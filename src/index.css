@@ -1,0 +1,526 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Custom Base Styles
+   ============================================ */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply text-slate-800 antialiased;
+}
+
+/* ============================================
+   Selection Styles
+   ============================================ */
+
+::selection {
+  @apply bg-navy-800/20 text-navy-900;
+}
+
+::-moz-selection {
+  @apply bg-navy-800/20 text-navy-900;
+}
+
+/* ============================================
+   Scrollbar Styles
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* ============================================
+   Focus Styles
+   ============================================ */
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-navy-500/50 ring-offset-2;
+}
+
+/* ============================================
+   Custom Utilities
+   ============================================ */
+
+@layer utilities {
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-navy-800 to-navy-600;
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gold-600 to-gold-500;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-navy-900/80 backdrop-blur-md border border-navy-700/30;
+  }
+
+  .glass-premium {
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-soft-xl;
+  }
+
+  /* Micro animations */
+  .animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+  }
+
+  /* Button press effect */
+  .btn-press {
+    @apply active:scale-[0.98] transition-transform duration-150;
+  }
+
+  /* Gradient border */
+  .border-gradient {
+    border-image: linear-gradient(135deg, theme('colors.navy.800'), theme('colors.navy.600')) 1;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    @apply relative overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      theme('colors.slate.100') 0%,
+      theme('colors.slate.200') 50%,
+      theme('colors.slate.100') 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Line clamp */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* ============================================
+   Component Classes
+   ============================================ */
+
+@layer components {
+  /* Premium Card */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-card;
+    @apply transition-all duration-300;
+  }
+
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  /* Premium Button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply bg-gradient-to-r from-navy-800 to-navy-700;
+    @apply text-white font-medium;
+    @apply px-5 py-2.5 rounded-xl;
+    @apply shadow-md;
+    @apply transition-all duration-200;
+    @apply hover:from-navy-700 hover:to-navy-600 hover:shadow-lg;
+    @apply active:scale-[0.98];
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn-press;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply bg-white border border-slate-200;
+    @apply text-slate-700 font-medium;
+    @apply px-5 py-2.5 rounded-xl;
+    @apply shadow-sm;
+    @apply transition-all duration-200;
+    @apply hover:bg-slate-50 hover:border-slate-300;
+    @apply active:scale-[0.98];
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn-press;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply bg-gradient-to-r from-gold-500 to-gold-600;
+    @apply text-white font-semibold;
+    @apply px-5 py-2.5 rounded-xl;
+    @apply shadow-md;
+    @apply transition-all duration-200;
+    @apply hover:from-gold-600 hover:to-gold-700 hover:shadow-lg;
+    @apply active:scale-[0.98];
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn-press;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply text-slate-600 font-medium;
+    @apply px-4 py-2 rounded-lg;
+    @apply transition-all duration-200;
+    @apply hover:bg-slate-100 hover:text-slate-800;
+    @apply active:scale-[0.98];
+  }
+
+  /* Input Premium */
+  .input {
+    @apply w-full rounded-xl border border-slate-200;
+    @apply px-4 py-2.5 text-sm;
+    @apply bg-white;
+    @apply transition-all duration-200;
+    @apply placeholder:text-slate-400;
+    @apply focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none;
+    @apply disabled:bg-slate-50 disabled:text-slate-500;
+  }
+
+  .input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/20;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1;
+    @apply px-2.5 py-1 rounded-full;
+    @apply text-xs font-semibold;
+    @apply transition-colors duration-200;
+  }
+
+  .badge-primary {
+    @apply bg-navy-100 text-navy-800;
+  }
+
+  .badge-gold {
+    @apply bg-gold-100 text-gold-800;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+
+  /* Avatar */
+  .avatar {
+    @apply rounded-full object-cover border-2 border-white shadow-md;
+  }
+
+  .avatar-sm {
+    @apply h-8 w-8;
+  }
+
+  .avatar-md {
+    @apply h-10 w-10;
+  }
+
+  .avatar-lg {
+    @apply h-12 w-12;
+  }
+
+  .avatar-xl {
+    @apply h-16 w-16;
+  }
+
+  /* Table */
+  .table-container {
+    @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft;
+  }
+
+  .table-header {
+    @apply bg-gradient-to-r from-slate-50 to-slate-100;
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-600;
+    @apply border-b border-slate-200;
+  }
+
+  .table-row {
+    @apply border-b border-slate-100 last:border-0;
+    @apply transition-colors duration-150;
+    @apply hover:bg-slate-50/70;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm text-slate-700;
+  }
+
+  /* Alert */
+  .alert {
+    @apply rounded-xl p-4 border-l-4;
+    @apply text-sm;
+  }
+
+  .alert-info {
+    @apply bg-blue-50/70 border-blue-400 text-blue-800;
+  }
+
+  .alert-success {
+    @apply bg-emerald-50/70 border-emerald-400 text-emerald-800;
+  }
+
+  .alert-warning {
+    @apply bg-amber-50/70 border-amber-400 text-amber-800;
+  }
+
+  .alert-error {
+    @apply bg-red-50/70 border-red-400 text-red-800;
+  }
+
+  /* Modal Backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 z-50;
+    @apply bg-slate-900/60 backdrop-blur-sm;
+    @apply flex items-center justify-center p-4;
+    @apply animate-fade-in;
+  }
+
+  /* Modal Content */
+  .modal-content {
+    @apply w-full max-w-lg;
+    @apply bg-white rounded-3xl shadow-soft-xl;
+    @apply animate-scale-in;
+  }
+
+  /* Tab */
+  .tab {
+    @apply inline-flex items-center gap-2;
+    @apply px-4 py-2.5 text-sm font-medium;
+    @apply rounded-xl;
+    @apply transition-all duration-200;
+    @apply hover:bg-slate-100;
+  }
+
+  .tab-active {
+    @apply bg-navy-800 text-white;
+    @apply shadow-md;
+  }
+
+  /* Stepper */
+  .stepper-item {
+    @apply flex items-center gap-3;
+  }
+
+  .stepper-circle {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full;
+    @apply text-sm font-semibold;
+    @apply transition-all duration-300;
+  }
+
+  .stepper-circle-active {
+    @apply bg-navy-800 text-white shadow-lg;
+  }
+
+  .stepper-circle-complete {
+    @apply bg-gold-500 text-white;
+  }
+
+  .stepper-circle-inactive {
+    @apply bg-slate-200 text-slate-500;
+  }
+
+  .stepper-line {
+    @apply h-px flex-1 bg-slate-200;
+    @apply transition-colors duration-300;
+  }
+
+  .stepper-line-complete {
+    @apply bg-gold-500;
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-slate-200;
+  }
+
+  /* Divider */
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent;
+  }
+}
+
+/* ============================================
+   Animation Delays for Staggered Effects
+   ============================================ */
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-1000 { animation-delay: 1000ms; }
+
+/* ============================================
+   Custom Range Slider Styling
+   ============================================ */
+
+input[type="range"] {
+  @apply appearance-none w-full h-2 rounded-full;
+  @apply bg-slate-200;
+  @apply cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 rounded-full;
+  @apply bg-gradient-to-br from-navy-700 to-navy-800;
+  @apply shadow-lg border-2 border-white;
+  @apply cursor-pointer;
+  @apply transition-transform duration-150;
+  @apply hover:scale-110;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-5 h-5 rounded-full;
+  @apply bg-gradient-to-br from-navy-700 to-navy-800;
+  @apply shadow-lg border-2 border-white;
+  @apply cursor-pointer;
+  @apply transition-transform duration-150;
+  @apply hover:scale-110;
+}
+
+/* ============================================
+   Custom Checkbox Styling
+   ============================================ */
+
+input[type="checkbox"] {
+  @apply w-4 h-4 rounded border-slate-300;
+  @apply text-navy-800;
+  @apply focus:ring-2 focus:ring-navy-500/30;
+  @apply cursor-pointer;
+  @apply transition-colors duration-200;
+}
+
+/* ============================================
+   Custom Radio Styling
+   ============================================ */
+
+input[type="radio"] {
+  @apply w-4 h-4 border-slate-300;
+  @apply text-navy-800;
+  @apply focus:ring-2 focus:ring-navy-500/30;
+  @apply cursor-pointer;
+}
+
+/* ============================================
+   Animation Classes for Tailwind
+   ============================================ */
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+}
