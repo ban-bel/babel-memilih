@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { getSignedUrlBuktiPDF } from '../../../services/votingService';
@@ -34,9 +34,34 @@ function getEmbedUrl(url) {
  * @param {(daftarPenilaian: {nominee_id:number,kategori_id:number,skor:number,catatan_juri:string}[]) => void} onSubmit
  * @param {boolean} isSubmitting
  */
-export default function FormMode2({ nominee, kategori, jawaban, onSubmit, isSubmitting }) {
+export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit, isSubmitting }) {
   const [downloadingUrl, setDownloadingUrl] = useState(null);
+  
+  const loadDraft = () => {
+    if (!token) return null;
+    try {
+      const saved = localStorage.getItem(`draft_mode2_${token}`);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Failed to read draft", e);
+    }
+    return null;
+  };
+
+  const draft = useMemo(loadDraft, [token]);
+
   const nilaiAwal = useMemo(() => {
+    if (draft && draft.skor) {
+      const rerata = {};
+      kategori.forEach((k) => {
+        const tengah = Math.round((k.skor_min + k.skor_max) / 2);
+        nominee.forEach((n) => {
+          const key = kunciSkor(n.id, k.id);
+          rerata[key] = draft.skor[key] !== undefined ? draft.skor[key] : tengah;
+        });
+      });
+      return rerata;
+    }
     const rerata = {};
     kategori.forEach((k) => {
       const tengah = Math.round((k.skor_min + k.skor_max) / 2);
@@ -45,17 +70,32 @@ export default function FormMode2({ nominee, kategori, jawaban, onSubmit, isSubm
       });
     });
     return rerata;
-  }, [nominee, kategori]);
+  }, [nominee, kategori, draft]);
 
   const [skor, setSkor] = useState(nilaiAwal);
-  const [catatan, setCatatan] = useState({});
+  const [catatan, setCatatan] = useState(() => draft?.catatan || {});
+  const [hasDraft, setHasDraft] = useState(!!draft);
   const [nomineeTerbuka, setNomineeTerbuka] = useState(() => nominee[0]?.id ?? null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [tersentuh, setTersentuh] = useState(() => {
+    if (draft && draft.tersentuh) {
+      return new Set(draft.tersentuh);
+    }
     const s = new Set();
     if (nominee[0]) s.add(nominee[0].id);
     return s;
   });
+
+  useEffect(() => {
+    if (!token) return;
+    if (hasDraft || tersentuh.size > 1 || Object.keys(catatan).length > 0) {
+      localStorage.setItem(`draft_mode2_${token}`, JSON.stringify({
+        skor,
+        catatan,
+        tersentuh: Array.from(tersentuh)
+      }));
+    }
+  }, [skor, catatan, tersentuh, hasDraft, token]);
   // Track which input is being edited and its temporary value
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
@@ -77,6 +117,7 @@ export default function FormMode2({ nominee, kategori, jawaban, onSubmit, isSubm
   function ubahSkor(nomineeId, kategoriId, nilai) {
     setSkor((prev) => ({ ...prev, [kunciSkor(nomineeId, kategoriId)]: Number(nilai) }));
     setTersentuh((prev) => new Set(prev).add(nomineeId));
+    setHasDraft(true);
     // Auto-save toast hanya muncul setiap 2 detik untuk avoid spam
     if (!document.querySelector('[data-toast-auto-save]')) {
       toast.success('Disimpan otomatis', {
@@ -127,6 +168,12 @@ export default function FormMode2({ nominee, kategori, jawaban, onSubmit, isSubm
           <div className="flex items-center gap-2">
             <Gavel className="h-5 w-5 text-navy-700" />
             <span className="text-sm font-medium text-slate-700">Progress Penilaian Juri</span>
+            {hasDraft && sudahDinilai < nominee.length && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1 ml-2">
+                <Save className="h-3 w-3" />
+                DRAF TERSIMPAN
+              </span>
+            )}
           </div>
           <span className="text-sm font-bold text-navy-800">
             {sudahDinilai} / {nominee.length} Nominee
@@ -422,6 +469,7 @@ export default function FormMode2({ nominee, kategori, jawaban, onSubmit, isSubm
                       onChange={(e) => {
                         setCatatan((prev) => ({ ...prev, [n.id]: e.target.value }));
                         setTersentuh((prev) => new Set(prev).add(n.id));
+                        setHasDraft(true);
                       }}
                       placeholder="Tuliskan catatan kualitatif untuk nominee ini (opsional)..."
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"

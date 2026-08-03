@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Loader2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { submitAllVotesMode1C } from '../../../services/votingService';
@@ -29,6 +29,7 @@ import { submitAllVotesMode1C } from '../../../services/votingService';
  * @param {string} props.errorMessage - Pesan error
  */
 export default function FormMode1C({
+  token,
   nominee,
   kategori,
   votesTersimpan = [],
@@ -39,19 +40,43 @@ export default function FormMode1C({
   const [votes, setVotes] = useState({}); // { [kategoriId]: nomineeId }
   const [langkahSaatIni, setLangkahSaatIni] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
 
-  // Inisialisasi votes dari data tersimpan
+  // Inisialisasi votes dari data tersimpan dan localStorage
   useEffect(() => {
+    let baru = {};
     if (votesTersimpan.length > 0) {
-      const baru = {};
       votesTersimpan.forEach((v) => {
         if (v.nominee_id && v.nominee_id > 0) {
           baru[v.kategori_id] = v.nominee_id;
         }
       });
-      setVotes(baru);
     }
-  }, [votesTersimpan]);
+    
+    if (token) {
+      try {
+        const saved = localStorage.getItem(`draft_mode1c_${token}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.votes) {
+            baru = { ...baru, ...parsed.votes };
+            setHasDraft(true);
+          }
+        }
+      } catch(e) {
+        console.warn("Failed to read draft", e);
+      }
+    }
+    
+    setVotes(baru);
+  }, [votesTersimpan, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    if (hasDraft || Object.keys(votes).length > 0) {
+      localStorage.setItem(`draft_mode1c_${token}`, JSON.stringify({ votes }));
+    }
+  }, [votes, hasDraft, token]);
 
   const totalKategori = kategori.length;
   const kategoriSaatIni = kategori[langkahSaatIni];
@@ -68,6 +93,7 @@ export default function FormMode1C({
       ...prev,
       [kategoriSaatIni.id]: nomineeId,
     }));
+    setHasDraft(true);
     toast.success('Pilihan tersimpan', { duration: 1000 });
   }
 
@@ -98,9 +124,17 @@ export default function FormMode1C({
       {/* Progress Bar */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-700">
-            Progress Voting
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700">
+              Progress Voting
+            </span>
+            {hasDraft && voteCount < totalKategori && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1">
+                <Save className="h-3 w-3" />
+                DRAF TERSIMPAN
+              </span>
+            )}
+          </div>
           <span className="text-sm font-bold text-navy-800">
             {voteCount} / {totalKategori}
           </span>

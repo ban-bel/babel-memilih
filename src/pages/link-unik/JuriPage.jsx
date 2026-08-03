@@ -175,10 +175,16 @@ export default function JuriPage() {
               <LoadingScreen label="Memuat..." />
             ) : (
               <FormMode2
+                token={token}
                 nominee={nominee}
                 kategori={kategori}
                 jawaban={jawabanNominee}
-                onSubmit={(daftarPenilaian) => { setErrorSubmit(null); mutasiSubmit.mutate(daftarPenilaian); }}
+                onSubmit={(daftarPenilaian) => { 
+                  setErrorSubmit(null); 
+                  mutasiSubmit.mutate(daftarPenilaian, {
+                    onSuccess: () => localStorage.removeItem(`draft_mode2_${token}`)
+                  }); 
+                }}
                 isSubmitting={mutasiSubmit.isPending}
               />
             )}

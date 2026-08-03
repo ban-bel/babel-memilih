@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Send, Loader2, ChevronDown, Star, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Send, Loader2, ChevronDown, Star, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 
 function kunciSkor(nomineeId, pertanyaanId) {
@@ -28,8 +28,31 @@ function getEmbedUrl(url) {
  * @param {boolean} isSubmitting
  * @param {string|null} [errorMessage] - Error message from submit
  */
-export default function FormMode1A({ nominee, pertanyaan, jawaban, onSubmit, isSubmitting, errorMessage }) {
+export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubmit, isSubmitting, errorMessage }) {
+  const loadDraft = () => {
+    if (!token) return null;
+    try {
+      const saved = localStorage.getItem(`draft_mode1a_${token}`);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Failed to read draft", e);
+    }
+    return null;
+  };
+
+  const draft = useMemo(loadDraft, [token]);
+
   const nilaiAwal = useMemo(() => {
+    if (draft && draft.skor) {
+      const awal = {};
+      nominee.forEach((n) => {
+        pertanyaan.forEach((p) => {
+          const key = kunciSkor(n.id, p.id);
+          awal[key] = draft.skor[key] !== undefined ? draft.skor[key] : p.skor_min;
+        });
+      });
+      return awal;
+    }
     const awal = {};
     nominee.forEach((n) => {
       pertanyaan.forEach((p) => {
@@ -37,16 +60,30 @@ export default function FormMode1A({ nominee, pertanyaan, jawaban, onSubmit, isS
       });
     });
     return awal;
-  }, [nominee, pertanyaan]);
+  }, [nominee, pertanyaan, draft]);
 
   const [skor, setSkor] = useState(nilaiAwal);
+  const [hasDraft, setHasDraft] = useState(!!draft);
   const [nomineeTerbuka, setNomineeTerbuka] = useState(() => nominee[0]?.id ?? null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [tersentuh, setTersentuh] = useState(() => {
+    if (draft && draft.tersentuh) {
+      return new Set(draft.tersentuh);
+    }
     const s = new Set();
     if (nominee[0]) s.add(nominee[0].id);
     return s;
   });
+
+  useEffect(() => {
+    if (!token) return;
+    if (hasDraft || tersentuh.size > 1) {
+      localStorage.setItem(`draft_mode1a_${token}`, JSON.stringify({
+        skor,
+        tersentuh: Array.from(tersentuh)
+      }));
+    }
+  }, [skor, tersentuh, hasDraft, token]);
   // Track which input is being edited and its temporary value
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
@@ -68,6 +105,7 @@ export default function FormMode1A({ nominee, pertanyaan, jawaban, onSubmit, isS
   function ubahSkor(nomineeId, pertanyaanId, nilai) {
     setSkor((prev) => ({ ...prev, [kunciSkor(nomineeId, pertanyaanId)]: Number(nilai) }));
     setTersentuh((prev) => new Set(prev).add(nomineeId));
+    setHasDraft(true);
   }
 
   function handleSubmit(e) {
@@ -121,6 +159,12 @@ export default function FormMode1A({ nominee, pertanyaan, jawaban, onSubmit, isS
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3" />
                 LENGKAP
+              </span>
+            )}
+            {hasDraft && !isAllComplete && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1">
+                <Save className="h-3 w-3" />
+                DRAF TERSIMPAN
               </span>
             )}
           </div>

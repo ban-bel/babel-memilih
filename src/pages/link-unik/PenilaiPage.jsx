@@ -180,12 +180,17 @@ export default function PenilaiPage() {
           <LoadingScreen label="Memuat data..." />
         ) : modeSaatIni === MODE_PENILAIAN.MODE_1A ? (
           <FormMode1A
+            token={token}
             nominee={nominee}
             pertanyaan={pertanyaan}
             jawaban={jawabanNominee}
             onSubmit={(daftarSkor, daftarNominee) => {
               setErrorSubmit(null);
-              mutasiMode1A.mutate({ daftarSkor, daftarNominee });
+              mutasiMode1A.mutate({ daftarSkor, daftarNominee }, {
+                onSuccess: () => {
+                  localStorage.removeItem(`draft_mode1a_${token}`);
+                }
+              });
             }}
             isSubmitting={mutasiMode1A.isPending}
             errorMessage={mutasiMode1A.error?.message}
@@ -217,12 +222,15 @@ export default function PenilaiPage() {
             <LoadingScreen label="Memuat voting..." />
           ) : (
             <FormMode1C
+              token={token}
               nominee={nominee}
               kategori={votingKategori}
               votesTersimpan={votesTersimpan}
               onSubmit={(votes) => {
                 setErrorSubmit(null);
-                mutasiMode1C.mutate(votes);
+                mutasiMode1C.mutate(votes, {
+                  onSuccess: () => localStorage.removeItem(`draft_mode1c_${token}`)
+                });
               }}
               isSubmitting={mutasiMode1C.isPending}
               errorMessage={mutasiMode1C.error?.message}

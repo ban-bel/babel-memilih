@@ -41,7 +41,7 @@ out/
 *.xls
 supabase/.temp/
 supabase/db_backup/
-supabase/migrations/
+supabase/migrations/*
 supabase/backups/
 
 # ============================================

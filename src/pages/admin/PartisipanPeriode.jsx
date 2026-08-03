@@ -37,6 +37,7 @@ import {
 import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
 import { formatHP } from '../../services/fonnteService';
+import { kirimPesanLocalBot } from '../../services/wabotLokalService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
 import { MODE_PENILAIAN } from '../../utils/constants';
 
@@ -50,64 +51,59 @@ import { MODE_PENILAIAN } from '../../utils/constants';
 function formatTanggal(dateStr) {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 
 /**
- * Hitung sapaan berdasarkan NIP baru (digit 1-4 = tahun lahir, digit 15 = jenis kelamin).
+ * Hitung sapaan berdasarkan NIP baru
  */
 function hitungSapaan(nama, nipBaru) {
-  let sapaan = 'Bapak/Ibu ' + nama;
-
   if (nipBaru && nipBaru.length >= 15) {
     const tahunLahir = parseInt(nipBaru.substring(0, 4), 10);
     const jenisKelamin = nipBaru.charAt(14);
 
     if (!isNaN(tahunLahir)) {
       const umur = new Date().getFullYear() - tahunLahir;
-
-      if (umur < 28) {
-        sapaan = nama;
-      } else if (umur < 35) {
-        sapaan = (jenisKelamin === '1' ? 'Bang ' : 'Kak ') + nama;
-      } else {
-        sapaan = (jenisKelamin === '1' ? 'Bapak ' : 'Ibu ') + nama;
-      }
+      if (umur < 28) return ''; // tidak ada sapaan (masih muda banget)
+      if (umur < 35) return jenisKelamin === '1' ? 'Bang' : 'Kak';
+      return jenisKelamin === '1' ? 'Bapak' : 'Ibu';
     }
   }
-
-  return sapaan;
+  return ''; // fallback kosong
 }
 
 // =============================================================================
-// UI COMPONENTS
+// SUB-KOMPONEN
 // =============================================================================
 
 /**
- * Tab Button
+ * TabButton - Komponen tab minimalis
  */
-function TabButton({ label, dotColor, active, onClick, count }) {
+function TabButton({ label, active, onClick, count, dotColor }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={
-        'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ' +
+        'relative px-4 py-2 text-sm font-semibold transition-all ' +
         (active
-          ? 'bg-navy-800 text-white shadow-lg'
-          : 'text-slate-500 hover:bg-slate-100')
+          ? 'text-navy-900 border-b-2 border-navy-700'
+          : 'text-slate-400 hover:text-slate-600')
       }
     >
-      <span className={'h-2.5 w-2.5 rounded-full ' + dotColor} />
-      {label}
-      <span
-        className={
-          'rounded-full px-1.5 py-0.5 text-xs ' +
-          (active ? 'bg-white/20' : 'bg-slate-200')
-        }
-      >
-        {count}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+        {label}
+        {count !== undefined && (
+          <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            {count}
+          </span>
+        )}
+      </div>
     </button>
   );
 }
@@ -115,7 +111,8 @@ function TabButton({ label, dotColor, active, onClick, count }) {
 /**
  * PartisipanRow - Baris tabel untuk satu partisipan
  */
-function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }) {
+function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWaStatus, periode, templates }) {
+  const [isSending, setIsSending] = useState(false);
   const p = item.nominee || item.pegawai;
   if (!p) return null;
 
@@ -139,9 +136,9 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
   let waText = '';
   const templateText = pilihTemplateByKategori(templates, kategoriLabel);
   
-  if (templateText) {
+  if (templateText && templateText.isi_pesan) {
     const sapaan = hitungSapaan(p.nama, p.nip_baru);
-    waText = generatePesan(templateText, {
+    waText = generatePesan(templateText.isi_pesan, {
       'NAMA': p.nama,
       'PANGGILAN': sapaan ? sapaan.trim() + ' ' : '',
       'LINK': linkToken,
@@ -183,6 +180,11 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              if (!sudahNotif) {
+                onToggleWaStatus(item.id, true);
+              }
+            }}
             className="inline-flex items-center gap-1 font-mono text-xs text-slate-600 hover:text-emerald-600 hover:underline"
             title="Chat via WhatsApp dengan Template"
           >
@@ -209,16 +211,19 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
 
       {/* Status Notifikasi */}
       <td className="px-4 py-3">
-        <span
+        <button
+          type="button"
+          onClick={() => onToggleWaStatus(item.id, !sudahNotif)}
           className={
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ' +
-            (sudahNotif ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all hover:scale-105 ' +
+            (sudahNotif ? 'bg-emerald-100 text-emerald-700 hover:bg-slate-100 hover:text-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700')
           }
+          title={sudahNotif ? 'Klik untuk tandai belum terkirim' : 'Klik untuk tandai sudah terkirim'}
         >
           {sudahNotif ? (
             <>
-              <Bell className="h-3 w-3" />
-              WA Sent
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Terkirim
             </>
           ) : (
             <>
@@ -226,7 +231,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
               Belum
             </>
           )}
-        </span>
+        </button>
       </td>
 
       {/* Status Submit */}
@@ -276,16 +281,50 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
           </button>
 
           {hp && (
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
-              title="Kirim via WhatsApp Web (Template Otomatis)"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Kirim WA
-            </a>
+            <>
+              <button
+                type="button"
+                disabled={isSending}
+                onClick={async () => {
+                  setIsSending(true);
+                  const hpFormat = formatHP(hp);
+                  try {
+                    const result = await kirimPesanLocalBot(hpFormat, waText);
+                    if (result.status) {
+                      toast.success(`Berhasil mengirim ke ${p.nama} via Bot`);
+                      if (!sudahNotif) onToggleWaStatus(item.id, true);
+                    } else {
+                      toast.error(`Gagal: ${result.reason}`);
+                    }
+                  } catch (err) {
+                    toast.error(`Error: ${err.message}`);
+                  } finally {
+                    setIsSending(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+                title="Kirim otomatis lewat WA Bot Lokal"
+              >
+                {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                Kirim Bot
+              </button>
+
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (!sudahNotif) {
+                    onToggleWaStatus(item.id, true);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                title="Kirim via WhatsApp Web (Template Otomatis)"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                Kirim WA
+              </a>
+            </>
           )}
         </div>
       </td>
@@ -296,7 +335,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, periode, templates }
 /**
  * TabelPartisipan
  */
-function TabelPartisipan({ daftar, tab, copiedId, onCopy, periode, templates }) {
+function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWaStatus, periode, templates }) {
   if (!daftar || daftar.length === 0) {
     return (
       <div className="mt-4 rounded-xl border border-dashed border-slate-200 py-10 text-center text-slate-400">
@@ -326,6 +365,7 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, periode, templates }) 
               activeTab={tab}
               copiedId={copiedId}
               onCopy={onCopy}
+              onToggleWaStatus={onToggleWaStatus}
               periode={periode}
               templates={templates}
             />
@@ -390,6 +430,23 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  // Mutation untuk toggle status WA
+  const toggleWaMut = useMutation({
+    mutationFn: ({ tokenId, setSudah }) => {
+      const currentTabConfig = availableTabs.find(t => t.key === tab) || availableTabs[0];
+      return toggleStatusTerkirim(currentTabConfig.kategori, tokenId, setSudah);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`partisipan-${tab}`, periode?.id] });
+      toast.success('Status WhatsApp diperbarui');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleToggleWa = (tokenId, setSudah) => {
+    toggleWaMut.mutate({ tokenId, setSudah });
+  };
 
   // Tab configuration
   const availableTabs = [
@@ -641,7 +698,9 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
           tab={tab}
           copiedId={terpilih}
           onCopy={salin}
+          onToggleWaStatus={handleToggleWa}
           periode={periode}
+          templates={templates}
         />
       )}
 

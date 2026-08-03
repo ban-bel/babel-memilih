@@ -367,6 +367,7 @@ export async function fetchPeriodeList(wilayahId = null) {
       mode_penilaian,
       status,
       jumlah_kandidat_kakan,
+      max_nominee,
       wilayah_id,
       tgl_mulai,
       tgl_selesai,
@@ -1061,3 +1062,4 @@ export async function fetchDaftarJuriLengkap(periodeId) {
     };
   });
 }
+ 
