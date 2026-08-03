@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @fileoverview Kirim WA Service
  *
  * Logika kirim batch notifikasi WhatsApp dengan:
@@ -14,7 +14,8 @@
  */
 
 import { supabase } from '../config/supabaseClient';
-import { kirimPesanFonnte, formatHP } from './fonnteService';
+import { formatHP } from './fonnteService';
+import { kirimPesanLocalBot } from './wabotLokalService';
 import { fetchTemplateWaAktif } from './templateWaService';
 
 /**
@@ -211,14 +212,14 @@ function getBatchPause() {
 
   // Reason yang lebih natural
   const reasons = [
-    'ngopi dulu ☕',
-    'nyamuk bentar 🦟',
-    'scroll WA dulu 📱',
-    'istirahat sebentar 💭',
-    'respon chat lain 💬',
-    'makan siang 🍽️',
-    'ke toilet 🚽',
-    'bertaubat bentar 🤲'
+    'ngopi dulu â˜•',
+    'nyamuk bentar ðŸ¦Ÿ',
+    'scroll WA dulu ðŸ“±',
+    'istirahat sebentar ðŸ’­',
+    'respon chat lain ðŸ’¬',
+    'makan siang ðŸ½ï¸',
+    'ke toilet ðŸš½',
+    'bertaubat bentar ðŸ¤²'
   ];
   const reason = reasons[Math.floor(Math.random() * reasons.length)];
 
@@ -240,7 +241,7 @@ function addMessageVariation(baseMessage, recipientName) {
     (msg) => msg.replace('!', '!'),
     // Tambah emoji random (tidak selalu sama)
     (msg) => {
-      const emojis = ['👋', '📋', '✨', '📌', '🎯'];
+      const emojis = ['ðŸ‘‹', 'ðŸ“‹', 'âœ¨', 'ðŸ“Œ', 'ðŸŽ¯'];
       const emoji = emojis[Math.floor(Math.random() * emojis.length)];
       return `${emoji} ${msg}`;
     },
@@ -345,13 +346,13 @@ export function pilihTemplateByKategori(templates, kategori) {
   );
 
   if (templateSpesifik) {
-    console.log(`📋 Template untuk ${kategori}: "${templateSpesifik.nama_tampilan}"`);
+    console.log(`ðŸ“‹ Template untuk ${kategori}: "${templateSpesifik.nama_tampilan}"`);
     return templateSpesifik;
   }
 
   // Fallback: random
   const index = Math.floor(Math.random() * templates.length);
-  console.log(`📋 Template random untuk ${kategori}: "${templates[index].nama_tampilan}"`);
+  console.log(`ðŸ“‹ Template random untuk ${kategori}: "${templates[index].nama_tampilan}"`);
   return templates[index];
 }
 
@@ -410,25 +411,25 @@ export async function kirimNotifikasiBatch({
   const safeHour = isSafeHour();
   const currentTime = getHumanReadableTime();
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('📱 MULAI KIRIM NOTIFIKASI WA (Hybrid Batch Mode)');
-  console.log('─'.repeat(70));
-  console.log(`👥 Total penerima: ${penerimaList.length}`);
-  console.log(`🏷️  Kategori: ${kategori}`);
-  console.log(`🕐 Waktu mulai: ${currentTime}`);
-  console.log(`⏰ Status jam: ${safeHour ? '⏱️ Dalam jam kerja' : '🌙 Di luar jam kerja'}`);
-  console.log('─'.repeat(70));
-  console.log('📊 Pattern Hybrid Batch:');
-  console.log('   • Batch size: 2-5 pesan per batch (acak)');
-  console.log('   • 70% → pause 45-120 detik antar batch ("ngopi/nyamuk")');
-  console.log('   • 30% → langsung lanjut tanpa pause panjang');
-  console.log('   • Weekend: batch pause 1.5x lebih lama');
-  console.log('   • 15% → delay pendek (1-2 detik) - "buru-buru"');
-  console.log('   • 72% → delay normal (3-8 detik) - typing normal');
-  console.log('   • 8% → pause panjang (15-45 detik) - "terganggu"');
-  console.log('   • 3% → pause sangat panjang (1-3 menit) - "sibuk"');
-  console.log('   • 10% → variasi pesan untuk menghindari identical messages');
-  console.log('═'.repeat(70) + '\n');
+  console.log('\n' + 'â•'.repeat(70));
+  console.log('ðŸ“± MULAI KIRIM NOTIFIKASI WA (Hybrid Batch Mode)');
+  console.log('â”€'.repeat(70));
+  console.log(`ðŸ‘¥ Total penerima: ${penerimaList.length}`);
+  console.log(`ðŸ·ï¸  Kategori: ${kategori}`);
+  console.log(`ðŸ• Waktu mulai: ${currentTime}`);
+  console.log(`â° Status jam: ${safeHour ? 'â±ï¸ Dalam jam kerja' : 'ðŸŒ™ Di luar jam kerja'}`);
+  console.log('â”€'.repeat(70));
+  console.log('ðŸ“Š Pattern Hybrid Batch:');
+  console.log('   â€¢ Batch size: 2-5 pesan per batch (acak)');
+  console.log('   â€¢ 70% â†’ pause 45-120 detik antar batch ("ngopi/nyamuk")');
+  console.log('   â€¢ 30% â†’ langsung lanjut tanpa pause panjang');
+  console.log('   â€¢ Weekend: batch pause 1.5x lebih lama');
+  console.log('   â€¢ 15% â†’ delay pendek (1-2 detik) - "buru-buru"');
+  console.log('   â€¢ 72% â†’ delay normal (3-8 detik) - typing normal');
+  console.log('   â€¢ 8% â†’ pause panjang (15-45 detik) - "terganggu"');
+  console.log('   â€¢ 3% â†’ pause sangat panjang (1-3 menit) - "sibuk"');
+  console.log('   â€¢ 10% â†’ variasi pesan untuk menghindari identical messages');
+  console.log('â•'.repeat(70) + '\n');
 
   const results = {
     berhasil: [],
@@ -451,8 +452,8 @@ export async function kirimNotifikasiBatch({
     throw new Error('Tidak ada template WA yang aktif');
   }
 
-  console.log(`📋 Template: "${templateDipilih.nama_tampilan}"`);
-  console.log(`📋 Template ID: ${templateDipilih.id}`);
+  console.log(`ðŸ“‹ Template: "${templateDipilih.nama_tampilan}"`);
+  console.log(`ðŸ“‹ Template ID: ${templateDipilih.id}`);
   console.log('');
 
   // ========================================
@@ -471,9 +472,9 @@ export async function kirimNotifikasiBatch({
     batchStats.batches++;
     batchStats.avgBatchSize = (batchStats.avgBatchSize * (batchStats.batches - 1) + actualBatchSize) / batchStats.batches;
 
-    console.log(`\n${'─'.repeat(70)}`);
-    console.log(`📦 BATCH #${batchNumber} - ${actualBatchSize} pesan${actualBatchSize < batchSize ? ' (sisa ' + remaining + ')' : ''}`);
-    console.log(`─`.repeat(70));
+    console.log(`\n${'â”€'.repeat(70)}`);
+    console.log(`ðŸ“¦ BATCH #${batchNumber} - ${actualBatchSize} pesan${actualBatchSize < batchSize ? ' (sisa ' + remaining + ')' : ''}`);
+    console.log(`â”€`.repeat(70));
 
     // Proses pesan dalam batch ini
     for (let j = 0; j < actualBatchSize; j++) {
@@ -525,7 +526,7 @@ export async function kirimNotifikasiBatch({
             status: 'PENDING'
           });
       } catch (err) {
-        console.error('⚠️ Gagal insert log:', err);
+        console.error('âš ï¸ Gagal insert log:', err);
       }
 
       // Progress: queued
@@ -544,16 +545,16 @@ export async function kirimNotifikasiBatch({
       const contextualDelay = Math.round(getContextualDelay(delayPattern.delay));
 
       // Display human-readable delay info
-      const timeIcon = delayPattern.type === 'SHORT' ? '⚡' :
-                       delayPattern.type === 'LONG' ? '⏸️' :
-                       delayPattern.type === 'VERY_LONG' ? '☕' : '⏱️';
+      const timeIcon = delayPattern.type === 'SHORT' ? 'âš¡' :
+                       delayPattern.type === 'LONG' ? 'â¸ï¸' :
+                       delayPattern.type === 'VERY_LONG' ? 'â˜•' : 'â±ï¸';
 
       const reasonText = delayPattern.type === 'SHORT' ? 'keburu' :
                          delayPattern.type === 'LONG' ? 'terganggu' :
                          delayPattern.type === 'VERY_LONG' ? 'istirahat' : 'normal';
 
       if (delayPattern.type !== 'NORMAL' || contextualDelay > 5) {
-        console.log(`  [${i + 1}/${penerimaList.length}] ${timeIcon} ${contextualDelay}d (${reasonText}) → "${p.nama}"`);
+        console.log(`  [${i + 1}/${penerimaList.length}] ${timeIcon} ${contextualDelay}d (${reasonText}) â†’ "${p.nama}"`);
       }
 
       // Tunda sebelum kirim
@@ -562,14 +563,12 @@ export async function kirimNotifikasiBatch({
       // Update last send time
       lastSendTime = Date.now();
 
-      // Kirim via Fonnte single API
-      const response = await kirimPesanFonnte(noHpFormat, pesan, {
-        delay: String(Math.min(contextualDelay, 10)) // Fonnte max 10
-      });
+      // Kirim via Local Bot API single message
+      const response = await kirimPesanLocalBot(noHpFormat, pesan);
 
       if (response.status) {
         const sentTime = getHumanReadableTime();
-        console.log(`  [${i + 1}/${penerimaList.length}] ✅ "${p.nama}" → ${noHpFormat}`);
+        console.log(`  [${i + 1}/${penerimaList.length}] âœ… "${p.nama}" â†’ ${noHpFormat}`);
 
         results.berhasil.push(p);
         await updateLogStatus(periodeId, p.id, 'SENT');
@@ -585,7 +584,7 @@ export async function kirimNotifikasiBatch({
           batchProgress: `${j + 1}/${actualBatchSize}`
         });
       } else {
-        console.log(`  [${i + 1}/${penerimaList.length}] ❌ "${p.nama}" → ${noHpFormat} (${response.reason})`);
+        console.log(`  [${i + 1}/${penerimaList.length}] âŒ "${p.nama}" â†’ ${noHpFormat} (${response.reason})`);
 
         results.gagal.push({ ...p, error: response.reason });
         await updateLogStatus(periodeId, p.id, 'FAILED', response.reason);
@@ -613,8 +612,8 @@ export async function kirimNotifikasiBatch({
       // 70% chance untuk batch pause
       if (Math.random() < BATCH_PAUSE_CHANCE) {
         const { pause, reason } = getBatchPause();
-        console.log(`\n☕ Batch #${batchNumber} selesai. ${reason} (~${pause}d)...`);
-        console.log(`   📊 Progress: ${i}/${penerimaList.length} | Sisa: ${remainingAfterBatch} pesan`);
+        console.log(`\nâ˜• Batch #${batchNumber} selesai. ${reason} (~${pause}d)...`);
+        console.log(`   ðŸ“Š Progress: ${i}/${penerimaList.length} | Sisa: ${remainingAfterBatch} pesan`);
 
         onProgress?.({
           index: i - 1,
@@ -631,7 +630,7 @@ export async function kirimNotifikasiBatch({
       } else {
         // 30% chance langsung lanjut tanpa pause panjang
         const shortPause = Math.floor(Math.random() * 5) + 3;
-        console.log(`\n⏭️ Langsung lanjut ke batch berikutnya (pause ${shortPause}d)...`);
+        console.log(`\nâ­ï¸ Langsung lanjut ke batch berikutnya (pause ${shortPause}d)...`);
         await new Promise(resolve => setTimeout(resolve, shortPause * 1000));
       }
     }
@@ -642,24 +641,24 @@ export async function kirimNotifikasiBatch({
   const duration = Math.round((endTime - sessionStartTime) / 1000);
   const avgDelay = Math.round(duration / Math.max(penerimaList.length, 1));
 
-  console.log('\n' + '═'.repeat(70));
-  console.log('📊 RINGKASAN PENGIRIMAN (Hybrid Batch Mode)');
-  console.log('─'.repeat(70));
-  console.log(`   ✅ Berhasil: ${results.berhasil.length}`);
-  console.log(`   ❌ Gagal: ${results.gagal.length}`);
-  console.log(`   📦 Total: ${penerimaList.length} pesan`);
-  console.log(`   📦 Total batch: ${batchStats.batches}`);
-  console.log(`   📈 Rata-rata batch size: ${batchStats.avgBatchSize.toFixed(1)} pesan/batch`);
-  console.log(`   ⏱️  Durasi total: ${Math.floor(duration / 60)}m ${duration % 60}d`);
-  console.log(`   📈 Rata-rata delay: ${avgDelay} detik/pesan`);
-  console.log(`   🕐 Waktu selesai: ${getHumanReadableTime()}`);
-  console.log('─'.repeat(70));
-  console.log('💡 Tips Anti-Ban:');
-  console.log('   • Pattern batch (2-5 pesan) + pause (45-120 detik)');
-  console.log('   • Simulasi manusia: ngopi, nyamuk, scroll WA');
-  console.log('   • Weekend: batch pause lebih lama');
-  console.log('   • Jangan kirim di jam yang sama setiap hari');
-  console.log('═'.repeat(70) + '\n');
+  console.log('\n' + 'â•'.repeat(70));
+  console.log('ðŸ“Š RINGKASAN PENGIRIMAN (Hybrid Batch Mode)');
+  console.log('â”€'.repeat(70));
+  console.log(`   âœ… Berhasil: ${results.berhasil.length}`);
+  console.log(`   âŒ Gagal: ${results.gagal.length}`);
+  console.log(`   ðŸ“¦ Total: ${penerimaList.length} pesan`);
+  console.log(`   ðŸ“¦ Total batch: ${batchStats.batches}`);
+  console.log(`   ðŸ“ˆ Rata-rata batch size: ${batchStats.avgBatchSize.toFixed(1)} pesan/batch`);
+  console.log(`   â±ï¸  Durasi total: ${Math.floor(duration / 60)}m ${duration % 60}d`);
+  console.log(`   ðŸ“ˆ Rata-rata delay: ${avgDelay} detik/pesan`);
+  console.log(`   ðŸ• Waktu selesai: ${getHumanReadableTime()}`);
+  console.log('â”€'.repeat(70));
+  console.log('ðŸ’¡ Tips Anti-Ban:');
+  console.log('   â€¢ Pattern batch (2-5 pesan) + pause (45-120 detik)');
+  console.log('   â€¢ Simulasi manusia: ngopi, nyamuk, scroll WA');
+  console.log('   â€¢ Weekend: batch pause lebih lama');
+  console.log('   â€¢ Jangan kirim di jam yang sama setiap hari');
+  console.log('â•'.repeat(70) + '\n');
 
   onComplete?.(results);
   return results;
@@ -681,7 +680,7 @@ async function updateLogStatus(periodeId, pegawaiId, status, errorMessage = null
       .eq('pegawai_id', pegawaiId)
       .eq('status', 'PENDING');
   } catch (err) {
-    console.error('⚠️ Gagal update log:', err);
+    console.error('âš ï¸ Gagal update log:', err);
   }
 }
 
@@ -704,7 +703,7 @@ async function updateStatusTerkirim(kategori, tokenId) {
       .update({ notifikasi_wa_sent_at: new Date().toISOString() })
       .eq('id', tokenId);
   } catch (err) {
-    console.error(`⚠️ Gagal update status terkirim untuk ${kategori}:`, err);
+    console.error(`âš ï¸ Gagal update status terkirim untuk ${kategori}:`, err);
   }
 }
 
@@ -714,3 +713,22 @@ async function updateStatusTerkirim(kategori, tokenId) {
 export function filterBelumTerkirim(list, field = 'notifikasi_wa_sent_at') {
   return list.filter(item => !item[field]);
 }
+export async function toggleStatusTerkirim(kategori, tokenId, setSudah) {
+  const tableMap = {
+    'NOMINEE': 'akses_nominee',
+    'PENILAI': 'akses_penilai',
+    'JURI': 'juri_periode'
+  };
+
+  const table = tableMap[kategori];
+  if (!table) throw new Error('Kategori tidak valid');
+
+  const { error } = await supabase
+    .from(table)
+    .update({ notifikasi_wa_sent_at: setSudah ? new Date().toISOString() : null })
+    .eq('id', tokenId);
+    
+  if (error) throw error;
+}
+
+
