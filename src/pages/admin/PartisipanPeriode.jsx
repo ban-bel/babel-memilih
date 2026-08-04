@@ -38,6 +38,7 @@ import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplate
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
 import { formatHP, kirimPesanFonnte } from '../../services/fonnteService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
+import Pagination from '../../components/common/Pagination';
 import { MODE_PENILAIAN } from '../../utils/constants';
 
 // =============================================================================
@@ -394,6 +395,8 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
   // State
   const [cari, setCari] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const [tab, setTab] = useState('nominee');
   const [terpilih, setTerpilih] = useState(null);
   const [isProgressOpen, setIsProgressOpen] = useState(false);
@@ -578,6 +581,12 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   // Data based on active tab
   const daftar = tab === 'nominee' ? daftarNominee : tab === 'penilai' ? daftarPenilai : daftarJuri;
   const hasil = filterDaftar(daftar);
+
+  const totalPages = Math.ceil(hasil.length / itemsPerPage);
+  const paginatedHasil = useMemo(() => {
+    return hasil.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [hasil, currentPage]);
+
   const isLoading = tab === 'nominee' ? loadingNominee : tab === 'penilai' ? loadingPenilai : loadingJuri;
 
   // Stats
@@ -600,7 +609,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
               label={t.label}
               dotColor={t.dotColor}
               active={tab === t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setCurrentPage(1); }}
               count={t.data.length}
             />
           ))}
@@ -655,7 +664,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
         <input
           type="text"
           value={cari}
-          onChange={(e) => setCari(e.target.value)}
+          onChange={(e) => { setCari(e.target.value); setCurrentPage(1); }}
           placeholder="Cari nama, NIP, atau nomor HP..."
           className="input pl-10"
         />
@@ -667,16 +676,27 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
           <Loader2 className="h-8 w-8 animate-spin text-navy-600" />
         </div>
       ) : (
-        <TabelPartisipan
-          daftar={hasil}
-          tab={tab}
-          copiedId={terpilih}
-          onCopy={handleCopy}
-          onToggleWa={handleToggleWa}
-          periode={periode}
-          templates={templates}
-          localSentIds={localSentIds}
-        />
+        <>
+          <TabelPartisipan
+            daftar={paginatedHasil}
+            tab={tab}
+            copiedId={terpilih}
+            onCopy={handleCopy}
+            onToggleWa={handleToggleWa}
+            periode={periode}
+            templates={templates}
+            localSentIds={localSentIds}
+          />
+          {!isLoading && hasil.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={hasil.length}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
+        </>
       )}
 
       {/* Progress Modal */}

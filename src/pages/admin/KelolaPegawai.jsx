@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { UserCheck, Plus, Edit2, Trash2, Search, Loader2, X, FileSpreadsheet, Upload, Download, AlertTriangle, Shield } from 'lucide-react';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import Modal from '../../components/common/Modal';
+import Pagination from '../../components/common/Pagination';
 import { fetchDaftarPegawaiAktif, fetchWilayahList, tambahPegawai, tambahPegawaiBulk, updatePegawai, hapusPegawai } from '../../services/adminService';
 import { formatHP } from '../../services/fonnteService';
 import AdminLoginGate from './components/AdminLoginGate';
@@ -25,6 +26,8 @@ function KelolaPegawaiContent({ adminProfile }) {
 
   const [wilayahFilter, setWilayahFilter] = useState(defaultWilayahId);
   const [kataKunci, setKataKunci] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const [error, setError] = useState(null);
 
   // State Modal Form (Tambah / Edit)
@@ -108,6 +111,11 @@ function KelolaPegawaiContent({ adminProfile }) {
     queryKey: ['pegawai-list', activeWilayahFilter, kataKunci],
     queryFn: () => fetchDaftarPegawaiAktif(activeWilayahFilter, kataKunci),
   });
+
+  const totalPages = Math.ceil(pegawaiList.length / itemsPerPage);
+  const paginatedPegawai = useMemo(() => {
+    return pegawaiList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [pegawaiList, currentPage]);
 
   const mutasiSimpan = useMutation({
     mutationFn: (payload) => (editId ? updatePegawai(editId, payload) : tambahPegawai(payload)),
@@ -425,7 +433,10 @@ function KelolaPegawaiContent({ adminProfile }) {
           <input
             type="text"
             value={kataKunci}
-            onChange={(e) => setKataKunci(e.target.value)}
+            onChange={(e) => {
+              setKataKunci(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Cari nama, NIP, atau nomor HP..."
             className="input pl-10"
           />
@@ -433,7 +444,10 @@ function KelolaPegawaiContent({ adminProfile }) {
         <select
           disabled={isKabKotaAdmin}
           value={isKabKotaAdmin ? String(adminProfile.wilayah_id) : wilayahFilter}
-          onChange={(e) => setWilayahFilter(e.target.value)}
+          onChange={(e) => {
+            setWilayahFilter(e.target.value);
+            setCurrentPage(1);
+          }}
           className="input"
         >
           <option value="">Semua Wilayah</option>
@@ -467,7 +481,7 @@ function KelolaPegawaiContent({ adminProfile }) {
                 <td colSpan={6} className="px-4 py-8 text-center text-slate-400">Tidak ada data</td>
               </tr>
             ) : (
-              pegawaiList.map((p) => (
+              paginatedPegawai.map((p) => (
                 <tr key={p.id} className="table-row">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -514,9 +528,19 @@ function KelolaPegawaiContent({ adminProfile }) {
                 </tr>
               ))
             )}
-          </tbody>
+            </tbody>
         </table>
-      </div>
+        </div>
+
+        {!isLoading && pegawaiList.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={pegawaiList.length}
+            itemsPerPage={itemsPerPage}
+          />
+        )}
 
       <Modal
         isOpen={showModal}
