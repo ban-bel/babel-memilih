@@ -59,8 +59,8 @@ function DashboardContent({ adminProfile }) {
     setEditForm({
       id: p.id,
       nama_periode: p.nama_periode || '',
-      tgl_mulai: p.tgl_mulai ? p.tgl_mulai.substring(0, 10) : '',
-      tgl_selesai: p.tgl_selesai ? p.tgl_selesai.substring(0, 10) : '',
+      tgl_mulai: p.tgl_mulai ? p.tgl_mulai.substring(0, 16) : '',
+      tgl_selesai: p.tgl_selesai ? p.tgl_selesai.substring(0, 16) : '',
       petunjuk_penilaian: p.petunjuk_penilaian || '',
       status: p.status || 'DRAFT',
     });
@@ -257,7 +257,7 @@ function DashboardContent({ adminProfile }) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Mulai</label>
               <input
-                type="date"
+                type="datetime-local"
                 required
                 value={editForm.tgl_mulai}
                 onChange={(e) => setEditForm({ ...editForm, tgl_mulai: e.target.value })}
@@ -267,7 +267,7 @@ function DashboardContent({ adminProfile }) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Selesai</label>
               <input
-                type="date"
+                type="datetime-local"
                 required
                 value={editForm.tgl_selesai}
                 onChange={(e) => setEditForm({ ...editForm, tgl_selesai: e.target.value })}
