@@ -125,7 +125,7 @@ export default function VerifikasiPenilai() {
                 <div className="group">
                   <label className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
                     <Fingerprint className="w-4 h-4" />
-                    5 Digit NIP
+                    5 Digit Terakhir NIP
                   </label>
                   <div className="relative">
                     <input
@@ -155,7 +155,7 @@ export default function VerifikasiPenilai() {
                 <div className="group">
                   <label className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
                     <Smartphone className="w-4 h-4" />
-                    5 Digit HP
+                    5 Digit Terakhir No. HP
                   </label>
                   <div className="relative">
                     <input
@@ -270,70 +270,80 @@ export default function VerifikasiPenilai() {
                   Tiket Penilaian Tersedia
                 </h3>
 
-                <div className="grid gap-3">
-                  {periodeList.map((periode, index) => {
-                    const sudahDigunakan = periode.status_akses === 'SUDAH_DIGUNAKAN';
+                {periodeList.length === 0 ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center shadow-inner-soft animate-fade-in">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-100 text-amber-600 rounded-full mb-3">
+                      <AlertCircle className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-lg font-bold text-amber-900 mb-1">Tidak Ada Penilaian</h4>
+                    <p className="text-sm text-amber-700">Saat ini tidak ada periode penilaian yang sedang berlangsung untuk Anda.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {periodeList.map((periode, index) => {
+                      const sudahDigunakan = periode.status_akses === 'SUDAH_DIGUNAKAN';
 
-                    return (
-                      <div
-                        key={periode.periode_id || index}
-                        className={`
-                          relative group overflow-hidden border-2 rounded-2xl p-5 transition-all duration-300
-                          ${sudahDigunakan
-                            ? 'border-slate-200 bg-slate-50/50 opacity-80'
-                            : 'border-emerald-100 bg-emerald-50/30 hover:border-emerald-400 hover:bg-emerald-50/80 hover:shadow-soft-lg cursor-pointer'
-                          }
-                        `}
-                        onClick={() => !sudahDigunakan && handleMasukPeriode(periode.token)}
-                      >
-                        {/* Status Label (If Done) */}
-                        {sudahDigunakan && (
-                          <div className="absolute top-0 right-0 bg-slate-200 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                            Selesai
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            {/* Nama Periode */}
-                            <h4 className={`font-bold text-lg truncate ${sudahDigunakan ? 'text-slate-500' : 'text-navy-900 group-hover:text-emerald-800 transition-colors'}`}>
-                              {periode.nama_periode}
-                            </h4>
-
-                            {/* Info Badges */}
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              <span className={`
-                                px-2.5 py-1 rounded-lg text-xs font-bold
-                                ${periode.mode_penilaian === 'MODE_1A' ? 'bg-blue-100 text-blue-700' :
-                                  periode.mode_penilaian === 'MODE_1B' ? 'bg-purple-100 text-purple-700' :
-                                  'bg-amber-100 text-amber-700'}
-                                ${sudahDigunakan ? 'opacity-60' : ''}
-                              `}>
-                                {periode.mode_penilaian}
-                              </span>
-                              <span className={`flex items-center gap-1.5 text-xs font-medium ${sudahDigunakan ? 'text-slate-400' : 'text-slate-500'}`}>
-                                <Clock className="w-3.5 h-3.5" />
-                                Berlaku s.d. {formatTanggalIndonesia(periode.tgl_selesai)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Tombol Masuk */}
-                          {!sudahDigunakan && (
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all transform group-hover:scale-110 shadow-sm group-hover:shadow-glow">
-                              <ArrowRight className="w-5 h-5" />
-                            </div>
-                          )}
+                      return (
+                        <div
+                          key={periode.periode_id || index}
+                          className={`
+                            relative group overflow-hidden border-2 rounded-2xl p-5 transition-all duration-300
+                            ${sudahDigunakan
+                              ? 'border-slate-200 bg-slate-50/50 opacity-80'
+                              : 'border-emerald-100 bg-emerald-50/30 hover:border-emerald-400 hover:bg-emerald-50/80 hover:shadow-soft-lg cursor-pointer'
+                            }
+                          `}
+                          onClick={() => !sudahDigunakan && handleMasukPeriode(periode.token)}
+                        >
+                          {/* Status Label (If Done) */}
                           {sudahDigunakan && (
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
-                              <CheckCircle className="w-5 h-5" />
+                            <div className="absolute top-0 right-0 bg-slate-200 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                              Selesai
                             </div>
                           )}
+
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              {/* Nama Periode */}
+                              <h4 className={`font-bold text-lg truncate ${sudahDigunakan ? 'text-slate-500' : 'text-navy-900 group-hover:text-emerald-800 transition-colors'}`}>
+                                {periode.nama_periode}
+                              </h4>
+
+                              {/* Info Badges */}
+                              <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <span className={`
+                                  px-2.5 py-1 rounded-lg text-xs font-bold
+                                  ${periode.mode_penilaian === 'MODE_1A' ? 'bg-blue-100 text-blue-700' :
+                                    periode.mode_penilaian === 'MODE_1B' ? 'bg-purple-100 text-purple-700' :
+                                    'bg-amber-100 text-amber-700'}
+                                  ${sudahDigunakan ? 'opacity-60' : ''}
+                                `}>
+                                  {periode.mode_penilaian}
+                                </span>
+                                <span className={`flex items-center gap-1.5 text-xs font-medium ${sudahDigunakan ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <Clock className="w-3.5 h-3.5" />
+                                  Berlaku s.d. {formatTanggalIndonesia(periode.tgl_selesai)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Tombol Masuk */}
+                            {!sudahDigunakan && (
+                              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all transform group-hover:scale-110 shadow-sm group-hover:shadow-glow">
+                                <ArrowRight className="w-5 h-5" />
+                              </div>
+                            )}
+                            {sudahDigunakan && (
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                                <CheckCircle className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Verifikasi Ulang */}
