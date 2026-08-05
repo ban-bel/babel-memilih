@@ -116,7 +116,7 @@ export default function VerifikasiPenilai() {
             <div className="p-8">
               <div className="mb-6">
                 <p className="text-sm text-slate-600 text-center bg-slate-100/50 rounded-lg p-3 border border-slate-200/50 shadow-inner-soft">
-                  Masukkan <strong>5 digit terakhir</strong> NIP dan Nomor HP Anda yang terdaftar pada sistem.
+                  Masukkan <strong>5 digit terakhir</strong> NIP dan <strong>5 digit terakhir</strong> Nomor HP Anda yang terdaftar pada sistem.
                 </p>
               </div>
 
