@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { ShieldCheck, ArrowRight, AlertCircle, CheckCircle2, Loader2, ClipboardList, Clock, CheckCircle, Fingerprint, Smartphone } from 'lucide-react';
+import Modal from '../../components/common/Modal';
 import { verifikasiIdentitasPenilai } from '../../services/votingService';
 
 /**
@@ -219,7 +220,7 @@ export default function VerifikasiPenilai() {
           )}
 
           {/* Error Message */}
-          {error && (
+          {error && !error.toLowerCase().includes('tidak ada periode') && (
             <div className="px-8 pb-8 animate-fade-in">
               <div className="bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-4 flex items-start gap-4 shadow-sm">
                 <div className="bg-red-100 p-2 rounded-xl flex-shrink-0">
@@ -238,6 +239,29 @@ export default function VerifikasiPenilai() {
               </button>
             </div>
           )}
+
+          {/* Modal Khusus Tidak Ada Periode */}
+          <Modal
+            isOpen={!!error && error.toLowerCase().includes('tidak ada periode')}
+            onClose={handleReset}
+            title="Informasi Penilaian"
+          >
+            <div className="text-center py-4">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-50 text-amber-500 rounded-full mb-5 shadow-inner">
+                <AlertCircle className="w-10 h-10" />
+              </div>
+              <h4 className="text-xl font-bold text-navy-900 mb-2">Belum Ada Penilaian Aktif</h4>
+              <p className="text-slate-600 mb-8 px-4">
+                {error}
+              </p>
+              <button
+                onClick={handleReset}
+                className="w-full py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.98] transition-all shadow-md hover:shadow-lg"
+              >
+                Mengerti
+              </button>
+            </div>
+          </Modal>
 
           {/* Success: Daftar Periode */}
           {success && (
