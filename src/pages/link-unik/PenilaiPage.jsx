@@ -18,7 +18,7 @@ import {
   submitPenilaianMode2A,
 } from '../../services/votingService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
-import { STATUS_AKSES_TOKEN, MODE_PENILAIAN } from '../../utils/constants';
+import { STATUS_AKSES_TOKEN, MODE_PENILAIAN, getDailyAvatarUrl } from '../../utils/constants';
 
 import LoadingScreen from '../../components/common/LoadingScreen';
 import StatusScreen from '../../components/common/StatusScreen';
@@ -33,6 +33,8 @@ export default function PenilaiPage() {
   const { token } = useParams();
   const queryClient = useQueryClient();
   const [sudahKirim, setSudahKirim] = useState(false);
+  const girlAvatarSrc = getDailyAvatarUrl('girl');
+  const boyAvatarSrc = getDailyAvatarUrl('boy');
 
   // Redirect ke halaman verifikasi jika tidak ada token
   if (!token) {
@@ -162,8 +164,30 @@ export default function PenilaiPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-paper to-slate-100/50 pb-10">
-      <HeaderProfilAkses
+    <div className="min-h-screen bg-gradient-to-b from-paper to-slate-100/50 pb-10 relative">
+      
+      {/* Fixed Avatar Left */}
+      <div className="hidden xl:block fixed right-1/2 top-1/2 -translate-y-[35%] mr-[360px] 2xl:mr-[420px] z-0 pointer-events-none">
+        <img 
+          src={girlAvatarSrc} 
+          alt="Pegawai Perempuan" 
+          className="h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl opacity-30 animate-float" 
+          style={{ animationDelay: '1s' }}
+        />
+      </div>
+
+      {/* Fixed Avatar Right */}
+      <div className="hidden xl:block fixed left-1/2 top-1/2 -translate-y-[35%] ml-[360px] 2xl:ml-[420px] z-0 pointer-events-none">
+        <img 
+          src={boyAvatarSrc} 
+          alt="Pegawai Laki-laki" 
+          className="h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl opacity-30 animate-float" 
+          style={{ animationDelay: '0.5s' }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        <HeaderProfilAkses
         profil={akses.penilai}
         modePenilaian={akses.periode.mode_penilaian}
         namaPeriode={akses.periode.nama_periode}
@@ -242,6 +266,7 @@ export default function PenilaiPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

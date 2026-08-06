@@ -34,28 +34,11 @@ sistem-penilaian-pegawai/
 │   ├── services/
 │   └── ...
 │
-├── src-bot/                # WhatsApp Bot (Baileys - LOCAL SAJA)
-│   ├── index.js            # Main bot
-│   ├── services/
-│   │   ├── supabaseClient.js
-│   │   └── pesanService.js
-│   ├── .env.example
-│   └── README.md
-│
 ├── supabase/               # Database migrations
 └── ...
 ```
 
-### Menjalankan WhatsApp Bot (Local)
-
-```bash
-cd src-bot
-npm install
-cp .env.example .env        # edit dengan credentials Supabase
-npm run dev                 # scan QR dengan WhatsApp
-```
-
-> ⚠️ Folder `src-bot/` TIDAK di-deploy. Session WhatsApp dan .env hanya ada di komputer lokal kamu.
+> ⚠️ **Catatan**: Aplikasi Bot WhatsApp berjalan dari repositori/folder yang sepenuhnya terpisah dan berada di komputer lokal.
 
 ## Progres
 

@@ -181,7 +181,7 @@ web-git/                   # Frontend React (Vercel deploys this)
 +-- vite.config.js
 +-- tailwind.config.js
 
-wabot-lokal/               # WhatsApp Bot (LOCAL ONLY - sibling folder)
+repositori-bot-terpisah/               # WhatsApp Bot (LOCAL ONLY - sibling folder)
 +-- index.js               # Main bot + Express web server
 +-- package.json
 +-- .env                   # Supabase credentials (local only)
@@ -547,21 +547,21 @@ Batas: [TANGGAL_SELESAI]
 
 ---
 
-## WhatsApp Bot Lokal (wabot-lokal)
+## WhatsApp Bot Lokal (repositori-bot-terpisah)
 
-WhatsApp Bot menggunakan library [Baileys](https://github.com/WhiskeySockets/Baileys) untuk mengirim pesan dari HP kamu sendiri. **Lokasi: `wabot-lokal/`** (sibling folder, TIDAK di-deploy ke server).
+WhatsApp Bot menggunakan library [Baileys](https://github.com/WhiskeySockets/Baileys) untuk mengirim pesan dari HP kamu sendiri. **Lokasi: `repositori-bot-terpisah/`** (sibling folder, TIDAK di-deploy ke server).
 
 ### Kenapa Pakai Bot Lokal?
 
 | Metode | Kelebihan | Kekurangan |
 |--------|----------|------------|
 | **Fonnte API** | Cepat, otomatis | Risiko banned (location mismatch) |
-| **Baileys (wabot-lokal)** | Aman, tidak banned | Harus online, perlu scan QR |
+| **Baileys (repositori-bot-terpisah)** | Aman, tidak banned | Harus online, perlu scan QR |
 
 ### Arsitektur
 
 ```
-HP (WhatsApp)  <--->  WhatsApp Web Protocol  <--->  wabot-lokal (localhost:3000)
+HP (WhatsApp)  <--->  WhatsApp Web Protocol  <--->  repositori-bot-terpisah (localhost:3000)
                                                 |
                                                 +-- Web Dashboard UI
                                                 +-- Baileys Connection
@@ -572,7 +572,7 @@ HP (WhatsApp)  <--->  WhatsApp Web Protocol  <--->  wabot-lokal (localhost:3000)
 
 ```bash
 # Masuk ke folder bot (sibling of web-git)
-cd ../wabot-lokal
+cd ../repositori-bot-terpisah
 
 # Install dependencies (jika belum)
 npm install
@@ -585,7 +585,7 @@ npm run dev
 # 2. Web Dashboard di http://localhost:3000
 ```
 
-### Fitur Web Dashboard (wabot-lokal)
+### Fitur Web Dashboard (repositori-bot-terpisah)
 
 | Tab | Fungsi |
 |-----|--------|
@@ -594,10 +594,10 @@ npm run dev
 | **Template** | Edit template pesan WA |
 | **Kirim** | Kirim notifikasi bulk |
 
-### Struktur Folder (wabot-lokal)
+### Struktur Folder (repositori-bot-terpisah)
 
 ```
-wabot-lokal/
+repositori-bot-terpisah/
 +-- index.js              # Main bot + web server (Express)
 +-- package.json
 +-- .env                  # Environment (local only, gitignored)

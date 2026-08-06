@@ -28,8 +28,12 @@ function PlaceholderPage({ judul, keterangan }) {
 }
 
 import { ShieldCheck, UserCheck, ArrowRight, Fingerprint, Database, Award } from 'lucide-react';
+import { getDailyAvatarUrl } from './utils/constants';
 
 function PortalLandingPage() {
+  const girlAvatarSrc = getDailyAvatarUrl('girl');
+  const boyAvatarSrc = getDailyAvatarUrl('boy');
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-paper via-slate-50 to-slate-200 flex items-center justify-center p-4 sm:p-8">
       {/* Dynamic Background Elements */}
@@ -37,6 +41,26 @@ function PortalLandingPage() {
         <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-navy-200/40 to-blue-300/20 blur-[100px] mix-blend-multiply animate-pulse-soft" />
         <div className="absolute top-[60%] -left-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-emerald-200/30 to-teal-300/20 blur-[120px] mix-blend-multiply animate-float" />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiLz48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=')] opacity-30" />
+      </div>
+
+      {/* Floating Avatar Left */}
+      <div className="hidden lg:block absolute right-1/2 top-1/2 -translate-y-[35%] mr-[270px] xl:mr-[320px] z-0 pointer-events-none">
+        <img 
+          src={girlAvatarSrc} 
+          alt="Pegawai Perempuan" 
+          className="h-[500px] xl:h-[620px] w-auto drop-shadow-2xl opacity-90 animate-float" 
+          style={{ animationDelay: '1s' }}
+        />
+      </div>
+
+      {/* Floating Avatar Right */}
+      <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-y-[35%] ml-[270px] xl:ml-[320px] z-0 pointer-events-none">
+        <img 
+          src={boyAvatarSrc} 
+          alt="Pegawai Laki-laki" 
+          className="h-[500px] xl:h-[620px] w-auto drop-shadow-2xl opacity-90 animate-float" 
+          style={{ animationDelay: '0.5s' }}
+        />
       </div>
 
       <div className="relative w-full max-w-lg animate-fade-in-up z-10">

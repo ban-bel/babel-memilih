@@ -316,3 +316,36 @@ export function getPegawaiAvatarUrl(pegawai) {
 export function isValidNip(nip) {
   return nip && typeof nip === 'string' && nip.length > 0;
 }
+
+/**
+ * Mendapatkan URL avatar ilustrasi harian untuk tampilan dekorasi (Portal/Verifikasi)
+ * 
+ * @param {'boy' | 'girl'} gender 
+ * @returns {string} URL gambar dari github
+ */
+export function getDailyAvatarUrl(gender) {
+  const baseUrl = 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai';
+  const prefix = gender === 'boy' ? 'boy' : 'girl';
+  
+  const today = new Date();
+  const date = today.getDate();
+  const day = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  
+  let suffix = 'monday'; // default
+  
+  if (date === 17 && day >= 1 && day <= 5) {
+    suffix = '17th-Workday';
+  } else {
+    switch (day) {
+      case 0: suffix = 'sunday'; break;
+      case 1: suffix = 'monday'; break;
+      case 2: suffix = 'tuesday'; break;
+      case 3: suffix = 'wednesday'; break;
+      case 4: suffix = 'thursday'; break;
+      case 5: suffix = 'friday'; break;
+      case 6: suffix = 'saturday'; break;
+    }
+  }
+  
+  return `${baseUrl}/${prefix}-${suffix}.png`;
+}
