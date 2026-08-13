@@ -148,7 +148,7 @@ export const PESAN_STATUS_AKSES = Object.freeze({
   [STATUS_AKSES_TOKEN.BELUM_DIBUKA]: 'Periode Penilaian Belum Dibuka.',
 
   /** Sekarang > tgl_selesai atau status SELESAI/DIARSIPKAN */
-  [STATUS_AKSES_TOKEN.TELAH_DITUTUP]: 'Periode Penilaian Telah Ditutup.',
+  [STATUS_AKSES_TOKEN.TELAH_DITUTUP]: 'Waktu Penilaian Sudah Lewat.',
 
   /** Token sudah dipakai sebelumnya (read-only mode) */
   [STATUS_AKSES_TOKEN.SUDAH_DIGUNAKAN]: 'Anda sudah mengisi dan mengirimkan penilaian menggunakan link ini.',

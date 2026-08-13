@@ -32,8 +32,8 @@ const KONFIGURASI = {
   /** Periode sudah ditutup (sekarang > tgl_selesai atau status SELESAI/DIARSIPKAN) */
   [STATUS_AKSES_TOKEN.TELAH_DITUTUP]: {
     icon: Lock,
-    judul: 'Periode Penilaian Ditutup',
-    subjudul: 'Waktu sudah habis',
+    judul: 'Waktu Penilaian Sudah Lewat',
+    subjudul: 'Periode sudah ditutup',
     warna: 'text-slate-600 bg-slate-50 border-slate-200',
     gradient: 'from-slate-50 to-slate-100',
     iconBg: 'bg-slate-100',
