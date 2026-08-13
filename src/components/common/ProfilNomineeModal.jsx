@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, FileText, Table, Send, Loader2 } from 'lucide-react';
+import { X, FileText, Table, Send, Loader2, CheckSquare } from 'lucide-react';
 
 const getPreviewUrl = (url) => {
   if (!url) return '';
@@ -12,25 +12,40 @@ const getPreviewUrl = (url) => {
 
 export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteClick }) {
   const [mounted, setMounted] = useState(false);
-  const [countdown, setCountdown] = useState(15);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
-    let timer;
+  }, []);
+
+  // Check initial scrollability
+  useEffect(() => {
     if (isOpen) {
-      setCountdown(15);
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
+      setIsChecked(false);
+      // Give DOM time to render content
+      setTimeout(() => {
+        if (scrollRef.current) {
+          const { scrollHeight, clientHeight } = scrollRef.current;
+          if (scrollHeight <= clientHeight + 10) {
+            setHasScrolledToBottom(true);
+          } else {
+            setHasScrolledToBottom(false);
           }
-          return prev - 1;
-        });
-      }, 1000);
+        }
+      }, 300);
     }
-    return () => clearInterval(timer);
-  }, [isOpen]);
+  }, [isOpen, nominee]);
+
+  const handleScroll = (e) => {
+    if (hasScrolledToBottom) return;
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // Buffer of 20px to make it easier for users
+    if (scrollTop + clientHeight >= scrollHeight - 20) {
+      setHasScrolledToBottom(true);
+    }
+  };
 
   const hasTabel = (tabelData) => {
     if (!tabelData) return false;
@@ -106,7 +121,11 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex flex-col">
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex flex-col"
+        >
           {showPdfTab && (
             <div className="flex-1 flex flex-col min-h-[500px] animate-fade-in">
               <h4 className="font-semibold text-navy-900 flex items-center gap-2 mb-3">
@@ -173,26 +192,48 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
 
         {/* Footer Action */}
         <div className="p-4 border-t border-slate-200 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          
+          <div className="mb-4">
+            <label 
+              className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
+                hasScrolledToBottom 
+                  ? 'cursor-pointer hover:bg-slate-50 border-slate-200' 
+                  : 'cursor-not-allowed bg-slate-50/50 border-slate-200 opacity-70'
+              } ${isChecked ? 'bg-navy-50/50 border-navy-300 ring-1 ring-navy-300' : ''}`}
+            >
+              <div className="pt-0.5">
+                <input 
+                  type="checkbox" 
+                  checked={isChecked}
+                  onChange={(e) => setIsChecked(e.target.checked)}
+                  disabled={!hasScrolledToBottom}
+                  className="w-5 h-5 rounded border-slate-300 text-navy-600 focus:ring-navy-500 disabled:opacity-50 transition-all cursor-pointer"
+                />
+              </div>
+              <div className="flex-1">
+                <p className={`text-sm font-medium ${hasScrolledToBottom ? 'text-navy-900' : 'text-slate-500'}`}>
+                  Saya telah meninjau dokumen profil dan rekapitulasi kehadiran nominee ini.
+                </p>
+                {!hasScrolledToBottom && (
+                  <p className="text-xs text-red-500 mt-1.5 animate-pulse-soft font-medium">
+                    *Gulir (scroll) layar ke bagian paling bawah untuk mengaktifkan persetujuan.
+                  </p>
+                )}
+              </div>
+            </label>
+          </div>
+
           <button
             onClick={onVoteClick}
-            disabled={countdown > 0}
+            disabled={!isChecked}
             className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-bold text-white shadow-lg transition-all ${
-              countdown > 0
+              !isChecked
                 ? 'bg-slate-300 cursor-not-allowed'
                 : 'bg-gold-500 hover:bg-gold-600 hover:shadow-xl active:scale-[0.98]'
             }`}
           >
-            {countdown > 0 ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Membaca profil... ({countdown}s)
-              </>
-            ) : (
-              <>
-                <Send className="h-5 w-5" />
-                Pilih {nominee.nama}
-              </>
-            )}
+            <Send className="h-5 w-5" />
+            Pilih {nominee.nama}
           </button>
         </div>
       </div>
