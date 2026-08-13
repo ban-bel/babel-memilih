@@ -70,7 +70,7 @@ export async function kirimPesanFonnte(nomorHP, pesan, options = {}) {
   }
 
   try {
-    const formData = new FormData();
+    const formData = new URLSearchParams();
     formData.append('target', nomorHP);
     formData.append('message', pesan);
 
@@ -83,12 +83,11 @@ export async function kirimPesanFonnte(nomorHP, pesan, options = {}) {
     }
 
     // Delay: hanya works untuk multiple targets
-    // Format: '2' untuk fixed, '1-10' untuk random
     if (options.delay) {
       formData.append('delay', String(options.delay));
     }
 
-    // Typing indicator - auto-randomized
+    // Typing indicator
     const typingEnabled = options.typing !== undefined ? options.typing : (Math.random() < TYPING_CHANCE);
     if (typingEnabled) {
       formData.append('typing', 'true');
@@ -98,8 +97,9 @@ export async function kirimPesanFonnte(nomorHP, pesan, options = {}) {
       method: 'POST',
       headers: {
         'Authorization': FOONTE_TOKEN,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formData,
+      body: formData.toString(),
     });
 
     const data = await response.json();
@@ -162,7 +162,7 @@ export async function kirimPesanBulkFonnte(messages, options = {}) {
   }
 
   try {
-    const formData = new FormData();
+    const formData = new URLSearchParams();
 
     // data parameter harus JSON string
     // delay format: '2' atau '1-10' untuk random
@@ -171,7 +171,7 @@ export async function kirimPesanBulkFonnte(messages, options = {}) {
     // CountryCode default 62
     formData.append('countryCode', '62');
 
-    // Typing indicator - auto-randomized
+    // Typing indicator
     const typingEnabled = options.typing !== undefined ? options.typing : (Math.random() < TYPING_CHANCE);
     if (typingEnabled) {
       formData.append('typing', 'true');
@@ -181,8 +181,9 @@ export async function kirimPesanBulkFonnte(messages, options = {}) {
       method: 'POST',
       headers: {
         'Authorization': FOONTE_TOKEN,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: formData,
+      body: formData.toString(),
     });
 
     const data = await response.json();

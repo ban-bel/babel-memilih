@@ -47,19 +47,83 @@ const DELAY_PATTERNS = {
   VERY_LONG: { chance: 0.05, min: 45, max: 90 }, // 5% - sangat lama
 };
 
-// Variasi pesan untuk hindari identical messages
-const PESAN_VARIATIONS = [
-  (msg) => msg, // tanpa perubahan
-  (msg) => msg.replace('.', '..'),
-  (msg) => `${msg.trim()}`,
-  (msg) => msg.includes('Terima kasih')
-    ? msg.replace('Terima kasih', 'Terima kasih atas perhatiannya')
-    : msg,
-  (msg) => `Berikut informasi penting:\n\n${msg}`,
+// Variasi template untuk random
+const TEMPLATE_VARIASI = [
+  // Template 1: Original
+  `Yth. [PANGGILAN] [NAMA],
+
+Ini akun WhatsApp dari Rommel untuk kegiatan pemilihan pegawai pada babel-memilih.vercel.app.
+
+📱 *Nomor Baru:*
+[NOMOR_BARU]
+
+⚠️ *Penting:*
+• Jangan di-report spam ya, nanti nomornya hilang wkwkwkwk 😅
+• Nomor ini digunakan untuk WA blasting informasi kegiatan penilaian
+• Harap simpan dan gunakan nomor ini untuk komunikasi resmi
+• Akses penilaian di: https://babel-memilih.vercel.app
+
+Terima kasih atas perhatiannya.
+
+Salam,
+Admin Sistem Babel Memilih`,
+
+  // Template 2: Formal
+  `Yth. [PANGGILAN] [NAMA],
+
+Bersama ini kami perkenalkan nomor WhatsApp baru dari Rommel yang digunakan untuk sistem penilaian pegawai BPS.
+
+📱 *Nomor Baru:*
+[NOMOR_BARU]
+
+📌 *Kegunaan:*
+• Komunikasi resmi terkait pemilihan pegawai berprestasi
+• Notifikasi kegiatan penilaian
+
+⚠️ Mohon untuk tidak melaporkan sebagai spam. Terima kasih atas kerjasamanya.
+
+Salam,
+Admin Sistem Babel Memilih`,
+
+  // Template 3: Singkat
+  `Yth. [PANGGILAN] [NAMA],
+
+📱 Nomor baru dari Rommel untuk sistem penilaian pegawai:
+[NOMOR_BARU]
+
+Akses: https://babel-memilih.vercel.app
+
+Mohon disimpan dan jangan di-report spam ya! Terima kasih 🙏
+
+Salam,
+Admin`,
+
+  // Template 4: Casual
+  `Halo [PANGGILAN] [NAMA]! 👋
+
+Numor baru dari Rommel nih: [NOMOR_BARU]
+
+Ini buat sistim penilaian pegawai di https://babel-memilih.vercel.app
+
+Jgn di-report spam ya, ntar numornya ilang wkwkwk 😅
+
+Makasih! 😊`,
+
+  // Template 5: Formal Brief
+  `Yth. [PANGGILAN] [NAMA],
+
+Perkenalkan nomor WhatsApp baru dari Rommel untuk sistem penilaian pegawai BPS.
+
+📱 [NOMOR_BARU]
+
+Silakan simpan dan gunakan untuk komunikasi terkait penilaian pegawai.
+
+Terima kasih.
+Admin Babel Memilih`,
 ];
 
-// Template pesan perkenalan nomor WA
-const TEMPLATE_PERKENALAN = `Yth. [PANGGILAN] [NAMA],
+// Template default (untuk input user)
+const DEFAULT_WA_PESAN = `Yth. [PANGGILAN] [NAMA],
 
 Ini akun WhatsApp dari Rommel untuk kegiatan pemilihan pegawai pada babel-memilih.vercel.app.
 
@@ -80,6 +144,13 @@ Admin Sistem Babel Memilih`;
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
+
+/**
+ * Generate random template from variations
+ */
+function getRandomTemplate() {
+  return TEMPLATE_VARIASI[Math.floor(Math.random() * TEMPLATE_VARIASI.length)];
+}
 
 /**
  * Hitung sapaan berdasarkan NIP baru
@@ -115,14 +186,6 @@ function getRandomDelay() {
 
   // Fallback ke normal
   return Math.floor(Math.random() * (DELAY_PATTERNS.NORMAL.max - DELAY_PATTERNS.NORMAL.min + 1)) + DELAY_PATTERNS.NORMAL.min;
-}
-
-/**
- * Tambah variasi pada pesan untuk hindari identical messages (spam detection)
- */
-function addPesanVariation(pesan) {
-  const variation = PESAN_VARIATIONS[Math.floor(Math.random() * PESAN_VARIATIONS.length)];
-  return variation(pesan);
 }
 
 /**
@@ -177,10 +240,11 @@ function PerkenalanNomorWAContent({ adminProfile }) {
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(null);
 
-  // State Wa.Me
+  // State Wa.Me - Track sent status per employee ID
   const [waMeNomor, setWaMeNomor] = useState('');
-  const [waMePesan, setWaMePesan] = useState('Halo ini Rommel, nomor ini buat sistem pemilihan pegawai https://babel-memilih.vercel.app. Jangan di-report spam ya, nanti nomornya hilang wkwkwkwk 😅');
+  const [waMePesan, setWaMePesan] = useState(DEFAULT_WA_PESAN);
   const [selectedWaMe, setSelectedWaMe] = useState(null);
+  const [sentWaMeIds, setSentWaMeIds] = useState(new Set()); // Track IDs yang sudah terkirim via Wa.Me
 
   // Helper: Generate URL Wa.Me
   function generateWaMeUrl(nomorHP, pesan) {
@@ -195,6 +259,31 @@ function PerkenalanNomorWAContent({ adminProfile }) {
     if (!waMeNomor) return '';
     return generateWaMeUrl(waMeNomor, waMePesan);
   }, [waMeNomor, waMePesan]);
+
+  // Handle Kirim via Wa.Me - Random template + mark as sent
+  function handleKirimWaMe(pegawai) {
+    if (!nomorBaru) {
+      toast.error('Masukkan nomor WA baru terlebih dahulu!');
+      return;
+    }
+
+    // Generate random template dan replacements
+    const randomTemplate = getRandomTemplate();
+    const panggilan = hitungSapaan(pegawai.nama, pegawai.nip_baru);
+    const pesan = generatePesan(randomTemplate, {
+      NAMA: pegawai.nama,
+      PANGGILAN: panggilan,
+      NOMOR_BARU: nomorBaru,
+    });
+
+    // Generate URL dan buka WhatsApp Web
+    const url = generateWaMeUrl(pegawai.no_hp, pesan);
+    window.open(url, '_blank');
+
+    // Tandai sebagai terkirim
+    setSentWaMeIds(prev => new Set([...prev, pegawai.id]));
+    toast.success(`Pesan untuk ${pegawai.nama} siap dikirim via WhatsApp Web!`);
+  }
 
   // Fetch pegawai
   const { data: pegawaiList = [], isLoading, refetch } = useQuery({
@@ -219,20 +308,34 @@ function PerkenalanNomorWAContent({ adminProfile }) {
     const total = pegawaiList.length;
     const withHP = pegawaiList.filter(p => p.no_hp).length;
     const selected = selectedIds.size;
-    return { total, withHP, selected };
-  }, [pegawaiList, selectedIds]);
+    const sentWaMe = sentWaMeIds.size;
+    return { total, withHP, selected, sentWaMe };
+  }, [pegawaiList, selectedIds, sentWaMeIds]);
 
-  // Toggle select all
+  // Toggle select all - hanya yang belum terkirim via Wa.Me
   function toggleSelectAll() {
-    if (selectedIds.size === filteredPegawai.length) {
-      setSelectedIds(new Set());
+    const selectableIds = filteredPegawai
+      .filter(p => p.no_hp && !sentWaMeIds.has(p.id))
+      .map(p => p.id);
+
+    const allSelected = selectableIds.every(id => selectedIds.has(id));
+
+    if (allSelected) {
+      // Hapus semua selectable dari selection
+      const newSet = new Set(selectedIds);
+      selectableIds.forEach(id => newSet.delete(id));
+      setSelectedIds(newSet);
     } else {
-      setSelectedIds(new Set(filteredPegawai.map(p => p.id)));
+      // Pilih semua yang belum terpilih
+      const newSet = new Set(selectedIds);
+      selectableIds.forEach(id => newSet.add(id));
+      setSelectedIds(newSet);
     }
   }
 
   // Toggle select one
   function toggleSelect(id) {
+    if (sentWaMeIds.has(id)) return; // Jangan bisa pilih yang sudah terkirim
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) {
       newSet.delete(id);
@@ -279,20 +382,18 @@ function PerkenalanNomorWAContent({ adminProfile }) {
     setSendProgress({ sent: 0, total: withHP.length, failed: 0 });
 
     try {
-      // Generate pesan per recipient dengan variasi
+      // Generate pesan per recipient dengan random template
       const messages = withHP.map(p => {
         const noHp = formatHP(p.no_hp);
         const panggilan = hitungSapaan(p.nama, p.nip_baru);
-        let pesan = generatePesan(TEMPLATE_PERKENALAN, {
+
+        // Use random template for each message
+        const randomTemplate = getRandomTemplate();
+        const pesan = generatePesan(randomTemplate, {
           NAMA: p.nama,
           PANGGILAN: panggilan,
           NOMOR_BARU: nomorBaru,
         });
-
-        // Tambah variasi pesan (20% chance)
-        if (Math.random() < 0.20) {
-          pesan = addPesanVariation(pesan);
-        }
 
         return {
           target: noHp,
@@ -355,13 +456,14 @@ function PerkenalanNomorWAContent({ adminProfile }) {
     }
   }
 
-  // Preview pesan
+  // Preview pesan - gunakan random template
   const previewPesan = useMemo(() => {
     if (!nomorBaru) return '';
     const samplePegawai = filteredPegawai.find(p => p.no_hp) || filteredPegawai[0];
     if (!samplePegawai) return '';
 
-    return generatePesan(TEMPLATE_PERKENALAN, {
+    const randomTemplate = getRandomTemplate();
+    return generatePesan(randomTemplate, {
       NAMA: samplePegawai.nama,
       PANGGILAN: hitungSapaan(samplePegawai.nama, samplePegawai.nip_baru),
       NOMOR_BARU: nomorBaru,
@@ -543,7 +645,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
       </div>
 
       {/* Statistik */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-xl bg-white border border-slate-200 p-4 shadow-soft">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-100 text-navy-600">
@@ -551,7 +653,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
             </div>
             <div>
               <p className="text-2xl font-bold text-navy-900">{stats.total}</p>
-              <p className="text-xs text-slate-500">Total Pegawai</p>
+              <p className="text-xs text-slate-500">Total</p>
             </div>
           </div>
         </div>
@@ -563,7 +665,19 @@ function PerkenalanNomorWAContent({ adminProfile }) {
             </div>
             <div>
               <p className="text-2xl font-bold text-green-700">{stats.withHP}</p>
-              <p className="text-xs text-slate-500">Punya Nomor HP</p>
+              <p className="text-xs text-slate-500">Punya HP</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white border border-slate-200 p-4 shadow-soft">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+              <MessageCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-700">{stats.sentWaMe}</p>
+              <p className="text-xs text-slate-500">Via Wa.Me</p>
             </div>
           </div>
         </div>
@@ -606,7 +720,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
         </div>
       )}
 
-      {/* Tombol Kirim */}
+      {/* Tombol Kirim via Fonnte */}
       <div className="flex items-center gap-4">
         <button
           onClick={handleKirim}
@@ -620,12 +734,12 @@ function PerkenalanNomorWAContent({ adminProfile }) {
           {isSending ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              Mengirim...
+              Mengirim via Fonnte...
             </>
           ) : (
             <>
               <Send className="h-5 w-5" />
-              Kirim ke {selectedIds.size} Pegawai
+              Kirim via Fonnte ({selectedIds.size})
             </>
           )}
         </button>
@@ -674,17 +788,33 @@ function PerkenalanNomorWAContent({ adminProfile }) {
 
         {/* Select All */}
         <div className="border-b border-slate-100 bg-slate-50/50 px-4 py-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selectedIds.size === filteredPegawai.length && filteredPegawai.length > 0}
-              onChange={toggleSelectAll}
-              className="h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-            />
-            <span className="text-sm font-medium text-slate-700">
-              Pilih Semua ({filteredPegawai.length})
-            </span>
-          </label>
+          {(() => {
+            const selectableIds = filteredPegawai
+              .filter(p => p.no_hp && !sentWaMeIds.has(p.id))
+              .map(p => p.id);
+            const allSelected = selectableIds.length > 0 && selectableIds.every(id => selectedIds.has(id));
+            const selectableCount = selectableIds.length;
+
+            return (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  disabled={selectableCount === 0}
+                  className="h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500 disabled:opacity-50"
+                />
+                <span className="text-sm font-medium text-slate-700">
+                  Pilih Semua ({selectableCount} bisa dipilih)
+                </span>
+                {sentWaMeIds.size > 0 && (
+                  <span className="text-xs text-blue-600">
+                    ({sentWaMeIds.size} sudah terkirim)
+                  </span>
+                )}
+              </label>
+            );
+          })()}
         </div>
 
         {/* Table */}
@@ -721,6 +851,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
                 {filteredPegawai.map((p) => {
                   const hasHP = Boolean(p.no_hp);
                   const isSelected = selectedIds.has(p.id);
+                  const isSentWaMe = sentWaMeIds.has(p.id);
 
                   return (
                     <tr
@@ -734,7 +865,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelect(p.id)}
-                          disabled={!hasHP}
+                          disabled={!hasHP || isSentWaMe}
                           className="h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500 disabled:opacity-50"
                         />
                       </td>
@@ -768,7 +899,12 @@ function PerkenalanNomorWAContent({ adminProfile }) {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {hasHP ? (
+                        {isSentWaMe ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                            <CheckCircle className="h-3 w-3" />
+                            Terkirim
+                          </span>
+                        ) : hasHP ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                             <CheckCircle className="h-3 w-3" />
                             Siap Kirim
@@ -781,16 +917,18 @@ function PerkenalanNomorWAContent({ adminProfile }) {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {hasHP ? (
-                          <a
-                            href={generateWaMeUrl(p.no_hp, waMePesan || 'Halo ini Rommel, nomor ini buat sistem pemilihan pegawai https://babel-memilih.vercel.app. Jangan di-report spam ya, nanti nomornya hilang wkwkwkwk 😅')}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {hasHP && !isSentWaMe ? (
+                          <button
+                            onClick={() => handleKirimWaMe(p)}
                             title="Kirim via WhatsApp Web"
                             className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 hover:text-green-700 transition-colors"
                           >
                             <MessageCircle className="h-4 w-4" />
-                          </a>
+                          </button>
+                        ) : hasHP && isSentWaMe ? (
+                          <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-100 text-blue-400">
+                            <CheckCircle className="h-4 w-4" />
+                          </span>
                         ) : (
                           <span className="inline-flex items-center justify-center h-8 w-8 text-slate-300">
                             <MessageCircle className="h-4 w-4" />
