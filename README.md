@@ -47,6 +47,7 @@ sistem-penilaian-pegawai/
 - [x] **STEP 3** — `JuriPage.jsx` (`/juri?token=xxx`, Mode 2 + Tab Ketua Juri)
 - [x] **STEP 4** — `BuatPeriode.jsx` (Admin, Form Wizard periode baru)
 - [x] **Tambahan** — `NomineePage.jsx`, `KelolaNominee.jsx`, `DashboardKakan.jsx`, `ResetToken.jsx`
+- [x] **Terbaru (Agt 2026)** — Verifikasi Identitas Penilai (NIP + HP), Pagination Data Master, dan UX State Kosong.
 
 Belum ada (di luar semua permintaan sejauh ini): export Excel/CSV daftar token,
 live-progress partisipasi real-time di dashboard Admin, dan halaman audit log

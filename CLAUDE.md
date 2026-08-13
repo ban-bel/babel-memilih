@@ -45,7 +45,7 @@ cp .env.example .env
 # Edit .env with your Supabase credentials:
 # VITE_SUPABASE_URL=https://xxx.supabase.co
 # VITE_SUPABASE_ANON_KEY=your-anon-key
-# VITE_FOONTE_TOKEN=your_fonnte_token_here  # For WhatsApp
+# VITE_FONNTE_TOKEN=your_fonnte_token_here  # For WhatsApp
 ```
 
 ---
@@ -457,7 +457,7 @@ A dedicated page for introducing a new WhatsApp number to employees:
 
 **Authentication**:
 ```javascript
-Authorization: YOUR_FOONTE_TOKEN
+Authorization: YOUR_FONNTE_TOKEN
 ```
 
 **Single Message**:
@@ -731,6 +731,7 @@ supabase/*.csv      # Import/export data
 
 | Date | Feature | Files |
 |------|---------|-------|
+| 2026-08 | **UI/UX Enhancements** - Pagination on large tables and empty state modals | `KelolaPegawai.jsx`, `PartisipanPeriode.jsx`, `VerifikasiPenilai.jsx` |
 | 2026-08 | **Verifikasi Identitas Penilai** - Input 5 digit NIP + 5 digit HP → tampilkan daftar periode → redirect ke form penilaian | `VerifikasiPenilai.jsx`, `votingService.js`, `00_deploy_master.sql` |
 | 2026-07 | **MODE_1B Hybrid** - Voting per kategori (opsional) | `votingService.js`, `adminService.js`, `FormMode1C.jsx`, `FormVotingKategoriBuilder.jsx` |
 | 2026-07 | **Perkenalan Nomor WA** - Introduction page for new WhatsApp number | `PerkenalanNomorWA.jsx`, `/admin/perkenalan-wa` route |
