@@ -744,7 +744,25 @@ function DashboardKakanContent({ adminProfile }) {
             </p>
           </div>
 
-          <div className="mb-6">
+          {/* Podium for Print Layout */}
+          {!loadingRekap && rekapTopN.length > 0 && (
+            <div className="mb-10 print:break-inside-avoid">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-navy-900">Top 3 Peringkat Tertinggi</h3>
+              </div>
+              {/* Add scaling to ensure it fits well on A4 portrait */}
+              <div className="transform scale-[0.85] origin-top">
+                <Podium 
+                  top3={rekapTopN.slice(0, 3)} 
+                  mode={mode} 
+                  isMode1BKategori={isMode1BKategori} 
+                  selectedKategori={selectedKategori} 
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mb-6 print:break-inside-avoid">
             <h3 className="text-lg font-bold text-navy-900 mb-3 border-b border-slate-200 pb-2">
               Tabulasi Hasil {selectedKategori ? `(${selectedKategori.nama_kategori})` : 'Keseluruhan'}
             </h3>

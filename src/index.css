@@ -515,6 +515,12 @@ input[type="radio"] {
    ============================================ */
 
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    animation: none !important;
+  }
+  
   .no-print {
     display: none !important;
   }
