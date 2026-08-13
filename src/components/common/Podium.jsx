@@ -31,12 +31,15 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
 
     // MODE_1B Hybrid: berbeda antara overview dan per kategori
     if (mode === 'MODE_1B') {
-      if (selectedKategori) {
-        // Per kategori: pakai total_suara
-        return `${r.total_suara ?? 0} suara`;
+      if (isMode1BKategori) {
+        if (selectedKategori) {
+          return `${r.total_suara ?? 0} suara`;
+        } else {
+          return `${r.total_keseluruhan ?? 0} suara`;
+        }
       } else {
-        // Overview: pakai total_keseluruhan (di-aggregate oleh frontend)
-        return `${r.total_keseluruhan ?? 0} suara`;
+        // Normal MODE_1B (bukan hybrid)
+        return `${r.total_suara ?? 0} suara`;
       }
     }
     return `${r.total_suara ?? 0} suara`;

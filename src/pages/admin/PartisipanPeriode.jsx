@@ -344,7 +344,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
 /**
  * TabelPartisipan
  */
-function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, templates, localSentIds }) {
+function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, templates, localSentIds, globalTotal, globalSubmitted }) {
   if (!daftar || daftar.length === 0) {
     return (
       <div className="mt-4 rounded-xl border border-dashed border-slate-200 py-10 text-center text-slate-400">
@@ -353,10 +353,32 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, t
     );
   }
 
+  const percentage = globalTotal > 0 ? Math.round((globalSubmitted / globalTotal) * 100) : 0;
+
   return (
-    <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
-      <table className="w-full text-left text-sm">
-        <thead className="table-header">
+    <div className="mt-4">
+      {/* Progress Recap */}
+      {tab !== 'nominee' && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-slate-700">Progress Penilaian</span>
+            <span className="text-xs text-slate-500">{globalSubmitted} dari {globalTotal} partisipan telah menyelesaikan penilaian</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-24 sm:w-48 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${percentage === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} 
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <span className="text-sm font-bold text-slate-700 w-10 text-right">{percentage}%</span>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-soft">
+        <table className="w-full text-left text-sm">
+          <thead className="table-header">
           <tr>
             <th className="px-4 py-3">Nama</th>
             <th className="px-4 py-3">No. HP</th>
@@ -383,6 +405,7 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, t
         </tbody>
       </table>
     </div>
+    </div>
   );
 }
 
@@ -395,6 +418,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
   // State
   const [cari, setCari] = useState('');
+  const [filterSubmit, setFilterSubmit] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [tab, setTab] = useState('nominee');
@@ -566,9 +590,16 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
   // Filter
   const filterDaftar = (list) => {
-    if (!cari) return list;
+    let filtered = list;
+    if (filterSubmit === 'SUDAH') {
+      filtered = filtered.filter(item => item.is_digunakan);
+    } else if (filterSubmit === 'BELUM') {
+      filtered = filtered.filter(item => !item.is_digunakan);
+    }
+
+    if (!cari) return filtered;
     const q = cari.toLowerCase();
-    return list.filter(item => {
+    return filtered.filter(item => {
       const p = item.nominee || item.pegawai;
       return (
         p?.nama?.toLowerCase().includes(q) ||
@@ -597,6 +628,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
     const p = item.nominee || item.pegawai;
     return p?.no_hp;
   }).length;
+  const totalSubmitted = daftar.filter(item => item.is_digunakan).length;
 
   return (
     <div className="space-y-4">
@@ -658,16 +690,27 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-        <input
-          type="text"
-          value={cari}
-          onChange={(e) => { setCari(e.target.value); setCurrentPage(1); }}
-          placeholder="Cari nama, NIP, atau nomor HP..."
-          className="input pl-10"
-        />
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+          <input
+            type="text"
+            value={cari}
+            onChange={(e) => { setCari(e.target.value); setCurrentPage(1); }}
+            placeholder="Cari nama, NIP, atau nomor HP..."
+            className="input pl-10"
+          />
+        </div>
+        <select
+          value={filterSubmit}
+          onChange={(e) => { setFilterSubmit(e.target.value); setCurrentPage(1); }}
+          className="input sm:w-48 bg-white cursor-pointer border-slate-200"
+        >
+          <option value="ALL">Semua Status</option>
+          <option value="SUDAH">Sudah Submit</option>
+          <option value="BELUM">Belum Submit</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -686,6 +729,8 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             periode={periode}
             templates={templates}
             localSentIds={localSentIds}
+            globalTotal={total}
+            globalSubmitted={totalSubmitted}
           />
           {!isLoading && hasil.length > 0 && (
             <Pagination

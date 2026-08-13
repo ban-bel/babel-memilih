@@ -92,6 +92,27 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee }) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex flex-col">
+          {showPdfTab && (
+            <div className="flex-1 flex flex-col min-h-[500px] animate-fade-in">
+              <h4 className="font-semibold text-navy-900 flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-navy-500" />
+                Preview Dokumen
+              </h4>
+              <div className="flex-1 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white min-h-[400px]">
+                <iframe
+                  src={previewUrl}
+                  title="PDF Viewer"
+                  className="w-full h-full border-none"
+                  allow="autoplay"
+                ></iframe>
+              </div>
+            </div>
+          )}
+
+          {showTabelTab && showPdfTab && (
+            <hr className="my-8 border-slate-200 border-dashed" />
+          )}
+
           {showTabelTab && (
             <div className="space-y-4 animate-fade-in">
               <h4 className="font-semibold text-navy-900 flex items-center gap-2">
@@ -121,27 +142,6 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee }) {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {showTabelTab && showPdfTab && (
-            <hr className="my-8 border-slate-200 border-dashed" />
-          )}
-
-          {showPdfTab && (
-            <div className="flex-1 flex flex-col min-h-[500px] animate-fade-in">
-              <h4 className="font-semibold text-navy-900 flex items-center gap-2 mb-3">
-                <FileText className="w-4 h-4 text-navy-500" />
-                Preview Dokumen
-              </h4>
-              <div className="flex-1 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white min-h-[400px]">
-                <iframe
-                  src={previewUrl}
-                  title="PDF Viewer"
-                  className="w-full h-full border-none"
-                  allow="autoplay"
-                ></iframe>
               </div>
             </div>
           )}
