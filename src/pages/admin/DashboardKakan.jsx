@@ -625,12 +625,14 @@ function DashboardKakanContent({ adminProfile }) {
                       skorTampilnya = `${Number(r.rata_rata_skor ?? 0).toFixed(1)} poin`;
                     } else if (mode === MODE_PENILAIAN.MODE_1B) {
                       if (isMode1BKategori) {
-                        skorTampilnya = `${r.total_suara ?? 0} suara`;
+                        if (selectedKategori) {
+                          skorTampilnya = `${r.total_suara ?? 0} suara`;
+                        } else {
+                          skorTampilnya = `${r.total_keseluruhan ?? 0} suara`;
+                        }
                       } else {
                         skorTampilnya = `${r.total_suara ?? 0} suara`;
                       }
-                    } else if (selectedKategori) {
-                      skorTampilnya = `${r.total_suara ?? 0} suara`;
                     }
 
                     const namaNominee = r.nama_nominee || r.nama || '-';
@@ -655,13 +657,13 @@ function DashboardKakanContent({ adminProfile }) {
 
                     return (
                     <tr key={r.id || r.nominee_id} className={bgClass}>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex items-center gap-1 font-bold ${isTopN ? 'text-navy-800' : 'text-slate-600'}`}>
-                          {iconNode}
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 text-lg font-bold ${isTopN ? 'text-navy-800' : 'text-slate-600'}`}>
+                          {iconNode && <span className="scale-125">{iconNode}</span>}
                           #{peringkat}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                             <img
                               src={
@@ -669,19 +671,19 @@ function DashboardKakanContent({ adminProfile }) {
                                 (r.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${r.nip}.jpg` : null)
                               }
                               alt={namaNominee}
-                              className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
+                              className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(namaNominee || 'P')}&background=16324a&color=fff&size=64`;
                               }}
                             />
                           <div>
-                            <p className="font-medium text-slate-800">{namaNominee}</p>
-                            <p className="text-xs text-slate-500">{r.unit_kerja}</p>
+                            <p className="text-base font-bold text-slate-800">{namaNominee}</p>
+                            <p className="text-sm text-slate-600">{r.unit_kerja}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-right font-bold text-navy-800">
+                      <td className="px-5 py-4 text-right text-lg font-bold text-navy-800">
                         {skorTampilnya}
                       </td>
                     </tr>

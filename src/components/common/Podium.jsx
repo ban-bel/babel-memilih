@@ -62,11 +62,11 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
             {/* Avatar & Info */}
             <div className={`relative flex flex-col items-center mb-4 z-10 transition-transform hover:-translate-y-2`}>
               {isWinner && (
-                <div className="absolute -top-10 animate-bounce">
-                  <Medal className="h-10 w-10 text-gold-500 drop-shadow-lg" />
+                <div className="absolute -top-12 animate-bounce">
+                  <Medal className="h-14 w-14 text-gold-500 drop-shadow-lg" />
                 </div>
               )}
-              <div className={`p-1 bg-white rounded-full shadow-xl mb-3 ${isWinner ? 'w-24 h-24 ring-4 ' + ring : 'w-20 h-20 ring-4 ' + ring}`}>
+              <div className={`p-1 bg-white rounded-full shadow-xl mb-3 ${isWinner ? 'w-32 h-32 md:w-40 md:h-40 ring-4 ' + ring : 'w-24 h-24 md:w-32 md:h-32 ring-4 ' + ring}`}>
                 <img
                   src={item.foto_url || (item.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${item.nip}.jpg` : null)}
                   alt={item.nama_nominee || item.nama}
@@ -77,9 +77,9 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
                   }}
                 />
               </div>
-              <h4 className="text-center font-bold text-navy-900 line-clamp-1">{item.nama_nominee || item.nama}</h4>
-              <p className="text-xs text-slate-500 text-center line-clamp-1">{item.unit_kerja}</p>
-              <div className="mt-2 inline-flex items-center justify-center px-3 py-1 rounded-full bg-navy-900 text-white font-bold text-sm shadow-md">
+              <h4 className="text-center text-lg md:text-xl font-bold text-navy-900 line-clamp-1">{item.nama_nominee || item.nama}</h4>
+              <p className="text-sm text-slate-600 text-center line-clamp-2 leading-tight mt-1">{item.unit_kerja}</p>
+              <div className="mt-3 inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-navy-900 text-white font-bold text-base md:text-lg shadow-md">
                 {getSkorTampil(item)}
               </div>
             </div>

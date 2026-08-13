@@ -51,15 +51,24 @@ const PLACEHOLDERS = [
  */
 function TemplateModal({ isOpen, onClose, onSave, template = null, isLoading }) {
   const [nama, setNama] = useState('');
+  const [konteks, setKonteks] = useState('');
   const [pesan, setPesan] = useState('');
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (template) {
-      setNama(template.nama_tampilan);
+      let namaParsed = template.nama_tampilan;
+      let k = '';
+      if (namaParsed.startsWith('[PENILAI] ')) { k = '[PENILAI] '; namaParsed = namaParsed.replace('[PENILAI] ', ''); }
+      else if (namaParsed.startsWith('[NOMINEE] ')) { k = '[NOMINEE] '; namaParsed = namaParsed.replace('[NOMINEE] ', ''); }
+      else if (namaParsed.startsWith('[JURI] ')) { k = '[JURI] '; namaParsed = namaParsed.replace('[JURI] ', ''); }
+
+      setNama(namaParsed);
+      setKonteks(k);
       setPesan(template.isi_pesan);
     } else {
       setNama('');
+      setKonteks('');
       setPesan('');
     }
     setErrors({});
@@ -79,7 +88,7 @@ function TemplateModal({ isOpen, onClose, onSave, template = null, isLoading }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    onSave({ nama_tampilan: nama.trim(), isi_pesan: pesan.trim() });
+    onSave({ nama_tampilan: konteks + nama.trim(), isi_pesan: pesan.trim() });
   };
 
   const insertPlaceholder = (placeholder) => {
@@ -105,6 +114,26 @@ function TemplateModal({ isOpen, onClose, onSave, template = null, isLoading }) 
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Konteks Template */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Peruntukan (Konteks)
+            </label>
+            <select
+              value={konteks}
+              onChange={(e) => setKonteks(e.target.value)}
+              className="input bg-white"
+            >
+              <option value="">Umum (Semua Peran)</option>
+              <option value="[PENILAI] ">Khusus Penilai</option>
+              <option value="[NOMINEE] ">Khusus Nominee</option>
+              <option value="[JURI] ">Khusus Juri</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Jika dipilih "Khusus", template ini hanya akan muncul saat admin menekan tombol WA di tab tersebut.
+            </p>
+          </div>
+
           {/* Nama Template */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">

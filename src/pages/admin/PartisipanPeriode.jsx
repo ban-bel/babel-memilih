@@ -144,10 +144,42 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
   const linkToken = generateLinkToken(activeTab, item.token_akses);
   const kategoriLabel = activeTab.toUpperCase();
 
-  // Select random template
-  const randomTemplate = templates?.length > 0
-    ? templates[Math.floor(Math.random() * templates.length)]
+  // Filter templates berdasarkan activeTab
+  let eligibleTemplates = [];
+  if (templates && templates.length > 0) {
+    const targetTag = `[${activeTab.toUpperCase()}]`;
+    const specificTemplates = templates.filter((t) => t.nama_tampilan.startsWith(targetTag));
+    
+    if (specificTemplates.length > 0) {
+      eligibleTemplates = specificTemplates;
+    } else {
+      // Ambil yang umum (tidak ada tag khusus)
+      eligibleTemplates = templates.filter(
+        (t) =>
+          !t.nama_tampilan.startsWith('[PENILAI]') &&
+          !t.nama_tampilan.startsWith('[NOMINEE]') &&
+          !t.nama_tampilan.startsWith('[JURI]')
+      );
+    }
+  }
+
+  // Select random template dari yang eligible
+  const randomTemplate = eligibleTemplates.length > 0
+    ? eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)]
     : null;
+
+  const formatTanggal = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   const sapaan = hitungSapaan(p.nama, p.nip_baru);
   const waText = randomTemplate
@@ -156,7 +188,9 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
         PANGGILAN: sapaan ? sapaan.trim() + ' ' : '',
         LINK: linkToken,
         NAMA_PERIODE: periode?.nama_periode || '',
-        PERAN: PERAN_LABELS[kategoriLabel] || kategoriLabel
+        PERAN: PERAN_LABELS[kategoriLabel] || kategoriLabel,
+        TANGGAL_MULAI: formatTanggal(periode?.waktu_mulai),
+        TANGGAL_SELESAI: formatTanggal(periode?.waktu_selesai)
       })
     : `Halo ${p.nama},\n\nBerikut link akses Anda:\n${linkToken}\n\nMohon tidak membagikan link ini.\nTerima kasih.`;
 
