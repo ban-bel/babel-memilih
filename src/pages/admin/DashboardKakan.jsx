@@ -742,6 +742,11 @@ function DashboardKakanContent({ adminProfile }) {
             <p className="text-sm text-slate-600 mt-1">
               Periode: {new Date(periode?.tgl_mulai).toLocaleDateString('id-ID')} s.d. {new Date(periode?.tgl_selesai).toLocaleDateString('id-ID')}
             </p>
+            {statusKelengkapan && (
+              <p className="text-sm font-semibold text-navy-700 mt-2">
+                Tingkat Partisipasi Penilaian: {statusKelengkapan.submitted} dari {statusKelengkapan.total} Suara Masuk
+              </p>
+            )}
           </div>
 
           {/* Podium for Print Layout */}
