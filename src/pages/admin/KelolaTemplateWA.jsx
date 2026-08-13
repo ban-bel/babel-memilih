@@ -406,14 +406,28 @@ function KelolaTemplateWAContent() {
               {filteredTemplates.map((template) => (
                 <tr key={template.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <span className="font-medium text-slate-800">
-                      {template.nama_tampilan}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-slate-800">
+                        {template.nama_tampilan}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {template.kategori_tujuan && (
+                          <span className="inline-flex items-center rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                            {template.kategori_tujuan}
+                          </span>
+                        )}
+                        {template.is_default && (
+                          <span className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="max-w-xs truncate text-slate-600" title={template.isi_pesan}>
+                    <div className="max-w-md text-xs text-slate-600 whitespace-pre-wrap line-clamp-3" title={template.isi_pesan}>
                       {template.isi_pesan}
-                    </p>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <button
