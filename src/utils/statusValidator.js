@@ -78,7 +78,11 @@ export function getStatusAksesToken(periode, isDigunakan, sekarang = new Date())
   const tglMulai = new Date(periode.tgl_mulai);
   const tglSelesai = new Date(periode.tgl_selesai);
 
-  // Cek 1: Apakah periode belum dibuka?
+  // Cek 1: Apakah periode masih DRAFT atau belum dibuka?
+  if (periode.status === STATUS_PERIODE.DRAFT) {
+    return STATUS_AKSES_TOKEN.BELUM_DIBUKA;
+  }
+
   if (sekarang < tglMulai) {
     return STATUS_AKSES_TOKEN.BELUM_DIBUKA;
   }
