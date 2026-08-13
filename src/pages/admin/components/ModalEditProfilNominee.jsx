@@ -46,7 +46,7 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
   const tambahBaris = () => {
     setTabelKehadiran([
       ...tabelKehadiran,
-      { label_baris: '', tl1: 0, tl2: 0, psw4: 0, kjk: 0 }
+      { label_baris: '', tl1: 0, tl2: 0, psw4: 0, kjk: '00:00:00' }
     ]);
   };
 
@@ -161,10 +161,11 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
                       </td>
                       <td className="px-4 py-2 text-center">
                         <input
-                          type="number"
+                          type="text"
+                          placeholder="00:00:00"
                           value={row.kjk}
                           onChange={(e) => updateBaris(idx, 'kjk', e.target.value)}
-                          className="w-16 rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-center focus:border-navy-400 focus:outline-none"
+                          className="w-20 rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-center focus:border-navy-400 focus:outline-none"
                         />
                       </td>
                       <td className="px-4 py-2 text-center">

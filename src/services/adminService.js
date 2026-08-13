@@ -319,16 +319,19 @@ export async function hapusPegawai(pegawaiId) {
  * // Cari dengan filter nama
  * const cari = await fetchDaftarPegawaiAktif(null, 'Ahmad');
  */
-export async function fetchDaftarPegawaiAktif(wilayahId, kata_kunci = '') {
+export async function fetchDaftarPegawaiAktif(wilayahId, kata_kunci = '', includeInactive = false) {
   let query = supabase
     .from('pegawai')
     .select(`
       id, nama, nip, nip_baru, email, no_hp, golongan, jabatan, foto_url, wilayah_id, role_admin, is_kakan, is_active,
       wilayah:wilayah_id ( nama_wilayah, nama_unit_kerja )
     `)
-    .eq('is_active', true)
     .order('nama', { ascending: true })
     .limit(1000);
+
+  if (!includeInactive) {
+    query = query.eq('is_active', true);
+  }
 
   if (wilayahId) query = query.eq('wilayah_id', wilayahId);
   if (kata_kunci) query = query.ilike('nama', `%${kata_kunci}%`);

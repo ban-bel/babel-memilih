@@ -146,15 +146,24 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tabelData.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-slate-800">{row.label_baris}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{row.tl1}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{row.tl2}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{row.psw4}</td>
-                        <td className="px-4 py-3 text-center text-slate-600">{row.kjk}</td>
-                      </tr>
-                    ))}
+                    {tabelData.map((row, idx) => {
+                      const isBad = (val, isTime = false) => {
+                        if (!val) return false;
+                        const str = String(val).trim();
+                        if (isTime) return str !== '00:00:00' && str !== '0';
+                        return str !== '0';
+                      };
+
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-slate-800">{row.label_baris}</td>
+                          <td className={`px-4 py-3 text-center ${isBad(row.tl1) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.tl1}</td>
+                          <td className={`px-4 py-3 text-center ${isBad(row.tl2) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.tl2}</td>
+                          <td className={`px-4 py-3 text-center ${isBad(row.psw4) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.psw4}</td>
+                          <td className={`px-4 py-3 text-center ${isBad(row.kjk, true) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.kjk}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

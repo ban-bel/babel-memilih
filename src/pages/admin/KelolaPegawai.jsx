@@ -109,7 +109,7 @@ function KelolaPegawaiContent({ adminProfile }) {
 
   const { data: pegawaiList = [], isLoading } = useQuery({
     queryKey: ['pegawai-list', activeWilayahFilter, kataKunci],
-    queryFn: () => fetchDaftarPegawaiAktif(activeWilayahFilter, kataKunci),
+    queryFn: () => fetchDaftarPegawaiAktif(activeWilayahFilter, kataKunci, true),
   });
 
   const totalPages = Math.ceil(pegawaiList.length / itemsPerPage);
@@ -383,13 +383,14 @@ function KelolaPegawaiContent({ adminProfile }) {
       setError('Nama dan Wilayah wajib diisi.');
       return;
     }
-    const payload = { ...formData, user_id: formData.user_id?.trim() || null, wilayah_id: targetWilayahId };
+    const { unit_kerja, wilayah, ...cleanFormData } = formData;
+    const payload = { ...cleanFormData, user_id: formData.user_id?.trim() || null, wilayah_id: targetWilayahId };
     mutasiSimpan.mutate(payload);
   }
 
   function handleSubmitImport(e) {
     e.preventDefault();
-    const validRowsToSubmit = parsedRows.filter((r) => r.status === 'VALID' || r.status === 'WARNING').map(({ lineNum, status, errorMsg, warningMsg, wilayah_nama, kode_wilayah, ...payload }) => payload);
+    const validRowsToSubmit = parsedRows.filter((r) => r.status === 'VALID' || r.status === 'WARNING').map(({ lineNum, status, errorMsg, warningMsg, wilayah_nama, kode_wilayah, unit_kerja, ...payload }) => payload);
     if (validRowsToSubmit.length === 0) {
       setError('Tidak ada data valid untuk diimpor.');
       return;
@@ -466,6 +467,7 @@ function KelolaPegawaiContent({ adminProfile }) {
               <th className="px-4 py-3">No. HP</th>
               <th className="px-4 py-3">Unit Kerja</th>
               <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Aksi</th>
             </tr>
           </thead>
@@ -516,6 +518,13 @@ function KelolaPegawaiContent({ adminProfile }) {
                       {p.role_admin}
                     </span>
                     {p.is_kakan && <span className="ml-1 badge bg-purple-100 text-purple-800">KAKAN</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {p.is_active ? (
+                      <span className="badge badge-success">Aktif</span>
+                    ) : (
+                      <span className="badge badge-danger">Tidak Aktif</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => bukaModalEdit(p)} className="rounded-lg p-2 text-slate-400 hover:bg-navy-50 hover:text-navy-700 transition">
@@ -613,10 +622,6 @@ function KelolaPegawaiContent({ adminProfile }) {
               <input type="text" value={formData.golongan} onChange={(e) => setFormData({ ...formData, golongan: e.target.value })} className="input" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Unit Kerja (BPS/Biro)</label>
-            <input type="text" value={formData.unit_kerja} onChange={(e) => setFormData({ ...formData, unit_kerja: e.target.value })} className="input" />
-          </div>
           
           <div className="border-t pt-4 mt-2">
             <h4 className="text-sm font-bold text-navy-900 mb-3 flex items-center gap-2">
@@ -658,6 +663,16 @@ function KelolaPegawaiContent({ adminProfile }) {
                 <div className="ml-3 text-sm leading-6">
                   <label htmlFor="is_kakan" className="font-medium text-slate-900">Jadikan Kepala Kantor (Kakan)</label>
                   <p className="text-slate-500">Memberikan akses dashboard Kakan untuk melihat rekapitulasi penilaian dan menetapkan juara final.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start pt-2 border-t border-slate-100">
+                <div className="flex h-6 items-center">
+                  <input id="is_active" name="is_active" type="checkbox" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600" />
+                </div>
+                <div className="ml-3 text-sm leading-6">
+                  <label htmlFor="is_active" className="font-medium text-slate-900">Status Pegawai Aktif</label>
+                  <p className="text-slate-500">Hapus centang untuk menonaktifkan pegawai (soft delete). Pegawai tidak aktif tidak akan muncul di daftar pilihan periode.</p>
                 </div>
               </div>
             </div>

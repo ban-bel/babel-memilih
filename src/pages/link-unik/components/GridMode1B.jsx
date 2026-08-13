@@ -62,8 +62,8 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
             <Heart className="h-5 w-5 text-gold-600" />
           </div>
           <div>
-            <p className="font-semibold text-slate-800">Pemilihan Kandidat pada {periode?.nama_periode}</p>
-            <p className="text-xs text-slate-500">Tentukan pilihan Anda dengan cermat dan berikan suara untuk kandidat terbaik.</p>
+            <p className="font-semibold text-slate-800">Pemilihan {periode?.nama_periode}</p>
+            <p className="text-xs text-slate-500">Tentukan pilihan Anda dengan cermat dan berikan suara untuk insan terbaik.</p>
           </div>
         </div>
       </div>
@@ -139,13 +139,13 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
                     setProfilNominee(n);
                     setReadProfiles(prev => new Set(prev).add(n.id));
                   }}
-                  className={`relative z-10 mt-3 w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                  className={`relative z-10 mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 border-none ${
                     terpilih 
-                      ? 'bg-white/50 border-navy-200 text-navy-700 hover:bg-white' 
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-navy-600'
+                      ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
                   }`}
                 >
-                  🔍 Lihat Detail Profil
+                  👀 Kenalan Dulu Yuk
                 </button>
               )}
 
@@ -258,17 +258,18 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
           <p className="text-slate-600 text-sm mb-6">
             Untuk memberikan penilaian yang objektif, mohon luangkan waktu melihat <strong>detail profil</strong> kandidat {warningNominee?.nama} sebelum mengirim suara.
           </p>
-          <button
-            onClick={() => {
-              const n = warningNominee;
-              setWarningNominee(null);
-              setProfilNominee(n);
-              setReadProfiles(prev => new Set(prev).add(n.id));
-            }}
-            className="w-full bg-navy-600 text-white font-medium py-3 rounded-xl hover:bg-navy-700 transition"
-          >
-            Tinjau Profil Kandidat
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const n = warningNominee;
+                  setProfilNominee(n);
+                  setReadProfiles(prev => new Set(prev).add(n.id));
+                  setWarningNominee(null);
+                }}
+                className="w-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-200 hover:scale-[1.02]"
+              >
+                👀 Kenalan Dulu Yuk
+              </button>
         </div>
       </Modal>
     </div>

@@ -24,9 +24,13 @@ import {
   Loader2,
   MessageCircle,
   ExternalLink,
-  Zap
+  Zap,
+  Download,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import {
   fetchDaftarNomineeLengkap,
@@ -647,6 +651,72 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   const daftar = tab === 'nominee' ? daftarNominee : tab === 'penilai' ? daftarPenilai : daftarJuri;
   const hasil = filterDaftar(daftar);
 
+  const handleExportCsv = () => {
+    if (hasil.length === 0) {
+      toast.error('Tidak ada data untuk diekspor');
+      return;
+    }
+    const header = ['Nama', 'NIP', 'No HP', 'Unit Kerja', 'Status Submit', 'Waktu Submit'].join(',');
+    const rows = hasil.map(item => {
+      const p = item.nominee || item.pegawai;
+      const statusSubmit = item.is_digunakan ? 'Sudah Submit' : 'Belum Submit';
+      const waktuSubmit = item.digunakan_pada ? new Date(item.digunakan_pada).toLocaleString('id-ID') : '-';
+      return [
+        `"${p?.nama || ''}"`,
+        `"${p?.nip_baru || p?.nip || ''}"`,
+        `"${p?.no_hp || ''}"`,
+        `"${p?.unit_kerja || ''}"`,
+        `"${statusSubmit}"`,
+        `"${waktuSubmit}"`
+      ].join(',');
+    });
+    
+    const csvContent = [header, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Export_${tab}_${filterSubmit}_${periode?.nama_periode || 'periode'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPdf = () => {
+    if (hasil.length === 0) {
+      toast.error('Tidak ada data untuk diekspor');
+      return;
+    }
+    const doc = new jsPDF('p', 'pt', 'a4');
+    doc.text(`Daftar ${tab.toUpperCase()} - ${periode?.nama_periode || ''}`, 40, 40);
+    
+    const tableColumn = ["Nama", "NIP", "No HP", "Unit Kerja", "Status Submit"];
+    const tableRows = [];
+
+    hasil.forEach(item => {
+      const p = item.nominee || item.pegawai;
+      const statusSubmit = item.is_digunakan ? 'Sudah Submit' : 'Belum Submit';
+      const rowData = [
+        p?.nama || '-',
+        p?.nip_baru || p?.nip || '-',
+        p?.no_hp || '-',
+        p?.unit_kerja || '-',
+        statusSubmit
+      ];
+      tableRows.push(rowData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 60,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [22, 50, 74] } // navy-800
+    });
+
+    doc.save(`Export_${tab}_${filterSubmit}_${periode?.nama_periode || 'periode'}.pdf`);
+  };
+
   const totalPages = Math.ceil(hasil.length / itemsPerPage);
   const paginatedHasil = useMemo(() => {
     return hasil.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -745,6 +815,18 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
           <option value="SUDAH">Sudah Submit</option>
           <option value="BELUM">Belum Submit</option>
         </select>
+        <button
+          onClick={handleExportCsv}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
+        <button
+          onClick={handleExportPdf}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition"
+        >
+          <FileText className="h-4 w-4" /> Export PDF
+        </button>
       </div>
 
       {/* Table */}
