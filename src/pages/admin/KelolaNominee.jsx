@@ -15,7 +15,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, X, CheckCircle2, Clock, Loader2, UserCheck, Plus, Users, CheckSquare, Square, UserPlus } from 'lucide-react';
+import { Search, X, CheckCircle2, Clock, Loader2, UserCheck, Plus, Users, CheckSquare, Square, UserPlus, Edit3 } from 'lucide-react';
 
 import { fetchPeriodeList, fetchUnitKerjaPeriode, fetchDaftarPegawaiAktifMultiUnit } from '../../services/adminService';
 import { fetchNomineeByPeriode, tambahNominee, hapusNominee } from '../../services/votingService';
@@ -25,6 +25,7 @@ import toast from 'react-hot-toast';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import ModalEditProfilNominee from './components/ModalEditProfilNominee';
 
 export function KelolaNomineeContent({ adminProfile, periodeId }) {
   const isKabKotaAdmin = adminProfile?.role_admin === 'ADMIN_KABKOTA';
@@ -40,6 +41,8 @@ export function KelolaNomineeContent({ adminProfile, periodeId }) {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [singleNominee, setSingleNominee] = useState(null);
   const [showSingleModal, setShowSingleModal] = useState(false);
+  const [editNomineeData, setEditNomineeData] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch data
@@ -469,17 +472,31 @@ export function KelolaNomineeContent({ adminProfile, periodeId }) {
                     </span>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm(`Hapus "${n.pegawai?.nama}"?`)) {
-                        mutasiHapus.mutate(n.pegawai_id);
-                      }
-                    }}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditNomineeData(n);
+                        setShowEditModal(true);
+                      }}
+                      className="rounded-lg p-2 text-slate-400 hover:bg-navy-50 hover:text-navy-600 transition"
+                      title="Edit Profil Tambahan"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Hapus "${n.pegawai?.nama}"?`)) {
+                          mutasiHapus.mutate(n.pegawai_id);
+                        }
+                      }}
+                      className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                      title="Hapus dari nominee"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -565,6 +582,14 @@ export function KelolaNomineeContent({ adminProfile, periodeId }) {
           </div>
         )}
       </ConfirmModal>
+
+      {/* === MODAL EDIT PROFIL NOMINEE === */}
+      <ModalEditProfilNominee
+        isOpen={showEditModal}
+        onClose={() => { setShowEditModal(false); setEditNomineeData(null); }}
+        nominee={editNomineeData}
+        periodeId={periodeId}
+      />
     </div>
   );
 }

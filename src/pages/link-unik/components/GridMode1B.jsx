@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Send, Loader2, Check, Heart } from 'lucide-react';
+import { Send, Loader2, Check, Heart, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import ProfilNomineeModal from '../../../components/common/ProfilNomineeModal';
+import Modal from '../../../components/common/Modal';
 
 /**
  * Form Mode 1B — Quick Vote / Pegawai Terfavorit. Grid kartu foto nominee,
@@ -15,6 +18,19 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
   const [pilihan, setPilihan] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState(null);
+  const [profilNominee, setProfilNominee] = useState(null);
+  const [readProfiles, setReadProfiles] = useState(new Set());
+  const [warningNominee, setWarningNominee] = useState(null);
+
+  const hasTabel = (tabelData) => {
+    if (!tabelData) return false;
+    let arr = [];
+    if (Array.isArray(tabelData)) arr = tabelData;
+    else if (typeof tabelData === 'string') {
+      try { arr = JSON.parse(tabelData); } catch (e) { return false; }
+    }
+    return arr.length > 0;
+  };
 
   if (nominee.length === 0) {
     return (
@@ -104,6 +120,25 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
               </p>
               <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{n.unit_kerja}</p>
 
+              {/* Lihat Profil Button (Only if has data) */}
+              {(n.dokumen_link || hasTabel(n.tabel_kehadiran)) && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProfilNominee(n);
+                    setReadProfiles(prev => new Set(prev).add(n.id));
+                  }}
+                  className={`relative z-10 mt-3 w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-colors border ${
+                    terpilih 
+                      ? 'bg-white/50 border-navy-200 text-navy-700 hover:bg-white' 
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-navy-600'
+                  }`}
+                >
+                  🔍 Lihat Detail Profil
+                </button>
+              )}
+
               {/* Hover Effect Overlay */}
               <div className={`absolute inset-0 rounded-2xl transition-all duration-300 pointer-events-none ${
                 isHovered && !terpilih ? 'bg-gradient-to-t from-navy-800/5 to-transparent' : ''
@@ -118,6 +153,12 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (pilihan != null) {
+            const selectedNominee = nominee.find((n) => n.id === pilihan);
+            const requiresReading = selectedNominee && (selectedNominee.dokumen_link || hasTabel(selectedNominee.tabel_kehadiran));
+            if (requiresReading && !readProfiles.has(pilihan)) {
+              setWarningNominee(selectedNominee);
+              return;
+            }
             setIsConfirmOpen(true);
           }
         }}
@@ -167,6 +208,35 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
         title="Kirim Suara Pilihan?"
         message={`Apakah Anda yakin ingin memilih ${nominee.find((n) => n.id === pilihan)?.nama}? Suara yang sudah dikirim tidak dapat diubah lagi.`}
       />
+
+      <ProfilNomineeModal
+        isOpen={Boolean(profilNominee)}
+        onClose={() => setProfilNominee(null)}
+        nominee={profilNominee}
+      />
+
+      <Modal isOpen={Boolean(warningNominee)} onClose={() => setWarningNominee(null)} title="Peringatan" maxWidth="max-w-md">
+        <div className="flex flex-col items-center text-center p-4">
+          <div className="h-16 w-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg font-bold text-navy-900 mb-2">Profil Belum Dibaca</h3>
+          <p className="text-slate-600 text-sm mb-6">
+            Anda harus membuka <strong>Lihat Detail Profil</strong> milik {warningNominee?.nama} terlebih dahulu sebelum dapat mengirim suara.
+          </p>
+          <button
+            onClick={() => {
+              const n = warningNominee;
+              setWarningNominee(null);
+              setProfilNominee(n);
+              setReadProfiles(prev => new Set(prev).add(n.id));
+            }}
+            className="w-full bg-navy-600 text-white font-medium py-3 rounded-xl hover:bg-navy-700 transition"
+          >
+            Buka Profil Sekarang
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

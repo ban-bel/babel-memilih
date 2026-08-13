@@ -254,6 +254,8 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
       `
       id,
       video_profil_link,
+      dokumen_link,
+      tabel_kehadiran,
       nominee:pegawai ( id, nama, nip, nip_baru, foto_url, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `
     )
@@ -267,7 +269,7 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
   return (data ?? []).map(item => {
     const p = item.nominee;
     const unitKerja = p?.wilayah?.nama_unit_kerja || p?.wilayah?.nama_wilayah || '-';
-    return p ? { ...p, unit_kerja: unitKerja, video_profil_link: item.video_profil_link } : null;
+    return p ? { ...p, unit_kerja: unitKerja, video_profil_link: item.video_profil_link, dokumen_link: item.dokumen_link, tabel_kehadiran: item.tabel_kehadiran } : null;
   }).filter(Boolean);
 }
 
@@ -1139,6 +1141,8 @@ export async function fetchNomineeByPeriode(periodeId) {
       .select(`
         id,
         pegawai_id,
+        dokumen_link,
+        tabel_kehadiran,
         pegawai:pegawai_id (
           id,
           nama,
@@ -1166,6 +1170,23 @@ export async function fetchNomineeByPeriode(periodeId) {
       akses: aksesByPegawaiId.get(n.pegawai_id) ?? null,
     };
   });
+}
+
+/**
+ * Memperbarui dokumen link dan tabel kehadiran untuk nominee_periode.
+ * @async
+ * @param {number} nomineePeriodeId - ID dari tabel nominee_periode
+ * @param {string} dokumenLink - Tautan Google Drive
+ * @param {Object[]} tabelKehadiran - Array object tabel kehadiran
+ * @returns {Promise<void>}
+ */
+export async function updateProfilTambahanNominee(nomineePeriodeId, dokumenLink, tabelKehadiran) {
+  const { error } = await supabase
+    .from('nominee_periode')
+    .update({ dokumen_link: dokumenLink || null, tabel_kehadiran: tabelKehadiran || [] })
+    .eq('id', nomineePeriodeId);
+
+  if (error) throw new Error(`Gagal menyimpan profil tambahan: ${error.message}`);
 }
 
 /**

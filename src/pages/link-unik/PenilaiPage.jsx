@@ -28,11 +28,13 @@ import GridMode1B from './components/GridMode1B';
 import FormMode1C from './components/FormMode1C';
 import FormMode2A from './components/FormMode2A';
 import SuccessScreen from '../../components/common/SuccessScreen';
+import Modal from '../../components/common/Modal';
 
 export default function PenilaiPage() {
   const { token } = useParams();
   const queryClient = useQueryClient();
   const [sudahKirim, setSudahKirim] = useState(false);
+  const [tampilModalWelcome, setTampilModalWelcome] = useState(true);
   const girlAvatarSrc = getDailyAvatarUrl('girl');
   const boyAvatarSrc = getDailyAvatarUrl('boy');
 
@@ -266,6 +268,30 @@ export default function PenilaiPage() {
           </div>
         )}
       </main>
+      
+      <Modal 
+        isOpen={tampilModalWelcome} 
+        onClose={() => setTampilModalWelcome(false)}
+        title="Konfirmasi Penilaian"
+      >
+        <div className="space-y-6 text-center">
+          <div className="mx-auto w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-8 h-8" />
+          </div>
+          <div>
+            <h4 className="text-xl font-bold text-navy-900">Selamat Datang, {akses.penilai.nama}!</h4>
+            <p className="mt-2 text-slate-600">
+              Anda masuk pada periode penilaian <span className="font-semibold text-navy-800">{akses.periode.nama_periode}</span>.
+            </p>
+          </div>
+          <button
+            onClick={() => setTampilModalWelcome(false)}
+            className="w-full py-3 px-4 bg-navy-600 hover:bg-navy-700 text-white rounded-xl font-medium transition-colors"
+          >
+            Mulai Menilai
+          </button>
+        </div>
+      </Modal>
       </div>
     </div>
   );
