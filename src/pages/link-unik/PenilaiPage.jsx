@@ -240,6 +240,7 @@ export default function PenilaiPage() {
         ) : isMode1BFlat ? (
           <GridMode1B
             nominee={nominee}
+            periode={akses.periode}
             onSubmit={(nomineeId) => { setErrorSubmit(null); mutasiMode1B.mutate(nomineeId); }}
             isSubmitting={mutasiMode1B.isPending}
           />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Loader2, Check, Heart, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -11,16 +11,24 @@ import Modal from '../../../components/common/Modal';
  * Filter di votingService.fetchDaftarNominee.
  *
  * @param {{id:number,nama:string,unit_kerja:string,foto_url?:string}[]} nominee
+ * @param {object} periode
  * @param {(nomineeId:number) => void} onSubmit
  * @param {boolean} isSubmitting
  */
-export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
+export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting }) {
   const [pilihan, setPilihan] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState(null);
   const [profilNominee, setProfilNominee] = useState(null);
   const [readProfiles, setReadProfiles] = useState(new Set());
   const [warningNominee, setWarningNominee] = useState(null);
+  const [shuffledNominee, setShuffledNominee] = useState([]);
+
+  useEffect(() => {
+    if (nominee && nominee.length > 0 && shuffledNominee.length === 0) {
+      setShuffledNominee([...nominee].sort(() => Math.random() - 0.5));
+    }
+  }, [nominee, shuffledNominee.length]);
 
   const hasTabel = (tabelData) => {
     if (!tabelData) return false;
@@ -31,6 +39,8 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
     }
     return arr.length > 0;
   };
+
+  const selectedNominee = nominee.find((n) => n.id === pilihan);
 
   if (nominee.length === 0) {
     return (
@@ -52,15 +62,15 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
             <Heart className="h-5 w-5 text-gold-600" />
           </div>
           <div>
-            <p className="font-semibold text-slate-800">Pilih Pegawai Terfavorit</p>
-            <p className="text-xs text-slate-500">Klik kartu di bawah untuk memilih nominee favorit Anda</p>
+            <p className="font-semibold text-slate-800">Pemilihan Kandidat pada {periode?.nama_periode}</p>
+            <p className="text-xs text-slate-500">Tentukan pilihan Anda dengan cermat dan berikan suara untuk kandidat terbaik.</p>
           </div>
         </div>
       </div>
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {nominee.map((n, idx) => {
+        {(shuffledNominee.length > 0 ? shuffledNominee : nominee).map((n, idx) => {
           const terpilih = pilihan === n.id;
           const isHovered = hoveredId === n.id;
 
@@ -89,7 +99,7 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
               )}
 
               {/* Avatar with Glow Effect */}
-              <div className={`relative mx-auto mb-3 transition-all duration-300 ${terpilih ? 'scale-110' : 'group-hover:scale-105'}`}>
+              <div className={`relative mx-auto mb-4 w-fit transition-all duration-300 ${terpilih ? 'scale-110' : 'group-hover:scale-105'}`}>
                 <div className={`absolute inset-0 rounded-full transition-all duration-300 ${
                   terpilih ? 'bg-gradient-to-br from-gold-400 to-gold-500 blur-md opacity-50 scale-110' :
                   isHovered ? 'bg-gradient-to-br from-gold-300/50 to-gold-400/50 blur-md opacity-30 scale-105' : ''
@@ -97,7 +107,7 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
                 <img
                   src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
                   alt={n.nama}
-                  className="relative h-20 w-20 rounded-full border-3 border-white object-cover shadow-lg transition-all duration-300"
+                  className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=128`;
@@ -181,19 +191,19 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
           ) : pilihan == null ? (
             <span className="flex items-center justify-center gap-2">
               <Heart className="h-5 w-5" />
-              Pilih salah satu nominee
+              Pilih salah satu kandidat
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
               <Send className="h-5 w-5" />
-              Kirim Suara untuk {nominee.find((n) => n.id === pilihan)?.nama}
+              Konfirmasi Pilihan untuk {nominee.find((n) => n.id === pilihan)?.nama}
             </span>
           )}
         </button>
 
         {pilihan == null && (
           <p className="text-center text-xs text-slate-400">
-            Klik kartu nominee di atas untuk memilih
+            Silakan klik salah satu kartu di atas untuk menentukan pilihan Anda.
           </p>
         )}
       </form>
@@ -206,13 +216,37 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
           onSubmit(pilihan);
         }}
         title="Kirim Suara Pilihan?"
-        message={`Apakah Anda yakin ingin memilih ${nominee.find((n) => n.id === pilihan)?.nama}? Suara yang sudah dikirim tidak dapat diubah lagi.`}
+        message={
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            {selectedNominee && (
+              <img
+                src={selectedNominee.foto_url || (selectedNominee.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${selectedNominee.nip}.jpg` : null)}
+                alt={selectedNominee.nama}
+                className="h-16 w-16 shrink-0 rounded-full object-cover border-2 border-slate-200 shadow-sm"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedNominee.nama || 'N')}&background=16324a&color=fff&size=64`;
+                }}
+              />
+            )}
+            <p className="text-center sm:text-left">
+              Sebelum mengirim suara, pastikan Anda telah meninjau kandidat lainnya. Apakah Anda yakin ingin menetapkan pilihan pada <strong className="text-navy-900">{selectedNominee?.nama}</strong>?
+            </p>
+          </div>
+        }
       />
 
       <ProfilNomineeModal
         isOpen={Boolean(profilNominee)}
         onClose={() => setProfilNominee(null)}
         nominee={profilNominee}
+        onVoteClick={() => {
+          const n = profilNominee;
+          setPilihan(n.id);
+          setReadProfiles(prev => new Set(prev).add(n.id));
+          setProfilNominee(null);
+          setTimeout(() => setIsConfirmOpen(true), 150);
+        }}
       />
 
       <Modal isOpen={Boolean(warningNominee)} onClose={() => setWarningNominee(null)} title="Peringatan" maxWidth="max-w-md">
@@ -220,9 +254,9 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
           <div className="h-16 w-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-8 w-8" />
           </div>
-          <h3 className="text-lg font-bold text-navy-900 mb-2">Profil Belum Dibaca</h3>
+          <h3 className="text-lg font-bold text-navy-900 mb-2">Mohon Tinjau Profil Terlebih Dahulu</h3>
           <p className="text-slate-600 text-sm mb-6">
-            Anda harus membuka <strong>Lihat Detail Profil</strong> milik {warningNominee?.nama} terlebih dahulu sebelum dapat mengirim suara.
+            Untuk memberikan penilaian yang objektif, mohon luangkan waktu melihat <strong>detail profil</strong> kandidat {warningNominee?.nama} sebelum mengirim suara.
           </p>
           <button
             onClick={() => {
@@ -233,7 +267,7 @@ export default function GridMode1B({ nominee, onSubmit, isSubmitting }) {
             }}
             className="w-full bg-navy-600 text-white font-medium py-3 rounded-xl hover:bg-navy-700 transition"
           >
-            Buka Profil Sekarang
+            Tinjau Profil Kandidat
           </button>
         </div>
       </Modal>

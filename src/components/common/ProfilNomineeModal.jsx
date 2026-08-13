@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, FileText, Table } from 'lucide-react';
+import { X, FileText, Table, Send, Loader2 } from 'lucide-react';
 
 const getPreviewUrl = (url) => {
   if (!url) return '';
@@ -10,12 +10,27 @@ const getPreviewUrl = (url) => {
   return url;
 };
 
-export default function ProfilNomineeModal({ isOpen, onClose, nominee }) {
+export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteClick }) {
   const [mounted, setMounted] = useState(false);
+  const [countdown, setCountdown] = useState(15);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    let timer;
+    if (isOpen) {
+      setCountdown(15);
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isOpen]);
 
   const hasTabel = (tabelData) => {
     if (!tabelData) return false;
@@ -145,6 +160,31 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Footer Action */}
+        <div className="p-4 border-t border-slate-200 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <button
+            onClick={onVoteClick}
+            disabled={countdown > 0}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-bold text-white shadow-lg transition-all ${
+              countdown > 0
+                ? 'bg-slate-300 cursor-not-allowed'
+                : 'bg-gold-500 hover:bg-gold-600 hover:shadow-xl active:scale-[0.98]'
+            }`}
+          >
+            {countdown > 0 ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Membaca profil... ({countdown}s)
+              </>
+            ) : (
+              <>
+                <Send className="h-5 w-5" />
+                Pilih {nominee.nama}
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
