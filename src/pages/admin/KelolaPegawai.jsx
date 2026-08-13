@@ -70,7 +70,7 @@ function KelolaPegawaiContent({ adminProfile }) {
   const { data: semuaPegawai = [] } = useQuery({
     queryKey: ['pegawai-all-for-duplicate-check'],
     queryFn: async () => {
-      return fetchDaftarPegawaiAktif(null, '');
+      return fetchDaftarPegawaiAktif(null, '', false, false);
     },
   });
 
@@ -109,7 +109,7 @@ function KelolaPegawaiContent({ adminProfile }) {
 
   const { data: pegawaiList = [], isLoading } = useQuery({
     queryKey: ['pegawai-list', activeWilayahFilter, kataKunci],
-    queryFn: () => fetchDaftarPegawaiAktif(activeWilayahFilter, kataKunci, true),
+    queryFn: () => fetchDaftarPegawaiAktif(activeWilayahFilter, kataKunci, true, false),
   });
 
   const totalPages = Math.ceil(pegawaiList.length / itemsPerPage);

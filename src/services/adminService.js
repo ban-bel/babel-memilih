@@ -319,7 +319,7 @@ export async function hapusPegawai(pegawaiId) {
  * // Cari dengan filter nama
  * const cari = await fetchDaftarPegawaiAktif(null, 'Ahmad');
  */
-export async function fetchDaftarPegawaiAktif(wilayahId, kata_kunci = '', includeInactive = false) {
+export async function fetchDaftarPegawaiAktif(wilayahId, kata_kunci = '', includeInactive = false, excludeSuperAdmin = true) {
   let query = supabase
     .from('pegawai')
     .select(`
@@ -331,6 +331,10 @@ export async function fetchDaftarPegawaiAktif(wilayahId, kata_kunci = '', includ
 
   if (!includeInactive) {
     query = query.eq('is_active', true);
+  }
+
+  if (excludeSuperAdmin) {
+    query = query.neq('role_admin', 'SUPER_ADMIN');
   }
 
   if (wilayahId) query = query.eq('wilayah_id', wilayahId);
