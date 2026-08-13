@@ -167,21 +167,21 @@ export default function PenilaiPage() {
     <div className="min-h-screen bg-gradient-to-b from-paper to-slate-100/50 pb-10 relative">
       
       {/* Fixed Avatar Left */}
-      <div className="hidden xl:block fixed right-1/2 top-1/2 -translate-y-[35%] mr-[360px] 2xl:mr-[420px] z-0 pointer-events-none">
+      <div className="fixed top-1/2 -translate-y-[35%] z-0 pointer-events-none left-1/2 -translate-x-[80%] opacity-10 xl:left-auto xl:right-1/2 xl:translate-x-0 xl:mr-[360px] 2xl:mr-[420px] xl:opacity-30">
         <img 
           src={girlAvatarSrc} 
           alt="Pegawai Perempuan" 
-          className="h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl opacity-30 animate-float" 
+          className="h-[400px] xl:h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl animate-float" 
           style={{ animationDelay: '1s' }}
         />
       </div>
 
       {/* Fixed Avatar Right */}
-      <div className="hidden xl:block fixed left-1/2 top-1/2 -translate-y-[35%] ml-[360px] 2xl:ml-[420px] z-0 pointer-events-none">
+      <div className="fixed top-1/2 -translate-y-[35%] z-0 pointer-events-none right-1/2 translate-x-[80%] opacity-10 xl:right-auto xl:left-1/2 xl:translate-x-0 xl:ml-[360px] 2xl:ml-[420px] xl:opacity-30">
         <img 
           src={boyAvatarSrc} 
           alt="Pegawai Laki-laki" 
-          className="h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl opacity-30 animate-float" 
+          className="h-[400px] xl:h-[500px] 2xl:h-[620px] w-auto drop-shadow-xl animate-float" 
           style={{ animationDelay: '0.5s' }}
         />
       </div>

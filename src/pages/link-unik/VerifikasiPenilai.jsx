@@ -98,21 +98,21 @@ export default function VerifikasiPenilai() {
       </div>
 
       {/* Floating Avatar Left */}
-      <div className="hidden lg:block absolute right-1/2 top-1/2 -translate-y-[35%] mr-[270px] xl:mr-[320px] z-0 pointer-events-none">
+      <div className="absolute top-1/2 -translate-y-[35%] z-0 pointer-events-none left-1/2 -translate-x-[80%] opacity-20 lg:left-auto lg:right-1/2 lg:translate-x-0 lg:mr-[270px] xl:mr-[320px] lg:opacity-100">
         <img 
           src={girlAvatarSrc} 
           alt="Pegawai Perempuan" 
-          className="h-[500px] xl:h-[620px] w-auto drop-shadow-2xl opacity-90 animate-float" 
+          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float" 
           style={{ animationDelay: '1s' }}
         />
       </div>
 
       {/* Floating Avatar Right */}
-      <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-y-[35%] ml-[270px] xl:ml-[320px] z-0 pointer-events-none">
+      <div className="absolute top-1/2 -translate-y-[35%] z-0 pointer-events-none right-1/2 translate-x-[80%] opacity-20 lg:right-auto lg:left-1/2 lg:translate-x-0 lg:ml-[270px] xl:ml-[320px] lg:opacity-100">
         <img 
           src={boyAvatarSrc} 
           alt="Pegawai Laki-laki" 
-          className="h-[500px] xl:h-[620px] w-auto drop-shadow-2xl opacity-90 animate-float" 
+          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float" 
           style={{ animationDelay: '0.5s' }}
         />
       </div>
