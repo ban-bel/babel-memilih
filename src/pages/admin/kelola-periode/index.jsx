@@ -99,6 +99,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
     petunjuk_penilaian: '',
     status: 'DRAFT',
     is_nominee_can_vote: true,
+    is_allow_abstain: false,
   });
 
   const mutasiEdit = useMutation({
@@ -144,6 +145,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
       petunjuk_penilaian: p.petunjuk_penilaian || '',
       status: p.status || 'DRAFT',
       is_nominee_can_vote: p.is_nominee_can_vote ?? true,
+      is_allow_abstain: p.is_allow_abstain ?? false,
     });
     setShowEditModal(true);
   }
@@ -491,6 +493,20 @@ function ManajemenPeriodeContent({ adminProfile }) {
               <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
             </label>
           </div>
+
+          {/* Toggle Abstain in Edit */}
+          {(activePeriode?.mode_penilaian === 'MODE_1B' || activePeriode?.mode_penilaian === 'MODE_1A') && (
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 mb-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700">Izinkan Suara Abstain / Kotak Kosong</label>
+                <p className="text-xs text-slate-500">Jika aktif, penilai dapat memilih opsi abstain jika tersedia.</p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input type="checkbox" className="peer sr-only" checked={editForm.is_allow_abstain} onChange={(e) => setEditForm({ ...editForm, is_allow_abstain: e.target.checked })} />
+                <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+              </label>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Petunjuk Penilaian (Opsional)</label>

@@ -567,8 +567,8 @@ export async function submitPenilaianMode1A(token, periodeId, penilaiId, daftarS
  * await submitQuickVoteMode1B(token, 1, penilaiId, 5);
  */
 export async function submitQuickVoteMode1B(token, periodeId, penilaiId, nomineePilihanId) {
-  if (!nomineePilihanId) {
-    throw new Error('Silakan pilih satu nominee terlebih dahulu.');
+  if (nomineePilihanId === undefined) {
+    throw new Error('Silakan pilih satu nominee atau abstain terlebih dahulu.');
   }
   if (nomineePilihanId === penilaiId) {
     throw new Error('Tidak diperbolehkan memilih diri sendiri (Self-Vote terdeteksi).');
@@ -576,7 +576,7 @@ export async function submitQuickVoteMode1B(token, periodeId, penilaiId, nominee
 
   const { error } = await supabase.rpc('submit_quick_vote_mode_1b', {
     p_token: token,
-    p_nominee_id: nomineePilihanId,
+    p_nominee_id: nomineePilihanId === 'abstain' ? null : nomineePilihanId,
   });
 
   if (error) {
@@ -1678,8 +1678,8 @@ export async function submitAllVotesMode1C(token, votes) {
 
   // Validasi: tidak boleh vote diri sendiri
   for (const vote of votes) {
-    if (!vote.nominee_id) {
-      throw new Error('Semua kategori harus memiliki nominee yang dipilih.');
+    if (vote.nominee_id === undefined) {
+      throw new Error('Semua kategori harus memiliki nominee yang dipilih atau abstain.');
     }
   }
 
@@ -1695,7 +1695,7 @@ export async function submitAllVotesMode1C(token, votes) {
 
   const payload = votes.map((v) => ({
     kategori_id: v.kategori_id,
-    nominee_id: v.nominee_id,
+    nominee_id: v.nominee_id === 'abstain' ? null : v.nominee_id,
   }));
 
   const { error } = await supabase.rpc('submit_votes_mode_1c', {
@@ -1704,7 +1704,7 @@ export async function submitAllVotesMode1C(token, votes) {
   });
 
   if (error) {
-    throw new Error(`Gagal menyimpan vote: ${error.message}`);
+    throw new Error(`Gagal menyimpan suara: ${error.message}`);
   }
 }
 

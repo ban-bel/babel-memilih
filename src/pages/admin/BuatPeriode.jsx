@@ -47,9 +47,11 @@ function nilaiAwalForm() {
     kriteria: [buatBarisKriteria()],
     isVotingKategoriEnabled: false,
     votingKategori: [buatBarisKategoriVoting()],
+    is_voting_selesai: false,
     juri: [],
     is_video_profil: false,
     is_nominee_can_vote: true,
+    is_allow_abstain: false,
   };
 }
 
@@ -295,6 +297,20 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                   <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
                 </label>
               </div>
+
+              {/* Toggle Abstain */}
+              {(form.mode_penilaian === MODE_PENILAIAN.MODE_1B || form.mode_penilaian === MODE_PENILAIAN.MODE_1A) && (
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                  <div>
+                    <h4 className="font-semibold text-slate-800">Izinkan Suara Abstain / Kotak Kosong</h4>
+                    <p className="text-xs text-slate-500">Penilai diperbolehkan untuk memilih opsi Abstain (suara tidak sah) tanpa menunjuk kandidat mana pun.</p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox" className="peer sr-only" checked={form.is_allow_abstain} onChange={(e) => ubah('is_allow_abstain', e.target.checked)} />
+                    <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 

@@ -440,6 +440,8 @@ export async function buatPeriodePenilaian(periode) {
       status: 'DRAFT',
       created_by: periode.created_by,
       is_video_profil: periode.is_video_profil || false,
+      is_nominee_can_vote: periode.is_nominee_can_vote ?? false,
+      is_allow_abstain: periode.is_allow_abstain ?? false,
     })
     .select('id')
     .single();
