@@ -49,6 +49,7 @@ function nilaiAwalForm() {
     votingKategori: [buatBarisKategoriVoting()],
     juri: [],
     is_video_profil: false,
+    is_nominee_can_vote: true,
   };
 }
 
@@ -282,6 +283,17 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Petunjuk (opsional)</label>
                 <textarea rows={3} value={form.petunjuk_penilaian} onChange={(e) => ubah('petunjuk_penilaian', e.target.value)} className="input resize-none" />
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 mt-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai (diberi hak pilih).</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={form.is_nominee_can_vote} onChange={(e) => ubah('is_nominee_can_vote', e.target.checked)} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
               </div>
             </div>
           )}

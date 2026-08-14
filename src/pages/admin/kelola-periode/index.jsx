@@ -57,6 +57,17 @@ function InfoDasarPeriode({ periode }) {
           </div>
         </div>
         
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50 transition-all hover:bg-white hover:shadow-sm">
+            <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Hak Pilih Nominee</p>
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase ${
+              periode.is_nominee_can_vote !== false ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+            }`}>
+              {periode.is_nominee_can_vote !== false ? 'DIBERIKAN HAK VOTING' : 'TIDAK BERHAK VOTING'}
+            </span>
+          </div>
+        </div>
+
         <div className="mt-8 pt-6 border-t border-slate-200/50">
           <p className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Petunjuk Penilaian</p>
           <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100/50">
@@ -87,6 +98,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
     tgl_selesai: '',
     petunjuk_penilaian: '',
     status: 'DRAFT',
+    is_nominee_can_vote: true,
   });
 
   const mutasiEdit = useMutation({
@@ -131,6 +143,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
       tgl_selesai: p.tgl_selesai ? p.tgl_selesai.substring(0, 16) : '',
       petunjuk_penilaian: p.petunjuk_penilaian || '',
       status: p.status || 'DRAFT',
+      is_nominee_can_vote: p.is_nominee_can_vote ?? true,
     });
     setShowEditModal(true);
   }
@@ -466,6 +479,17 @@ function ManajemenPeriodeContent({ adminProfile }) {
               <option value="SELESAI">SELESAI</option>
               <option value="DIARSIPKAN">DIARSIPKAN</option>
             </select>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
+              <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai.</p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input type="checkbox" className="peer sr-only" checked={editForm.is_nominee_can_vote} onChange={(e) => setEditForm({ ...editForm, is_nominee_can_vote: e.target.checked })} />
+              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+            </label>
           </div>
 
           <div>

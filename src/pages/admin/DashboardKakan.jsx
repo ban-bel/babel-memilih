@@ -725,7 +725,7 @@ function DashboardKakanContent({ adminProfile }) {
             }}
             isSubmitting={mutasiKunci.isPending}
             disabled={statusKelengkapan ? !statusKelengkapan.isComplete : false}
-            disabledMessage={`Masih ada ${statusKelengkapan ? statusKelengkapan.total - statusKelengkapan.submitted : 'beberapa'} penilai/juri yang belum submit. (${statusKelengkapan?.submitted}/${statusKelengkapan?.total} selesai)`}
+            disabledMessage={`Voting belum mencapai batas minimum 50%+1. (${statusKelengkapan?.submitted}/${statusKelengkapan?.total} selesai, butuh min ${statusKelengkapan?.minRequired})`}
           />
         </>
       )}

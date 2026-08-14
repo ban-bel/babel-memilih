@@ -989,10 +989,13 @@ export async function fetchKelengkapanPenilai(periodeId, mode) {
 
   if (errSub) throw errSub;
 
+  const minRequired = total > 0 ? Math.floor(total / 2) + 1 : 0;
+
   return {
     total: total || 0,
     submitted: submitted || 0,
-    isComplete: total > 0 && total === submitted
+    minRequired,
+    isComplete: total > 0 && submitted >= minRequired
   };
 }
 
