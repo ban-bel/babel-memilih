@@ -26,7 +26,8 @@ import {
   ExternalLink,
   Zap,
   Download,
-  FileText
+  FileText,
+  Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -38,7 +39,7 @@ import {
   fetchDaftarJuriLengkap,
   generateTokenPenilaianMassal
 } from '../../services/adminService';
-import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim } from '../../services/kirimWaService';
+import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
 import { formatHP, kirimPesanFonnte } from '../../services/fonnteService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
@@ -134,8 +135,8 @@ function TabButton({ label, active, onClick, count, dotColor }) {
 /**
  * PartisipanRow - Baris tabel untuk satu partisipan
  */
-function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimFonnte, periode, templates, localSentIds }) {
-  const [isSendingFonnte, setIsSendingFonnte] = useState(false);
+function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggleEmail, onKirimFonnte, periode, templates, localSentIds, localSentEmailIds }) {
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const p = item.nominee || item.pegawai;
   if (!p) return null;
 
@@ -144,6 +145,11 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
   const dbSent = !!item.notifikasi_wa_sent_at;
   const localSent = localSentIds?.has(item.id) ?? false;
   const sudahNotif = dbSent || localSent;
+
+  const dbEmailSent = !!item.notifikasi_email_sent_at;
+  const localEmailSent = localSentEmailIds?.has(item.id) ?? false;
+  const sudahEmailNotif = dbEmailSent || localEmailSent;
+
   const hp = formatHP(p.no_hp);
   const linkToken = generateLinkToken(activeTab, item.token_akses);
   const kategoriLabel = activeTab.toUpperCase();
@@ -200,20 +206,37 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
 
   const waHref = hp ? `https://wa.me/${hp}?text=${encodeURIComponent(waText)}` : '#';
 
-  const handleFonnte = async () => {
-    setIsSendingFonnte(true);
+  const handleEmail = async () => {
+    if (!p.email) {
+      toast.error('Email pegawai belum terdaftar di database.');
+      return;
+    }
+    setIsSendingEmail(true);
+    const toastId = toast.loading(`Mengirim email ke ${p.nama}...`);
     try {
-      const result = await kirimPesanFonnte(hp, waText);
-      if (result.status) {
-        toast.success(`Berhasil kirim ke ${p.nama}`);
-        if (!sudahNotif) onToggleWa(item.id, true);
-      } else {
-        toast.error(`Gagal: ${result.reason}`);
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: p.email,
+          nama_penerima: p.nama,
+          link_penilaian: linkToken,
+          sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
+          nama_periode: periode?.nama_periode || 'Babel Memilih'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal mengirim email');
+      toast.success(`Email berhasil dikirim ke ${p.nama}`, { id: toastId });
+      
+      // Update DB and local state
+      if (!sudahEmailNotif && onToggleEmail) {
+        onToggleEmail(item.id, true);
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message, { id: toastId });
     } finally {
-      setIsSendingFonnte(false);
+      setIsSendingEmail(false);
     }
   };
 
@@ -270,31 +293,41 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
         </td>
       )}
 
-      {/* Status WA */}
+      {/* Status Notifikasi (WA & Email) */}
       <td className="px-4 py-3">
-        <button
-          type="button"
-          onClick={() => onToggleWa(item.id, !sudahNotif)}
-          className={
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all hover:scale-105 ' +
-            (sudahNotif
-              ? 'bg-emerald-100 text-emerald-700 hover:bg-slate-100 hover:text-slate-600'
-              : 'bg-slate-100 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700')
-          }
-          title={sudahNotif ? 'Klik untuk reset' : 'Klik untuk tandai terkirim'}
-        >
-          {sudahNotif ? (
-            <>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Terkirim
-            </>
-          ) : (
-            <>
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-              Belum
-            </>
-          )}
-        </button>
+        <div className="flex flex-col gap-1.5 items-start">
+          {/* WA Pill */}
+          <button
+            type="button"
+            onClick={() => onToggleWa(item.id, !sudahNotif)}
+            className={
+              'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-all hover:scale-105 ' +
+              (sudahNotif
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-slate-100 hover:text-slate-600'
+                : 'bg-slate-100 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700')
+            }
+            title={sudahNotif ? 'Klik untuk reset status WA' : 'Tandai WA terkirim'}
+          >
+            {sudahNotif ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />}
+            WA
+          </button>
+
+          {/* Email Pill */}
+          <button
+            type="button"
+            onClick={() => onToggleEmail && onToggleEmail(item.id, !sudahEmailNotif)}
+            className={
+              'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-all hover:scale-105 ' +
+              (sudahEmailNotif
+                ? 'bg-blue-100 text-blue-700 hover:bg-slate-100 hover:text-slate-600'
+                : 'bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-700')
+            }
+            title={sudahEmailNotif ? 'Klik untuk reset status Email' : 'Tandai Email terkirim'}
+          >
+            {sudahEmailNotif ? <CheckCircle2 className="h-3 w-3" /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />}
+            Email
+          </button>
+        </div>
       </td>
 
       {/* Status Submit */}
@@ -326,53 +359,38 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
             type="button"
             onClick={() => onCopy(item.token_akses, item.id)}
             className={
-              'btn-secondary text-xs ' +
-              (copiedId === item.id ? 'border-emerald-300 text-emerald-700' : '')
+              'inline-flex items-center justify-center h-7 w-7 rounded-lg border transition-colors ' +
+              (copiedId === item.id 
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700' 
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
             }
+            title="Salin Link Penilaian"
           >
-            {copiedId === item.id ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Tersalin
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                Link
-              </>
-            )}
+            {copiedId === item.id ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </button>
 
           {hp && (
-            <>
-              <button
-                type="button"
-                disabled={isSendingFonnte}
-                onClick={handleFonnte}
-                className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition-colors disabled:opacity-50"
-                title="Kirim via Fonnte API"
-              >
-                {isSendingFonnte
-                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  : <Zap className="h-3.5 w-3.5" />
-                }
-                Fonnte
-              </button>
-
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => !sudahNotif && onToggleWa(item.id, true)}
-                className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
-                title="Buka WhatsApp Web"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                Wa.Me
-                <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            </>
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => !sudahNotif && onToggleWa(item.id, true)}
+              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+              title="Kirim via WhatsApp Web (WA.Me)"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </a>
           )}
+
+          <button
+            type="button"
+            disabled={isSendingEmail}
+            onClick={handleEmail}
+            className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+            title={p.email ? "Kirim Undangan via Email" : "Email pegawai belum terdaftar"}
+          >
+            {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+          </button>
         </div>
       </td>
     </tr>
@@ -382,7 +400,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onKirimF
 /**
  * TabelPartisipan
  */
-function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, templates, localSentIds, globalTotal, globalSubmitted }) {
+function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, onToggleEmail, periode, templates, localSentIds, localSentEmailIds, globalTotal, globalSubmitted }) {
   if (!daftar || daftar.length === 0) {
     return (
       <div className="mt-4 rounded-xl border border-dashed border-slate-200 py-10 text-center text-slate-400">
@@ -421,7 +439,7 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, t
             <th className="px-4 py-3">Nama</th>
             <th className="px-4 py-3">No. HP</th>
             {tab === 'juri' && <th className="px-4 py-3">Peran</th>}
-            <th className="px-4 py-3">WA</th>
+            <th className="px-4 py-3">Notifikasi</th>
             <th className="px-4 py-3">Submit</th>
             <th className="px-4 py-3">Aksi</th>
           </tr>
@@ -435,9 +453,11 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, periode, t
               copiedId={copiedId}
               onCopy={onCopy}
               onToggleWa={onToggleWa}
+              onToggleEmail={onToggleEmail}
               periode={periode}
               templates={templates}
               localSentIds={localSentIds}
+              localSentEmailIds={localSentEmailIds}
             />
           ))}
         </tbody>
@@ -465,6 +485,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   const [kirimProgress, setKirimProgress] = useState({ sent: 0, failed: 0, total: 0, logs: [] });
   const [sedangMengirim, setSedangMengirim] = useState(false);
   const [localSentIds, setLocalSentIds] = useState(new Set());
+  const [localSentEmailIds, setLocalSentEmailIds] = useState(new Set());
 
   // Queries
   const { data: daftarNominee = [], isLoading: loadingNominee } = useQuery({
@@ -486,7 +507,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
   const { data: daftarJuri = [], isLoading: loadingJuri } = useQuery({
     queryKey: ['partisipan-juri', periode?.id],
-    fn: () => fetchDaftarJuriLengkap(periode.id),
+    queryFn: () => fetchDaftarJuriLengkap(periode.id),
     enabled: !!periode?.id,
   });
 
@@ -519,6 +540,27 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
     } catch (err) {
       // Rollback on error
       setLocalSentIds(prev => {
+        const next = new Set(prev);
+        shouldMarkSent ? next.delete(tokenId) : next.add(tokenId);
+        return next;
+      });
+      toast.error(err.message);
+    }
+  };
+
+  const handleToggleEmail = async (tokenId, shouldMarkSent) => {
+    setLocalSentEmailIds(prev => {
+      const next = new Set(prev);
+      shouldMarkSent ? next.add(tokenId) : next.delete(tokenId);
+      return next;
+    });
+
+    try {
+      const kategori = KATEGORI_MAP[tab] || 'NOMINEE';
+      await toggleStatusEmailTerkirim(kategori, tokenId, shouldMarkSent);
+      queryClient.invalidateQueries({ queryKey: [`partisipan-${tab}`, periode?.id] });
+    } catch (err) {
+      setLocalSentEmailIds(prev => {
         const next = new Set(prev);
         shouldMarkSent ? next.delete(tokenId) : next.add(tokenId);
         return next;
@@ -836,18 +878,20 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
         </div>
       ) : (
         <>
-          <TabelPartisipan
-            daftar={paginatedHasil}
-            tab={tab}
-            copiedId={terpilih}
-            onCopy={handleCopy}
-            onToggleWa={handleToggleWa}
-            periode={periode}
-            templates={templates}
-            localSentIds={localSentIds}
-            globalTotal={total}
-            globalSubmitted={totalSubmitted}
-          />
+            <TabelPartisipan
+              daftar={paginatedHasil}
+              tab={tab}
+              copiedId={terpilih}
+              onCopy={handleCopy}
+              onToggleWa={handleToggleWa}
+              onToggleEmail={handleToggleEmail}
+              periode={periode}
+              templates={templates}
+              localSentIds={localSentIds}
+              localSentEmailIds={localSentEmailIds}
+              globalTotal={total}
+              globalSubmitted={totalSubmitted}
+            />
           {!isLoading && hasil.length > 0 && (
             <Pagination
               currentPage={currentPage}

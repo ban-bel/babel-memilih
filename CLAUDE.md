@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) and other AI Agents when working with code in this repository.
+
+> **IMPORTANT KNOWLEDGE BASE:** For deep-dive architectural logic, security caveats, UI/UX paradigms, and WhatsApp integration rules, ALWAYS read `C:\Users\BringTheBeast\.gemini\antigravity\brain\ab065567-e82d-4961-85b9-3182fd5854fe\agent_knowledge_base.md` (or wherever the `agent_knowledge_base.md` is located) before modifying the system.
 
 ---
 

@@ -972,7 +972,8 @@ export async function fetchDaftarNomineeLengkap(periodeId) {
       is_digunakan,
       submitted_at,
       notifikasi_wa_sent_at,
-      nominee:pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      notifikasi_email_sent_at,
+      nominee:pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `)
     .eq('periode_id', periodeId);
 
@@ -1009,7 +1010,8 @@ export async function fetchDaftarPenilaiLengkap(periodeId) {
       is_digunakan,
       submitted_at,
       notifikasi_wa_sent_at,
-      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      notifikasi_email_sent_at,
+      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `)
     .eq('periode_id', periodeId);
 
@@ -1054,7 +1056,8 @@ export async function fetchDaftarJuriLengkap(periodeId) {
       is_ketua_juri,
       submitted_at,
       notifikasi_wa_sent_at,
-      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      notifikasi_email_sent_at,
+      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `)
     .eq('periode_id', periodeId);
 

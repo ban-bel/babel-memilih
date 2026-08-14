@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileoverview Kirim WA Service
  *
  * Logika kirim batch notifikasi WhatsApp dengan:
@@ -731,4 +731,21 @@ export async function toggleStatusTerkirim(kategori, tokenId, setSudah) {
   if (error) throw error;
 }
 
+export async function toggleStatusEmailTerkirim(kategori, tokenId, setSudah) {
+  const tableMap = {
+    'NOMINEE': 'akses_nominee',
+    'PENILAI': 'akses_penilai',
+    'JURI': 'juri_periode'
+  };
+
+  const table = tableMap[kategori];
+  if (!table) throw new Error('Kategori tidak valid');
+
+  const { error } = await supabase
+    .from(table)
+    .update({ notifikasi_email_sent_at: setSudah ? new Date().toISOString() : null })
+    .eq('id', tokenId);
+    
+  if (error) throw error;
+}
 
