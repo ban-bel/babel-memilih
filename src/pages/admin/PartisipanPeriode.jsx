@@ -39,7 +39,7 @@ import {
   fetchDaftarJuriLengkap,
   generateTokenPenilaianMassal
 } from '../../services/adminService';
-import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim } from '../../services/kirimWaService';
+import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim, insertLogEmail, insertLogWaMe } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
 import { formatHP, kirimPesanFonnte } from '../../services/fonnteService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
@@ -228,6 +228,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Gagal mengirim email');
       toast.success(`Email berhasil dikirim ke ${p.nama}`, { id: toastId });
+      await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'SENT');
       
       // Update DB and local state
       if (!sudahEmailNotif && onToggleEmail) {
@@ -235,6 +236,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
       }
     } catch (err) {
       toast.error(err.message, { id: toastId });
+      await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'FAILED', err.message);
     } finally {
       setIsSendingEmail(false);
     }
@@ -268,7 +270,10 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => !sudahNotif && onToggleWa(item.id, true)}
+            onClick={() => {
+              insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
+              !sudahNotif && onToggleWa(item.id, true);
+            }}
             className="inline-flex items-center gap-1 font-mono text-xs text-slate-600 hover:text-emerald-600 hover:underline"
             title="Chat via WhatsApp dengan Template"
           >
@@ -374,7 +379,10 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => !sudahNotif && onToggleWa(item.id, true)}
+              onClick={() => {
+                insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
+                !sudahNotif && onToggleWa(item.id, true);
+              }}
               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
               title="Kirim via WhatsApp Web (WA.Me)"
             >
@@ -668,6 +676,92 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
     }
   }, [tab, daftarNominee, daftarPenilai, daftarJuri, currentTabConfig, periode, queryClient]);
 
+  // Bulk send Email
+  const handleKirimBulkEmail = useCallback(async () => {
+    if (!currentTabConfig) return;
+
+    const currentList = tab === 'nominee' ? daftarNominee : tab === 'penilai' ? daftarPenilai : daftarJuri;
+    const belumTerKirim = filterBelumTerkirim(currentList, 'notifikasi_email_sent_at');
+    const denganEmail = belumTerKirim.filter(item => {
+      const p = item.nominee || item.pegawai;
+      return p?.email;
+    });
+
+    if (denganEmail.length === 0) {
+      toast.error('Tidak ada penerima yang belum mendapat notifikasi email atau belum punya alamat email');
+      return;
+    }
+
+    const konfirmasi = window.confirm(
+      `Kirim notifikasi EMAIL ke ${denganEmail.length} ${currentTabConfig.label.toLowerCase()} yang belum menerima?\n\n` +
+      `Sistem akan memberi jeda 2-4 detik antar pesan agar terlihat natural dan aman dari spam.`
+    );
+
+    if (!konfirmasi) return;
+
+    setKirimProgress({ sent: 0, failed: 0, total: denganEmail.length, logs: [] });
+    setIsProgressOpen(true);
+    setSedangMengirim(true);
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const logs = [];
+
+    for (let i = 0; i < denganEmail.length; i++) {
+      const item = denganEmail[i];
+      const p = item.nominee || item.pegawai;
+      const kategoriLabel = currentTabConfig.kategori;
+      const linkToken = `${window.location.origin}/nominee?token=${item.token_akses}`;
+      const sapaan = hitungSapaan(p.nama, p.nip_baru);
+      const namaPeriode = periode?.nama_periode || 'Babel Memilih';
+
+      try {
+        const res = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: p.email,
+            nama_penerima: p.nama,
+            link_penilaian: linkToken,
+            sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
+            nama_periode: namaPeriode
+          })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.message || 'Gagal mengirim email');
+        
+        await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'SENT');
+        await toggleStatusEmailTerkirim(kategoriLabel, item.id, true);
+        
+        sentCount++;
+        logs.unshift({ status: 'SUCCESS', nama: p.nama });
+      } catch (err) {
+        await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'FAILED', err.message);
+        failedCount++;
+        logs.unshift({ status: 'FAILED', nama: p.nama, error: err.message });
+      }
+
+      // Update progress
+      setKirimProgress({
+        sent: sentCount,
+        failed: failedCount,
+        total: denganEmail.length,
+        logs: logs.slice(0, 50)
+      });
+
+      // Natural delay 2-4 seconds, unless it's the last item
+      if (i < denganEmail.length - 1) {
+        const delay = Math.floor(Math.random() * 2000) + 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    setSedangMengirim(false);
+    queryClient.invalidateQueries({ queryKey: [`partisipan-${tab}`, periode?.id] });
+    toast.success(`Selesai! Berhasil: ${sentCount}, Gagal: ${failedCount}`);
+  }, [tab, daftarNominee, daftarPenilai, daftarJuri, currentTabConfig, periode, queryClient]);
+
   // Filter
   const filterDaftar = (list) => {
     let filtered = list;
@@ -803,13 +897,23 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             onClick={handleKirimBulkWA}
             disabled={sedangMengirim || belumTerKirim === 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#128C7E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title={belumTerKirim === 0 ? 'Semua sudah terkirim' : `Kirim ke ${belumTerKirim} yang belum`}
+            title={belumTerKirim === 0 ? 'Semua sudah terkirim' : `Kirim WA ke ${belumTerKirim} yang belum`}
           >
             {sedangMengirim
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <Zap className="h-3.5 w-3.5" />
             }
             Kirim Bulk Fonnte
+          </button>
+          
+          <button
+            className="btn btn-warning flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+            onClick={handleKirimBulkEmail}
+            disabled={sedangMengirim || daftar.filter(item => !item.notifikasi_email_sent_at && (item.nominee?.email || item.pegawai?.email)).length === 0}
+            title="Kirim Semua Email (Otomatis seleksi yang belum terkirim)"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Kirim Bulk Email
           </button>
 
           {tab === 'nominee' && (

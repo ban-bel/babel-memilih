@@ -749,3 +749,40 @@ export async function toggleStatusEmailTerkirim(kategori, tokenId, setSudah) {
   if (error) throw error;
 }
 
+/**
+ * Mencatat log pengiriman Email ke tabel log_notifikasi_email
+ */
+export async function insertLogEmail(periodeId, pegawaiId, kategori, emailTujuan, status, errorMessage = null) {
+  try {
+    await supabase.from('log_notifikasi_email').insert([{
+      periode_id: periodeId,
+      pegawai_id: pegawaiId,
+      kategori: kategori,
+      email_tujuan: emailTujuan,
+      status: status,
+      error_message: errorMessage,
+      sent_at: new Date().toISOString()
+    }]);
+  } catch (err) {
+    console.error('⚠️ Gagal insert log email:', err);
+  }
+}
+
+/**
+ * Mencatat klik WA.me ke tabel log_notifikasi_wa
+ */
+export async function insertLogWaMe(periodeId, pegawaiId, nomorTujuan, kategori = null) {
+  try {
+    await supabase.from('log_notifikasi_wa').insert([{
+      periode_id: periodeId,
+      pegawai_id: pegawaiId,
+      kategori: kategori,
+      nomor_hp: nomorTujuan,
+      isi_pesan: 'Terkirim manual via WA.me',
+      status: 'WA.ME',
+      sent_at: new Date().toISOString()
+    }]);
+  } catch (err) {
+    console.error('⚠️ Gagal insert log wa.me:', err);
+  }
+}

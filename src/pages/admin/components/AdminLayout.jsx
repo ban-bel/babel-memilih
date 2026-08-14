@@ -26,7 +26,8 @@ import {
   Menu,
   X,
   MessageSquare,
-  Phone
+  Phone,
+  Send
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -55,6 +56,7 @@ const NAV = [
   { href: '/admin/kelola-wilayah', label: 'Wilayah', icon: MapPin },
   { href: '/admin/kelola-template-wa', label: 'Template WA', icon: MessageSquare },
   { href: '/admin/perkenalan-wa', label: 'Perkenalan WA', icon: Phone },
+  { href: '/admin/kotak-keluar', label: 'Kotak Keluar', icon: Send },
   { href: '/admin/dashboard-kakan', label: 'Dashboard', icon: Trophy },
   { href: '/admin/reset-token', label: 'Reset Token', icon: RotateCcw },
 ];

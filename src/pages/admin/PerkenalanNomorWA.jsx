@@ -29,6 +29,7 @@ import {
 import { supabase } from '../../config/supabaseClient';
 import { formatHP } from '../../services/fonnteService';
 import { kirimPesanBulkFonnte } from '../../services/fonnteService';
+import { insertLogWaMe } from '../../services/kirimWaService';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
 
@@ -282,6 +283,7 @@ function PerkenalanNomorWAContent({ adminProfile }) {
 
     // Tandai sebagai terkirim
     setSentWaMeIds(prev => new Set([...prev, pegawai.id]));
+    insertLogWaMe(null, pegawai.id, pegawai.no_hp, 'PERKENALAN');
     toast.success(`Pesan untuk ${pegawai.nama} siap dikirim via WhatsApp Web!`);
   }
 

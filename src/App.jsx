@@ -11,6 +11,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ResetToken from './pages/admin/ResetToken';
 import KelolaTemplateWA from './pages/admin/KelolaTemplateWA';
 import PerkenalanNomorWA from './pages/admin/PerkenalanNomorWA';
+import KotakKeluar from './pages/admin/KotakKeluar';
 import { Toaster } from 'react-hot-toast';
 
 function PlaceholderPage({ judul, keterangan }) {
@@ -159,6 +160,7 @@ function App() {
         <Route path="/admin/reset-token" element={<ResetToken />} />
         <Route path="/admin/kelola-template-wa" element={<KelolaTemplateWA />} />
         <Route path="/admin/perkenalan-wa" element={<PerkenalanNomorWA />} />
+        <Route path="/admin/kotak-keluar" element={<KotakKeluar />} />
         <Route path="*" element={<PlaceholderPage judul="404" keterangan="Halaman tidak ditemukan." />} />
       </Routes>
     </>
