@@ -1224,6 +1224,22 @@ export async function tambahNominee(periodeId, pegawaiId) {
   if (aksesError) {
     throw new Error(`Nominee tersimpan, namun gagal membuat token akses: ${aksesError.message}`);
   }
+
+  // Cabut token penilai (jika ada) bila periode ini tidak mengizinkan nominee untuk voting
+  const { data: periode } = await supabase
+    .from('periode_penilaian')
+    .select('is_nominee_can_vote')
+    .eq('id', periodeId)
+    .single();
+
+  if (periode && periode.is_nominee_can_vote === false) {
+    await supabase
+      .from('akses_penilai')
+      .delete()
+      .eq('periode_id', periodeId)
+      .eq('pegawai_id', pegawaiId)
+      .eq('is_digunakan', false);
+  }
 }
 
 /**

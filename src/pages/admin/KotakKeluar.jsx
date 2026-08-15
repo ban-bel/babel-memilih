@@ -42,9 +42,16 @@ export default function KotakKeluar() {
           fetchWaLogs().catch(() => [])
         ]);
         
+        // Helper to parse dates securely as UTC if timezone is missing
+        const parseDateUTC = (d) => {
+          if (!d) return 0;
+          if (d.includes('T') && !/(Z|[+-]\d{2}:\d{2})$/.test(d)) return new Date(d + 'Z').getTime();
+          return new Date(d).getTime();
+        };
+
         // Merge and sort descending
         const merged = [...emailLogs, ...waLogs].sort((a, b) => {
-          return new Date(b.sent_at) - new Date(a.sent_at);
+          return parseDateUTC(b.sent_at) - parseDateUTC(a.sent_at);
         });
         
         return merged;
@@ -142,47 +149,55 @@ export default function KotakKeluar() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedLogs.map((log) => (
-                    <tr key={log.id + log.type} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-3 whitespace-nowrap text-slate-500">
-                        {new Date(log.sent_at).toLocaleString('id-ID', {
-                          day: '2-digit', month: 'short', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit', second: '2-digit'
-                        })}
-                      </td>
-                      <td className="px-6 py-3 font-medium text-slate-700">
-                        {log.pegawai?.nama || 'Unknown'}
-                        <div className="text-xs text-slate-400 font-normal">{log.kategori || '-'}</div>
-                      </td>
-                      <td className="px-6 py-3">
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(log.type)}
-                          <span>{getTypeLabel(log.type)}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 font-mono text-xs text-slate-500">
-                        {log.email_tujuan || log.nomor_hp || log.nomor_tujuan || '-'}
-                      </td>
-                      <td className="px-6 py-3">
-                        {log.status === 'FAILED' ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium" title={log.error_message}>
-                            <XCircle className="h-3.5 w-3.5" />
-                            GAGAL
+                  paginatedLogs.map((log) => {
+                    let dateStr = log.sent_at;
+                    if (dateStr && dateStr.includes('T') && !/(Z|[+-]\d{2}:\d{2})$/.test(dateStr)) {
+                      dateStr += 'Z';
+                    }
+                    return (
+                      <tr key={log.id + log.type} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-3 whitespace-nowrap text-slate-500">
+                          {new Date(dateStr).toLocaleString('id-ID', {
+                            timeZone: 'Asia/Jakarta',
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit', second: '2-digit',
+                            timeZoneName: 'short'
+                          })}
+                        </td>
+                        <td className="px-6 py-3 font-medium text-slate-700">
+                          {log.pegawai?.nama || 'Unknown'}
+                          <div className="text-xs text-slate-400 font-normal">{log.kategori || '-'}</div>
+                        </td>
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-2">
+                            {getTypeIcon(log.type)}
+                            <span>{getTypeLabel(log.type)}</span>
                           </div>
-                        ) : log.status === 'WA.ME' ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            DIKLIK
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            SUKSES
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-6 py-3 font-mono text-xs text-slate-500">
+                          {log.email_tujuan || log.nomor_hp || log.nomor_tujuan || '-'}
+                        </td>
+                        <td className="px-6 py-3">
+                          {log.status === 'FAILED' ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium" title={log.error_message}>
+                              <XCircle className="h-3.5 w-3.5" />
+                              GAGAL
+                            </div>
+                          ) : log.status === 'WA.ME' ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              DIKLIK
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              SUKSES
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

@@ -371,6 +371,7 @@ export async function fetchPeriodeList(wilayahId = null) {
     .select(`
       id,
       nama_periode,
+      petunjuk_penilaian,
       mode_penilaian,
       status,
       jumlah_kandidat_kakan,
@@ -378,6 +379,8 @@ export async function fetchPeriodeList(wilayahId = null) {
       wilayah_id,
       tgl_mulai,
       tgl_selesai,
+      is_nominee_can_vote,
+      is_allow_abstain,
       wilayah:wilayah_id ( nama_wilayah )
     `);
 
@@ -503,6 +506,40 @@ export async function updatePeriodePenilaian(periodeId, payload) {
     .eq('id', periodeId);
 
   if (error) throw new Error(`Gagal memperbarui periode: ${error.message}`);
+
+  // Cabut token penilai milik nominee jika hak pilih mereka dinonaktifkan
+  if (payload.is_nominee_can_vote === false) {
+    const { data: nominees } = await supabase
+      .from('nominee_periode')
+      .select('pegawai_id')
+      .eq('periode_id', periodeId);
+
+    if (nominees && nominees.length > 0) {
+      const nomineeIds = nominees.map(n => n.pegawai_id);
+      
+      // Hanya hapus token yang belum digunakan
+      await supabase
+        .from('akses_penilai')
+        .delete()
+        .eq('periode_id', periodeId)
+        .eq('is_digunakan', false)
+        .in('pegawai_id', nomineeIds);
+    }
+  } else if (payload.is_nominee_can_vote === true) {
+    // Jika diaktifkan kembali, otomatis generate token (hanya men-generate bagi yang belum punya token)
+    const { data: periode } = await supabase
+      .from('periode_penilaian')
+      .select('wilayah_id')
+      .eq('id', periodeId)
+      .single();
+      
+    if (periode && periode.wilayah_id) {
+      await supabase.rpc('generate_token_penilaian_multi_unit', {
+        p_periode_id: periodeId,
+        p_wilayah_ids: [periode.wilayah_id]
+      });
+    }
+  }
 }
 
 /**

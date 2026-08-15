@@ -199,7 +199,7 @@ export default function FormMode1C({
           </div>
 
           {/* Grid Nominee */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {nominee.map((n) => {
               const isSelected = voteSaatIni === n.id;
 
@@ -208,7 +208,7 @@ export default function FormMode1C({
                   key={n.id}
                   type="button"
                   onClick={() => handlePilihNominee(n.id)}
-                  className={`relative flex flex-col items-center rounded-xl border-2 p-4 transition-all ${
+                  className={`w-[calc((100%-0.75rem)/2)] sm:w-[calc((100%-1.5rem)/3)] relative flex flex-col items-center rounded-xl border-2 p-4 transition-all ${
                     isSelected
                       ? 'border-emerald-500 bg-emerald-50 shadow-md'
                       : 'border-slate-200 bg-white hover:border-navy-300 hover:bg-navy-50'

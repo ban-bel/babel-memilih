@@ -28,11 +28,28 @@ export default async function handler(req, res) {
       },
     });
 
+    // Variasi sapaan awal untuk menghindari deteksi spam (Energetic & Witty)
+    const pembukaList = [
+      `Semoga hari ${finalSapaan} lagi on fire banget nih! 🔥`,
+      `Gimana kabarnya ${finalSapaan}? Semoga selalu dilancarkan segalanya ya. 🚀`,
+      `Halo halo! Semoga ${finalSapaan} lagi santai sejenak dari rutinitas. ☕`,
+      `Panggilan cepat buat ${finalSapaan} yang super sibuk! ⚡`
+    ];
+    const pembuka = pembukaList[Math.floor(Math.random() * pembukaList.length)];
+
+    const penutupList = [
+      `Makasih banyak udah nyempetin waktu di sela-sela kesibukannya ya ${finalSapaan}! 🙏`,
+      `Insight dari ${finalSapaan} bener-bener berharga buat kita. Thanks a lot! 🌟`,
+      `We owe you one! Makasih atas bantuannya ${finalSapaan}. 🎉`
+    ];
+    const penutup = penutupList[Math.floor(Math.random() * penutupList.length)];
+
     // Template HTML Email (Energetic, Witty & To The Point)
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
         <h2 style="color: #1a365d;">Panggilan untuk ${finalSapaan} ${nama_penerima}! 🎯</h2>
-        <p>Halo ${finalSapaan} <strong>${nama_penerima || 'Partisipan'}</strong>! 👋</p>
+        <p>Yth. ${finalSapaan} <strong>${nama_penerima || 'Partisipan'}</strong>, 👋</p>
+        <p>${pembuka}</p>
         <p><em>Not to rush you or anything</em>, tapi <strong>${finalPeriode}</strong> udah mulai nih! Kita butuh banget <em>insight</em> dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.</p>
         <p><em>Less typing, more action.</em> Langsung aja klik tombol di bawah buat masuk ke sistem:</p>
         <div style="margin: 30px 0; text-align: center;">
@@ -40,9 +57,10 @@ export default async function handler(req, res) {
             🚀 Meluncur ke Portal!
           </a>
         </div>
-        <p><em>Reminder</em> kecil: Link ini <em>strictly confidential</em> (rahasia) ya ${finalSapaan}. Makasih banyak udah nyempetin waktu di sela-sela kesibukannya! ☕</p>
+        <p><em>Reminder</em> kecil: Link ini <em>strictly confidential</em> (rahasia) ya ${finalSapaan}, jangan di-share ke orang lain. 🤫</p>
         
         <p style="margin-top: 30px; font-weight: bold;">
+          ${penutup}<br><br>
           Yours in Friendship and Chaos,<br>
           <span style="color: #3b82f6;">Tim Diseminasi Statistik</span>
         </p>
@@ -60,7 +78,22 @@ export default async function handler(req, res) {
     `;
 
     // Plain text fallback
-    const textBody = `Halo ${finalSapaan} ${nama_penerima || 'Partisipan'}! 👋\n\nNot to rush you or anything, tapi ${finalPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.\n\nLess typing, more action. Langsung aja klik tautan di bawah ini buat masuk ke sistem:\n${link_penilaian}\n\nReminder kecil: Link ini strictly confidential ya ${finalSapaan}. Makasih banyak udah nyempetin waktu di sela-sela kesibukannya! ☕\n\nYours in Friendship and Chaos,\nTim Diseminasi Statistik`;
+    const textBody = `Yth. ${finalSapaan} ${nama_penerima || 'Partisipan'}, 👋
+
+${pembuka}
+
+Not to rush you or anything, tapi ${finalPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.
+
+Less typing, more action. Langsung aja akses tautan berikut untuk masuk ke sistem:
+${link_penilaian}
+
+Reminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${finalSapaan}. Jangan di-share ya! 🤫
+${penutup}
+
+Yours in Friendship and Chaos,
+Tim Diseminasi Statistik
+BPS Provinsi Kepulauan Bangka Belitung`;
+
 
     // Eksekusi pengiriman
     const info = await transporter.sendMail({

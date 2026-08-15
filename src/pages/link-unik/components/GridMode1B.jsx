@@ -40,8 +40,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
     return arr.length > 0;
   };
 
-  const selectedNominee = nominee.find((n) => n.id === pilihan);
-
+  const selectedNominee = pilihan === 'abstain' ? { id: 'abstain', nama: 'Abstain / Tidak Memilih', foto_url: 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png' } : nominee.find((n) => n.id === pilihan);
   if (nominee.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
@@ -69,7 +68,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="flex flex-wrap justify-center gap-4">
         {(shuffledNominee.length > 0 ? shuffledNominee : nominee).map((n, idx) => {
           const terpilih = pilihan === n.id;
           const isHovered = hoveredId === n.id;
@@ -82,7 +81,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
               onMouseEnter={() => setHoveredId(n.id)}
               onMouseLeave={() => setHoveredId(null)}
               aria-pressed={terpilih}
-              className={`group relative overflow-hidden rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
+              className={`w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] group relative overflow-hidden rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
                 terpilih
                   ? 'border-navy-800 bg-gradient-to-br from-navy-50 to-navy-100/50 shadow-soft-lg scale-[1.02]'
                   : 'border-slate-200 bg-white shadow-soft hover:border-navy-300 hover:shadow-card-hover'
@@ -156,6 +155,42 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
             </button>
           );
         })}
+        {periode?.is_allow_abstain && (
+          <button
+            type="button"
+            key="abstain"
+            onClick={() => setPilihan('abstain')}
+            onMouseEnter={() => setHoveredId('abstain')}
+            onMouseLeave={() => setHoveredId(null)}
+            aria-pressed={pilihan === 'abstain'}
+            className={`w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] group relative overflow-hidden rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
+              pilihan === 'abstain'
+                ? 'border-slate-800 bg-gradient-to-br from-slate-50 to-slate-200 shadow-soft-lg scale-[1.02]'
+                : 'border-slate-200 bg-white shadow-soft hover:border-slate-400 hover:shadow-card-hover'
+            }`}
+          >
+            {pilihan === 'abstain' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-800/5">
+                <div className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-white shadow-lg animate-bounce-in">
+                  <Check className="h-4 w-4" />
+                </div>
+              </div>
+            )}
+            <div className={`relative mx-auto mb-4 w-fit transition-all duration-300 ${pilihan === 'abstain' ? 'scale-110' : 'group-hover:scale-105'}`}>
+              <img
+                src="https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png"
+                alt="Abstain"
+                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300 bg-white grayscale opacity-[.92]"
+              />
+            </div>
+            <p className={`truncate text-sm font-semibold transition-colors duration-200 ${
+              pilihan === 'abstain' ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-800'
+            }`}>
+              Abstain
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">Tidak Memilih Siapapun</p>
+          </button>
+        )}
       </div>
 
       {/* Submit Button */}
@@ -163,11 +198,13 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
         onSubmit={(e) => {
           e.preventDefault();
           if (pilihan != null) {
-            const selectedNominee = nominee.find((n) => n.id === pilihan);
-            const requiresReading = selectedNominee && (selectedNominee.dokumen_link || hasTabel(selectedNominee.tabel_kehadiran));
-            if (requiresReading && !readProfiles.has(pilihan)) {
-              setWarningNominee(selectedNominee);
-              return;
+            if (pilihan !== 'abstain') {
+              const selectedN = nominee.find((n) => n.id === pilihan);
+              const requiresReading = selectedN && (selectedN.dokumen_link || hasTabel(selectedN.tabel_kehadiran));
+              if (requiresReading && !readProfiles.has(pilihan)) {
+                setWarningNominee(selectedN);
+                return;
+              }
             }
             setIsConfirmOpen(true);
           }
@@ -196,7 +233,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
           ) : (
             <span className="flex items-center justify-center gap-2">
               <Send className="h-5 w-5" />
-              Konfirmasi Pilihan untuk {nominee.find((n) => n.id === pilihan)?.nama}
+              {pilihan === 'abstain' ? 'Konfirmasi & Kirim Keputusan Abstain' : `Konfirmasi Pilihan untuk ${nominee.find((n) => n.id === pilihan)?.nama}`}
             </span>
           )}
         </button>
@@ -230,7 +267,11 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
               />
             )}
             <p className="text-center sm:text-left">
-              Sebelum mengirim suara, pastikan Anda telah meninjau kandidat lainnya. Apakah Anda yakin ingin menetapkan pilihan pada <strong className="text-navy-900">{selectedNominee?.nama}</strong>?
+              {pilihan === 'abstain' ? (
+                <>Apakah Anda yakin <strong>tidak ingin memilih siapapun (Abstain)</strong> pada periode ini? Suara Anda tetap akan dihitung sebagai partisipasi masuk.</>
+              ) : (
+                <>Sebelum mengirim suara, pastikan Anda telah meninjau kandidat lainnya. Apakah Anda yakin ingin menetapkan pilihan pada <strong className="text-navy-900">{selectedNominee?.nama}</strong>?</>
+              )}
             </p>
           </div>
         }
