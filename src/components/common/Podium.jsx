@@ -6,9 +6,9 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
 
   // top3 is expected to be an array of up to 3 nominees sorted by rank (1, 2, 3)
   // We want to display them as: 2 (Left), 1 (Center), 3 (Right)
-  const rank1 = top3.find((r) => getPeringkat(r, selectedKategori) === 1) || top3[0];
-  const rank2 = top3.find((r) => getPeringkat(r, selectedKategori) === 2) || top3[1];
-  const rank3 = top3.find((r) => getPeringkat(r, selectedKategori) === 3) || top3[2];
+  const rank1 = top3[0];
+  const rank2 = top3[1];
+  const rank3 = top3[2];
 
   const ordered = [
     { item: rank2, position: 2 },
@@ -68,12 +68,20 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
               )}
               <div className={`p-1 bg-white rounded-full shadow-xl mb-3 ${isWinner ? 'w-32 h-32 md:w-40 md:h-40 ring-4 ' + ring : 'w-24 h-24 md:w-32 md:h-32 ring-4 ' + ring}`}>
                 <img
-                  src={item.foto_url || (item.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${item.nip}.jpg` : null)}
+                  src={
+                    ((!item.nominee_id && !item.id) || item.foto_url?.includes('Kotak+Kosong') || item.nama_nominee?.toLowerCase().includes('abstain') || item.nama?.toLowerCase().includes('abstain') || item.nama_nominee?.toLowerCase().includes('kotak kosong') || item.nama?.toLowerCase().includes('kotak kosong')) 
+                      ? 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png'
+                      : (item.foto_url || (item.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${item.nip}.jpg` : null))
+                  }
                   alt={item.nama_nominee || item.nama}
-                  className="w-full h-full rounded-full object-cover"
+                  className={`w-full h-full rounded-full object-cover ${((!item.nominee_id && !item.id) || item.foto_url?.includes('Kotak+Kosong') || item.nama_nominee?.toLowerCase().includes('abstain') || item.nama?.toLowerCase().includes('abstain')) ? 'grayscale opacity-[.92]' : ''}`}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama_nominee || item.nama || 'A')}&background=16324a&color=fff&size=128`;
+                    if ((!item.nominee_id && !item.id) || item.foto_url?.includes('Kotak+Kosong') || item.nama_nominee?.toLowerCase().includes('abstain') || item.nama?.toLowerCase().includes('abstain')) {
+                      e.target.src = 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png';
+                    } else {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama_nominee || item.nama || 'A')}&background=16324a&color=fff&size=128`;
+                    }
                   }}
                 />
               </div>

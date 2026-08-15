@@ -253,6 +253,7 @@ export default function PenilaiPage() {
               nominee={nominee}
               kategori={votingKategori}
               votesTersimpan={votesTersimpan}
+              periode={akses.periode}
               onSubmit={(votes) => {
                 setErrorSubmit(null);
                 mutasiMode1C.mutate(votes, {

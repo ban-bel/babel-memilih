@@ -424,14 +424,19 @@ function DashboardKakanContent({ adminProfile }) {
                                 <div className="flex items-center gap-2 mt-1">
                                   <img
                                     src={
-                                      winner.foto_url ||
-                                      (winner.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${winner.nip}.jpg` : null)
+                                      ((!winner.nominee_id && !winner.id) || winner.nama_nominee?.toLowerCase().includes('abstain') || winner.nama_nominee?.toLowerCase().includes('kotak kosong')) 
+                                        ? 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png'
+                                        : (winner.foto_url || (winner.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${winner.nip}.jpg` : null))
                                     }
                                     alt={winner.nama_nominee}
-                                    className="h-6 w-6 rounded-full border border-white object-cover"
+                                    className={`h-6 w-6 rounded-full border border-white object-cover ${((!winner.nominee_id && !winner.id) || winner.nama_nominee?.toLowerCase().includes('abstain')) ? 'grayscale opacity-[.92]' : ''}`}
                                     onError={(e) => {
                                       e.target.onerror = null;
-                                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(winner.nama_nominee || 'P')}&background=16324a&color=fff&size=32`;
+                                      if ((!winner.nominee_id && !winner.id) || winner.nama_nominee?.toLowerCase().includes('abstain')) {
+                                        e.target.src = 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png';
+                                      } else {
+                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(winner.nama_nominee || 'P')}&background=16324a&color=fff&size=32`;
+                                      }
                                     }}
                                   />
                                   <span className="font-medium text-slate-800">{winner.nama_nominee || 'Belum ada vote'}</span>
@@ -474,14 +479,19 @@ function DashboardKakanContent({ adminProfile }) {
                                     >
                                       <img
                                         src={
-                                        n.foto_url ||
-                                        (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)
-                                      }
+                                          ((!n.nominee_id && !n.id) || n.nama?.toLowerCase().includes('abstain') || n.nama?.toLowerCase().includes('kotak kosong'))
+                                            ? 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png'
+                                            : (n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null))
+                                        }
                                       alt={n.nama}
-                                      className="h-6 w-6 rounded-full border border-slate-200 object-cover"
+                                      className={`h-6 w-6 rounded-full border border-slate-200 object-cover ${((!n.nominee_id && !n.id) || n.nama?.toLowerCase().includes('abstain')) ? 'grayscale opacity-[.92]' : ''}`}
                                       onError={(e) => {
                                         e.target.onerror = null;
-                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'P')}&background=16324a&color=fff&size=32`;
+                                        if ((!n.nominee_id && !n.id) || n.nama?.toLowerCase().includes('abstain')) {
+                                          e.target.src = 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png';
+                                        } else {
+                                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'P')}&background=16324a&color=fff&size=32`;
+                                        }
                                       }}
                                     />
                                       <span className="flex-1 truncate">{n.nama}</span>
@@ -667,14 +677,19 @@ function DashboardKakanContent({ adminProfile }) {
                         <div className="flex items-center gap-3">
                             <img
                               src={
-                                r.foto_url ||
-                                (r.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${r.nip}.jpg` : null)
+                                ((!r.nominee_id && !r.id) || r.foto_url?.includes('Kotak+Kosong') || namaNominee?.toLowerCase().includes('abstain') || namaNominee?.toLowerCase().includes('kotak kosong'))
+                                  ? 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png'
+                                  : (r.foto_url || (r.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${r.nip}.jpg` : null))
                               }
                               alt={namaNominee}
-                              className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm"
+                              className={`h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm ${((!r.nominee_id && !r.id) || r.foto_url?.includes('Kotak+Kosong') || namaNominee?.toLowerCase().includes('abstain')) ? 'grayscale opacity-[.92]' : ''}`}
                               onError={(e) => {
                                 e.target.onerror = null;
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(namaNominee || 'P')}&background=16324a&color=fff&size=64`;
+                                if ((!r.nominee_id && !r.id) || r.foto_url?.includes('Kotak+Kosong') || namaNominee?.toLowerCase().includes('abstain')) {
+                                  e.target.src = 'https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png';
+                                } else {
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(namaNominee || 'P')}&background=16324a&color=fff&size=64`;
+                                }
                               }}
                             />
                           <div>

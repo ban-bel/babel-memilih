@@ -33,6 +33,7 @@ export default function FormMode1C({
   nominee,
   kategori,
   votesTersimpan = [],
+  periode,
   onSubmit,
   isSubmitting,
   errorMessage,
@@ -248,6 +249,41 @@ export default function FormMode1C({
                 </button>
               );
             })}
+            
+            {/* Tombol Abstain */}
+            {periode?.is_allow_abstain && (
+              <button
+                key="abstain"
+                type="button"
+                onClick={() => handlePilihNominee('abstain')}
+                className={`w-[calc((100%-0.75rem)/2)] sm:w-[calc((100%-1.5rem)/3)] relative flex flex-col items-center rounded-xl border-2 p-4 transition-all ${
+                  voteSaatIni === 'abstain'
+                    ? 'border-emerald-500 bg-emerald-50 shadow-md'
+                    : 'border-slate-200 bg-white hover:border-navy-300 hover:bg-navy-50'
+                }`}
+              >
+                <img
+                  src="https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png"
+                  alt="Abstain"
+                  className={`h-16 w-16 rounded-full object-cover border-2 mb-2 grayscale opacity-[.92] ${
+                    voteSaatIni === 'abstain' ? 'border-emerald-400' : 'border-slate-200'
+                  }`}
+                />
+                <p className={`text-center font-semibold text-sm ${
+                  voteSaatIni === 'abstain' ? 'text-emerald-700' : 'text-slate-800'
+                }`}>
+                  {voteSaatIni === 'abstain' ? 'Konfirmasi & Kirim Keputusan Abstain' : 'Abstain / Kotak Kosong'}
+                </p>
+                <p className="text-center text-xs text-slate-400 mt-0.5">
+                  Suara Tidak Sah
+                </p>
+                {voteSaatIni === 'abstain' && (
+                  <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Vote Indicator */}

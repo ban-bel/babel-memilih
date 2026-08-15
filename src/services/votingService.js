@@ -1293,6 +1293,22 @@ export async function hapusNominee(periodeId, pegawaiId) {
       // Tidak perlu throw error karena data utamanya sudah berhasil dihapus
     }
   }
+
+  // 5. Cek pengaturan periode, jika is_nominee_can_vote mati, kembalikan hak pilih pegawai ini
+  const { data: periode } = await supabase
+    .from('periode_penilaian')
+    .select('is_nominee_can_vote')
+    .eq('id', periodeId)
+    .single();
+
+  if (periode && periode.is_nominee_can_vote === false) {
+    // Karena status nominee pegawai ini baru saja dihapus, dia otomatis kembali menjadi pegawai biasa.
+    // RPC ini bertugas men-scan seluruh pegawai yang berhak namun belum punya token, dan membuatkan token untuk mereka.
+    await supabase.rpc('generate_token_penilaian_multi_unit', {
+      p_periode_id: periodeId,
+      p_nominee_can_vote: false
+    });
+  }
 }
 
 // =============================================================================
