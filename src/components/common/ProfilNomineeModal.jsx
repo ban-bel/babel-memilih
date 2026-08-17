@@ -161,7 +161,10 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
                       <th className="px-4 py-3 font-semibold text-center w-24">TL1</th>
                       <th className="px-4 py-3 font-semibold text-center w-24">TL2</th>
                       <th className="px-4 py-3 font-semibold text-center w-24">PSW4</th>
-                      <th className="px-4 py-3 font-semibold text-center w-24">KJK</th>
+                      <th className="px-4 py-3 font-semibold text-center w-28 leading-tight">
+                        KJK
+                        <div className="text-[10px] font-normal text-navy-400 mt-0.5">jam : menit : detik</div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

@@ -121,7 +121,7 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
                     <th className="px-4 py-3 font-semibold text-center w-20">PSW4</th>
                     <th className="px-4 py-3 font-semibold text-center w-28 leading-tight">
                       KJK
-                      <div className="text-[10px] font-normal text-slate-400 mt-0.5">jam:menit:detik</div>
+                      <div className="text-[10px] font-normal text-slate-400 mt-0.5">jam : menit : detik</div>
                     </th>
                     <th className="px-4 py-3 text-center w-12">Hapus</th>
                   </tr>
