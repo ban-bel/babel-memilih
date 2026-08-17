@@ -140,7 +140,7 @@ export default function VerifikasiPenilai() {
             <div className="p-8">
               <div className="mb-6">
                 <p className="text-sm text-slate-600 text-center bg-slate-100/50 rounded-lg p-3 border border-slate-200/50 shadow-inner-soft">
-                  Masukkan <strong>5 digit terakhir</strong> NIP dan <strong>5 digit terakhir</strong> Nomor HP Anda yang terdaftar pada sistem.
+                  Masukkan <strong>5 digit terakhir NIP Lamamu </strong> & <strong>5 digit terakhir Nomor HP </strong> Anda yang terdaftar pada sistem.
                 </p>
               </div>
 
@@ -149,7 +149,7 @@ export default function VerifikasiPenilai() {
                 <div className="group">
                   <label className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
                     <Fingerprint className="w-4 h-4" />
-                    5 Digit Terakhir NIP
+                    5 Digit Terakhir NIP Lama Anda
                   </label>
                   <div className="relative">
                     <input

@@ -58,7 +58,7 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
 
   const updateBaris = (index, field, value) => {
     const newTabel = [...tabelKehadiran];
-    if (field === 'label_baris') {
+    if (field === 'label_baris' || field === 'kjk') {
       newTabel[index][field] = value;
     } else {
       newTabel[index][field] = Number(value) || 0;
@@ -119,7 +119,10 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
                     <th className="px-4 py-3 font-semibold text-center w-20">TL1</th>
                     <th className="px-4 py-3 font-semibold text-center w-20">TL2</th>
                     <th className="px-4 py-3 font-semibold text-center w-20">PSW4</th>
-                    <th className="px-4 py-3 font-semibold text-center w-20">KJK</th>
+                    <th className="px-4 py-3 font-semibold text-center w-28 leading-tight">
+                      KJK
+                      <div className="text-[10px] font-normal text-slate-400 mt-0.5">jam:menit:detik</div>
+                    </th>
                     <th className="px-4 py-3 text-center w-12">Hapus</th>
                   </tr>
                 </thead>

@@ -118,7 +118,7 @@ function PortalLandingPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-emerald-900 text-lg flex items-center gap-2">
-                    Akses Penilai
+                    Akses Pegawai
                     <span className="px-2 py-0.5 rounded-md bg-gold-400 text-navy-900 text-[10px] font-bold uppercase tracking-wider">Verifikasi</span>
                   </h3>
                   <p className="text-sm text-emerald-700/80 font-medium">Masuk dengan NIP & HP</p>
