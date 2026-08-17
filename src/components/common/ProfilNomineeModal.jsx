@@ -14,18 +14,31 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
   const [mounted, setMounted] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(10);
   const scrollRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Check initial scrollability
+  // Check initial scrollability and timer
   useEffect(() => {
     if (isOpen) {
       setIsChecked(false);
+      setTimeLeft(10);
+      
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
       // Give DOM time to render content
-      setTimeout(() => {
+      const scrollTimer = setTimeout(() => {
         if (scrollRef.current) {
           const { scrollHeight, clientHeight } = scrollRef.current;
           if (scrollHeight <= clientHeight + 10) {
@@ -35,8 +48,18 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
           }
         }
       }, 300);
+      
+      return () => {
+        clearInterval(timer);
+        clearTimeout(scrollTimer);
+      };
     }
   }, [isOpen, nominee]);
+
+  const handleClose = () => {
+    if (timeLeft > 0) return;
+    onClose();
+  };
 
   const handleScroll = (e) => {
     if (hasScrolledToBottom) return;
@@ -89,8 +112,8 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 animate-scale-in">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-navy-900/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        className={`absolute inset-0 bg-navy-900/60 backdrop-blur-sm transition-opacity ${timeLeft > 0 ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        onClick={handleClose}
       ></div>
 
       {/* Modal Dialog */}
@@ -113,10 +136,19 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-2 -mr-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors self-end sm:self-auto"
+            onClick={handleClose}
+            disabled={timeLeft > 0}
+            className={`p-2 -mr-2 rounded-xl transition-all self-end sm:self-auto flex items-center gap-1 ${
+              timeLeft > 0 
+                ? 'text-slate-300 bg-slate-100 cursor-not-allowed' 
+                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+            }`}
           >
-            <X className="w-5 h-5" />
+            {timeLeft > 0 ? (
+              <span className="text-xs font-bold px-1">{timeLeft}s</span>
+            ) : (
+              <X className="w-5 h-5" />
+            )}
           </button>
         </div>
 
@@ -168,24 +200,17 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tabelData.map((row, idx) => {
-                      const isBad = (val, isTime = false) => {
-                        if (!val) return false;
-                        const str = String(val).trim();
-                        if (isTime) return str !== '00:00:00' && str !== '0';
-                        return str !== '0';
-                      };
-
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3 font-medium text-slate-800">{row.label_baris}</td>
-                          <td className={`px-4 py-3 text-center ${isBad(row.tl1) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.tl1}</td>
-                          <td className={`px-4 py-3 text-center ${isBad(row.tl2) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.tl2}</td>
-                          <td className={`px-4 py-3 text-center ${isBad(row.psw4) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.psw4}</td>
-                          <td className={`px-4 py-3 text-center ${isBad(row.kjk, true) ? 'text-red-600 font-bold bg-red-50/30' : 'text-slate-600'}`}>{row.kjk}</td>
-                        </tr>
-                      );
-                    })}
+                    {tabelData.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="px-4 py-3 text-slate-700 font-medium">
+                          {row.label_baris || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-center text-slate-600">{row.tl1}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">{row.tl2}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">{row.psw4}</td>
+                        <td className="px-4 py-3 text-center text-slate-600">{row.kjk}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -209,17 +234,19 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
                   type="checkbox" 
                   checked={isChecked}
                   onChange={(e) => setIsChecked(e.target.checked)}
-                  disabled={!hasScrolledToBottom}
+                  disabled={!hasScrolledToBottom || timeLeft > 0}
                   className="w-5 h-5 rounded border-slate-300 text-navy-600 focus:ring-navy-500 disabled:opacity-50 transition-all cursor-pointer"
                 />
               </div>
               <div className="flex-1">
-                <p className={`text-sm font-medium ${hasScrolledToBottom ? 'text-navy-900' : 'text-slate-500'}`}>
+                <p className={`text-sm font-medium ${(hasScrolledToBottom && timeLeft === 0) ? 'text-navy-900' : 'text-slate-500'}`}>
                   Saya telah meninjau dokumen profil dan rekapitulasi kehadiran nominee ini.
                 </p>
-                {!hasScrolledToBottom && (
+                {(!hasScrolledToBottom || timeLeft > 0) && (
                   <p className="text-xs text-red-500 mt-1.5 animate-pulse-soft font-medium">
-                    *Gulir (scroll) layar ke bagian paling bawah untuk mengaktifkan persetujuan.
+                    {timeLeft > 0 
+                      ? `*Harap baca profil dengan saksama (${timeLeft} detik tersisa).` 
+                      : '*Gulir (scroll) layar ke bagian paling bawah untuk mengaktifkan persetujuan.'}
                   </p>
                 )}
               </div>
