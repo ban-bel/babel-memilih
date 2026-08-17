@@ -27,7 +27,8 @@ import {
   X,
   MessageSquare,
   Phone,
-  Send
+  Send,
+  ChevronDown
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -54,9 +55,15 @@ const NAV = [
   { href: '/admin/kelola-periode', label: 'Manajemen', icon: FilePlus2 },
   { href: '/admin/kelola-pegawai', label: 'Pegawai', icon: Users },
   { href: '/admin/kelola-wilayah', label: 'Wilayah', icon: MapPin },
-  { href: '/admin/kelola-template-wa', label: 'Template WA', icon: MessageSquare },
-  { href: '/admin/perkenalan-wa', label: 'Perkenalan WA', icon: Phone },
-  { href: '/admin/kotak-keluar', label: 'Kotak Keluar', icon: Send },
+  {
+    label: 'Pesan WA',
+    icon: MessageSquare,
+    subItems: [
+      { href: '/admin/kelola-template-wa', label: 'Template WA', icon: MessageSquare },
+      { href: '/admin/perkenalan-wa', label: 'Perkenalan WA', icon: Phone },
+      { href: '/admin/kotak-keluar', label: 'Kotak Keluar', icon: Send },
+    ],
+  },
   { href: '/admin/dashboard-kakan', label: 'Dashboard', icon: Trophy },
   { href: '/admin/reset-token', label: 'Reset Token', icon: RotateCcw },
 ];
@@ -127,37 +134,64 @@ export default function AdminLayout({ adminProfile, children }) {
 
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 border-b border-white/40 bg-white/70 backdrop-blur-xl shadow-soft">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
             {/* Logo & Brand */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-navy-700 to-navy-800 text-white shadow-lg">
+            <Link 
+              to={adminProfile?.role_admin === 'USER_BIASA' ? '/admin/dashboard-kakan' : '/admin'}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-navy-700 to-navy-800 text-white shadow-lg">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-display text-lg font-bold text-navy-900">Babel Memilih</h1>
-                <p className="text-[10px] text-slate-500 -mt-0.5">Admin Panel</p>
+                <h1 className="font-display text-lg font-bold leading-tight whitespace-nowrap text-navy-900">Babel Memilih</h1>
+                <p className="text-[10px] leading-tight text-slate-500">Admin Panel</p>
               </div>
-            </div>
+            </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center mx-2 px-2">
               {filteredNav.map((item) => {
+                if (item.subItems) {
+                  const isActive = item.subItems.some(sub => location.pathname === sub.href);
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="relative group">
+                      <button className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ${isActive ? 'bg-navy-800 text-white shadow-lg shadow-navy-800/25' : 'text-slate-600 hover:bg-slate-100 hover:text-navy-800'}`}>
+                        <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : ''}`} />
+                        {item.label}
+                        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform group-hover:rotate-180 ${isActive ? 'text-white/70' : 'opacity-50'}`} />
+                      </button>
+                      <div className="absolute left-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div className="py-2">
+                          {item.subItems.map(sub => (
+                            <Link key={sub.href} to={sub.href} className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors ${location.pathname === sub.href ? 'text-navy-800 bg-slate-50 font-medium' : 'text-slate-600 hover:bg-slate-50 hover:text-navy-800'}`}>
+                              <sub.icon className="h-4 w-4" />
+                              {sub.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const aktif = location.pathname === item.href;
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     to={item.href}
-                    className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                       aktif
                         ? 'bg-navy-800 text-white shadow-lg shadow-navy-800/25'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-navy-800'
                     }`}
                   >
-                    <Icon className={`h-4 w-4 ${aktif ? 'text-white' : ''}`} />
+                    <Icon className={`h-4 w-4 shrink-0 ${aktif ? 'text-white' : ''}`} />
                     {item.label}
                   </Link>
                 );
@@ -177,9 +211,13 @@ export default function AdminLayout({ adminProfile, children }) {
                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(adminProfile.nama || 'Admin')}&background=16324a&color=fff&size=128`;
                   }}
                 />
-                <div className="text-sm">
-                  <p className="font-medium text-slate-800 leading-tight">{adminProfile.nama}</p>
-                  <p className="text-[10px] text-slate-500">{adminProfile.role_admin}</p>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-navy-900 leading-tight whitespace-nowrap">
+                    {adminProfile.nama || 'Administrator'}
+                  </p>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider leading-tight whitespace-nowrap">
+                    {adminProfile.role_admin}
+                  </p>
                 </div>
               </div>
 
@@ -210,6 +248,33 @@ export default function AdminLayout({ adminProfile, children }) {
             <nav className="lg:hidden py-4 border-t border-slate-100 animate-fade-in">
               <div className="flex flex-col gap-1">
                 {filteredNav.map((item) => {
+                  if (item.subItems) {
+                    return (
+                      <div key={item.label} className="flex flex-col gap-1">
+                        <div className="px-4 py-2 mt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">{item.label}</div>
+                        {item.subItems.map((sub) => {
+                          const aktif = location.pathname === sub.href;
+                          const Icon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.href}
+                              to={sub.href}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className={`flex items-center gap-3 rounded-xl px-4 py-3 pl-8 text-sm font-medium transition-all duration-200 ${
+                                aktif
+                                  ? 'bg-navy-800 text-white shadow-lg'
+                                  : 'text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              <Icon className="h-5 w-5" />
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+
                   const aktif = location.pathname === item.href;
                   const Icon = item.icon;
                   return (
