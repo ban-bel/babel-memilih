@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, FileSignature, Gavel, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -8,7 +8,7 @@ import Modal from '../../../components/common/Modal';
 import AdminLoginGate from '../components/AdminLoginGate';
 import AdminLayout from '../components/AdminLayout';
 
-import { fetchPeriodeList, updatePeriodePenilaian, hapusPeriodePenilaian } from '../../../services/adminService';
+import { fetchPeriodeList, updatePeriodePenilaian, hapusPeriodePenilaian, fetchWilayahList } from '../../../services/adminService';
 import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../../utils/constants';
 
 import { BuatPeriodeWizard } from '../BuatPeriode';
@@ -81,6 +81,7 @@ function InfoDasarPeriode({ periode }) {
 
 function ManajemenPeriodeContent({ adminProfile }) {
   const isKabKotaAdmin = adminProfile?.role_admin === 'ADMIN_KABKOTA';
+  const isProvinsiAdmin = adminProfile?.role_admin === 'ADMIN_PROVINSI';
   const adminWilayahId = isKabKotaAdmin ? Number(adminProfile?.wilayah_id) : null;
   const queryClient = useQueryClient();
 
@@ -163,9 +164,29 @@ function ManajemenPeriodeContent({ adminProfile }) {
     queryFn: () => fetchPeriodeList(filterWilayahId) 
   });
   
-  const periodeList = isKabKotaAdmin
-    ? rawPeriodeList.filter((p) => Number(p.wilayah_id) === adminWilayahId)
-    : rawPeriodeList;
+  const { data: wilayahList = [] } = useQuery({
+    queryKey: ['wilayah-list'],
+    queryFn: fetchWilayahList,
+    enabled: isProvinsiAdmin
+  });
+
+  const validWilayahIds = useMemo(() => {
+    if (!isProvinsiAdmin) return null;
+    return new Set(wilayahList
+      .filter(w => String(w.id) === String(adminProfile.wilayah_id) || String(w.parent_id) === String(adminProfile.wilayah_id))
+      .map(w => String(w.id))
+    );
+  }, [wilayahList, adminProfile, isProvinsiAdmin]);
+
+  const periodeList = useMemo(() => {
+    if (isKabKotaAdmin) {
+      return rawPeriodeList.filter(p => Number(p.wilayah_id) === adminWilayahId);
+    }
+    if (isProvinsiAdmin && validWilayahIds) {
+      return rawPeriodeList.filter(p => validWilayahIds.has(String(p.wilayah_id)));
+    }
+    return rawPeriodeList;
+  }, [rawPeriodeList, isKabKotaAdmin, adminWilayahId, isProvinsiAdmin, validWilayahIds]);
 
   const activePeriode = activePeriodeId 
     ? periodeList.find(p => p.id === activePeriodeId) 

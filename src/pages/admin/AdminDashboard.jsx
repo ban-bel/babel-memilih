@@ -5,7 +5,7 @@ import { Users, FileText, Settings, RefreshCw, BarChart2, Loader2, MapPin, UserC
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
 import Modal from '../../components/common/Modal';
-import { fetchPeriodeList, updateStatusPeriode, updatePeriodePenilaian, hapusPeriodePenilaian } from '../../services/adminService';
+import { fetchPeriodeList, updateStatusPeriode, updatePeriodePenilaian, hapusPeriodePenilaian, fetchWilayahList } from '../../services/adminService';
 
 function DashboardContent({ adminProfile }) {
   const navigate = useNavigate();
@@ -27,12 +27,35 @@ function DashboardContent({ adminProfile }) {
     status: 'DRAFT',
   });
 
-  const filterWilayahId = adminProfile?.role_admin === 'ADMIN_KABKOTA' ? adminProfile.wilayah_id : null;
+  const isKabKotaAdmin = adminProfile?.role_admin === 'ADMIN_KABKOTA';
+  const isProvinsiAdmin = adminProfile?.role_admin === 'ADMIN_PROVINSI';
+  const filterWilayahId = isKabKotaAdmin ? adminProfile.wilayah_id : null;
 
   const { data: daftarPeriode = [], isLoading, error } = useQuery({
     queryKey: ['daftar-periode', filterWilayahId],
     queryFn: () => fetchPeriodeList(filterWilayahId),
   });
+
+  const { data: wilayahList = [] } = useQuery({
+    queryKey: ['wilayah-list'],
+    queryFn: fetchWilayahList,
+    enabled: isProvinsiAdmin
+  });
+
+  const validWilayahIds = React.useMemo(() => {
+    if (!isProvinsiAdmin) return null;
+    return new Set(wilayahList
+      .filter(w => String(w.id) === String(adminProfile.wilayah_id) || String(w.parent_id) === String(adminProfile.wilayah_id))
+      .map(w => String(w.id))
+    );
+  }, [wilayahList, adminProfile, isProvinsiAdmin]);
+
+  const displayedPeriode = React.useMemo(() => {
+    if (isProvinsiAdmin && validWilayahIds) {
+      return daftarPeriode.filter(p => validWilayahIds.has(String(p.wilayah_id)));
+    }
+    return daftarPeriode;
+  }, [daftarPeriode, isProvinsiAdmin, validWilayahIds]);
 
   const mutasiStatus = useMutation({
     mutationFn: ({ id, status }) => updateStatusPeriode(id, status),
@@ -107,7 +130,7 @@ function DashboardContent({ adminProfile }) {
       </div>
 
       {/* Empty State */}
-      {daftarPeriode.length === 0 ? (
+      {displayedPeriode.length === 0 ? (
         <div className="rounded-[2rem] border border-white/50 bg-white/70 backdrop-blur-xl p-12 text-center shadow-soft-xl">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-navy-50 to-slate-100 shadow-inner-soft">
             <Award className="h-10 w-10 text-navy-300" />
@@ -120,7 +143,7 @@ function DashboardContent({ adminProfile }) {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {daftarPeriode.map((periode, idx) => (
+          {displayedPeriode.map((periode, idx) => (
             <div
               key={periode.id}
               className="group relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/80 backdrop-blur-xl shadow-soft-lg transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1"

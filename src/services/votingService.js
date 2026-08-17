@@ -969,33 +969,20 @@ export async function fetchJumlahJuriPeriode(periodeId) {
  * Check if all assigned voters/juries have submitted their evaluations.
  */
 export async function fetchKelengkapanPenilai(periodeId, mode) {
-  let table = 'akses_penilai';
-  if (mode === 'MODE_2') {
-    table = 'juri_periode';
+  const { data, error } = await supabase.rpc('get_kelengkapan_penilai', {
+    p_periode_id: periodeId,
+    p_mode: mode
+  });
+
+  if (error) {
+    throw new Error(`Gagal memuat kelengkapan penilai: ${error.message}`);
   }
-
-  const { count: total, error: errTotal } = await supabase
-    .from(table)
-    .select('*', { count: 'exact', head: true })
-    .eq('periode_id', periodeId);
-    
-  if (errTotal) throw errTotal;
-
-  const { count: submitted, error: errSub } = await supabase
-    .from(table)
-    .select('*', { count: 'exact', head: true })
-    .eq('periode_id', periodeId)
-    .not('submitted_at', 'is', null);
-
-  if (errSub) throw errSub;
-
-  const minRequired = total > 0 ? Math.floor(total / 2) + 1 : 0;
-
-  return {
-    total: total || 0,
-    submitted: submitted || 0,
-    minRequired,
-    isComplete: total > 0 && submitted >= minRequired
+  
+  return data ?? {
+    total: 0,
+    submitted: 0,
+    minRequired: 0,
+    isComplete: false
   };
 }
 

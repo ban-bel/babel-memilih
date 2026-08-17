@@ -95,6 +95,28 @@ export async function logoutAdmin() {
   await supabase.auth.signOut();
 }
 
+/**
+ * Mencari UID Auth berdasarkan email.
+ * Fungsi ini memanggil RPC 'get_uid_by_email' yang harus dipasang di database.
+ * 
+ * @async
+ * @function cariUidByEmail
+ * @param {string} email - Email pegawai yang akan dicari
+ * @returns {Promise<string|null>} UID (UUID) jika ketemu, atau null jika tidak
+ */
+export async function cariUidByEmail(email) {
+  if (!email) return null;
+  
+  const { data, error } = await supabase.rpc('get_uid_by_email', { p_email: email });
+  
+  if (error) {
+    console.warn("Gagal memanggil RPC get_uid_by_email:", error.message);
+    return null;
+  }
+  
+  return data;
+}
+
 // =============================================================================
 // MANAJEMEN WILAYAH
 // =============================================================================

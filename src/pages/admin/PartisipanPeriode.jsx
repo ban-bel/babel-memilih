@@ -37,7 +37,8 @@ import {
   fetchDaftarNomineeLengkap,
   fetchDaftarPenilaiLengkap,
   fetchDaftarJuriLengkap,
-  generateTokenPenilaianMassal
+  generateTokenPenilaianMultiUnit,
+  fetchUnitKerjaPeriode
 } from '../../services/adminService';
 import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim, insertLogEmail, insertLogWaMe } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
@@ -521,7 +522,18 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
   // Generate token mutation
   const generateMut = useMutation({
-    mutationFn: () => generateTokenPenilaianMassal(periode.id, periode.wilayah_id),
+    mutationFn: async () => {
+      let wilayahIds = [periode.wilayah_id];
+      try {
+        const units = await fetchUnitKerjaPeriode(periode.id);
+        if (units && units.length > 0) {
+          wilayahIds = units.map(u => u.wilayah_id);
+        }
+      } catch (err) {
+        console.warn('Gagal memuat unit kerja multi-wilayah', err);
+      }
+      return generateTokenPenilaianMultiUnit(periode.id, wilayahIds);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partisipan-nominee', periode?.id] });
       queryClient.invalidateQueries({ queryKey: ['partisipan-penilai', periode?.id] });

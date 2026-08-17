@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Trophy, Lock, Loader2, Edit2, Check, Crown } from 'lucide-react';
 
 /**
@@ -16,6 +16,12 @@ export default function FormKunciPemenang({ opsiNominee, keputusanSaatIni, onKun
   const [editMode, setEditMode] = useState(!keputusanSaatIni);
   const [pemenangId, setPemenangId] = useState(keputusanSaatIni?.pemenang_id ?? null);
   const [catatan, setCatatan] = useState(keputusanSaatIni?.catatan_pertimbangan ?? '');
+
+  useEffect(() => {
+    setEditMode(!keputusanSaatIni);
+    setPemenangId(keputusanSaatIni?.pemenang_id ?? null);
+    setCatatan(keputusanSaatIni?.catatan_pertimbangan ?? '');
+  }, [keputusanSaatIni]);
 
   const selectedWinner = opsiNominee.find((n) => n.nominee_id === pemenangId);
 

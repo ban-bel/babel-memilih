@@ -14,7 +14,7 @@
  * @requires lucide-react
  */
 
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   FilePlus2,
@@ -29,7 +29,7 @@ import {
   Phone,
   Send
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { logoutAdmin } from '../../../services/adminService';
 
@@ -89,8 +89,23 @@ const NAV = [
  */
 export default function AdminLayout({ adminProfile, children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    // Jika user HANYA kakan (USER_BIASA) dan mencoba akses selain dashboard kakan
+    if (adminProfile?.role_admin === 'USER_BIASA' && location.pathname !== '/admin/dashboard-kakan') {
+      navigate('/admin/dashboard-kakan', { replace: true });
+    }
+  }, [adminProfile, location.pathname, navigate]);
+
+  const filteredNav = NAV.filter(item => {
+    if (adminProfile?.role_admin === 'USER_BIASA') {
+      return item.href === '/admin/dashboard-kakan';
+    }
+    return true;
+  });
 
   /**
    * Handle logout admin.
@@ -129,7 +144,7 @@ export default function AdminLayout({ adminProfile, children }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
-              {NAV.map((item) => {
+              {filteredNav.map((item) => {
                 const aktif = location.pathname === item.href;
                 const Icon = item.icon;
                 return (
@@ -194,7 +209,7 @@ export default function AdminLayout({ adminProfile, children }) {
           {mobileMenuOpen && (
             <nav className="lg:hidden py-4 border-t border-slate-100 animate-fade-in">
               <div className="flex flex-col gap-1">
-                {NAV.map((item) => {
+                {filteredNav.map((item) => {
                   const aktif = location.pathname === item.href;
                   const Icon = item.icon;
                   return (

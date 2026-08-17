@@ -5,7 +5,7 @@ import { UserCheck, Plus, Edit2, Trash2, Search, Loader2, X, FileSpreadsheet, Up
 import ConfirmModal from '../../components/common/ConfirmModal';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
-import { fetchDaftarPegawaiAktif, fetchWilayahList, tambahPegawai, tambahPegawaiBulk, updatePegawai, hapusPegawai } from '../../services/adminService';
+import { fetchDaftarPegawaiAktif, fetchWilayahList, tambahPegawai, tambahPegawaiBulk, updatePegawai, hapusPegawai, cariUidByEmail } from '../../services/adminService';
 import { formatHP } from '../../services/fonnteService';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
@@ -22,7 +22,8 @@ function normalizeHP(hp) {
 function KelolaPegawaiContent({ adminProfile }) {
   const queryClient = useQueryClient();
   const isKabKotaAdmin = adminProfile?.role_admin === 'ADMIN_KABKOTA';
-  const defaultWilayahId = isKabKotaAdmin ? String(adminProfile.wilayah_id) : '';
+  const isProvinsiAdmin = adminProfile?.role_admin === 'ADMIN_PROVINSI';
+  const defaultWilayahId = (isKabKotaAdmin || isProvinsiAdmin) ? String(adminProfile.wilayah_id) : '';
 
   const [wilayahFilter, setWilayahFilter] = useState(defaultWilayahId);
   const [kataKunci, setKataKunci] = useState('');
@@ -31,6 +32,7 @@ function KelolaPegawaiContent({ adminProfile }) {
   const [error, setError] = useState(null);
 
   // State Modal Form (Tambah / Edit)
+  const [isSearchingUid, setIsSearchingUid] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [formData, setFormData] = useState({
@@ -64,7 +66,22 @@ function KelolaPegawaiContent({ adminProfile }) {
   // State Duplicate HP Warning
   const [hpDuplicateWarning, setHpDuplicateWarning] = useState(null);
 
-  const { data: wilayahList = [] } = useQuery({ queryKey: ['wilayah-list'], queryFn: fetchWilayahList });
+  const { data: rawWilayahList = [] } = useQuery({ queryKey: ['wilayah-list'], queryFn: fetchWilayahList });
+  
+  // Filter daftar wilayah berdasarkan hak akses Admin
+  const wilayahList = useMemo(() => {
+    if (isKabKotaAdmin) {
+      return rawWilayahList.filter(w => String(w.id) === String(adminProfile.wilayah_id));
+    }
+    if (isProvinsiAdmin) {
+      // Admin Provinsi hanya boleh melihat wilayahnya sendiri dan Kab/Kota di bawahnya
+      return rawWilayahList.filter(w => 
+        String(w.id) === String(adminProfile.wilayah_id) || 
+        String(w.parent_id) === String(adminProfile.wilayah_id)
+      );
+    }
+    return rawWilayahList; // SUPER_ADMIN melihat semua
+  }, [rawWilayahList, adminProfile, isKabKotaAdmin, isProvinsiAdmin]);
 
   // Fetch semua pegawai untuk cek duplikat HP
   const { data: semuaPegawai = [] } = useQuery({
@@ -211,9 +228,7 @@ function KelolaPegawaiContent({ adminProfile }) {
     setHpDuplicateWarning(null);
   }
 
-  function handleRoleAdminChange(role, isKakan = formData.is_kakan) {
-    setFormData(prev => ({ ...prev, role_admin: role, is_kakan: isKakan }));
-  }
+
 
   function handleNoHpChange(value) {
     setFormData({ ...formData, no_hp: value });
@@ -383,8 +398,18 @@ function KelolaPegawaiContent({ adminProfile }) {
       setError('Nama dan Wilayah wajib diisi.');
       return;
     }
+    
+    // Auto-detect role_admin based on the toggle and wilayah level
+    let finalRoleAdmin = 'USER_BIASA';
+    if (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA') {
+      const targetW = wilayahList.find((w) => String(w.id) === String(targetWilayahId));
+      if (targetW) {
+        finalRoleAdmin = targetW.level === 'PROVINSI' ? 'ADMIN_PROVINSI' : 'ADMIN_KABKOTA';
+      }
+    }
+
     const { unit_kerja, wilayah, ...cleanFormData } = formData;
-    const payload = { ...cleanFormData, user_id: formData.user_id?.trim() || null, wilayah_id: targetWilayahId };
+    const payload = { ...cleanFormData, user_id: formData.user_id?.trim() || null, wilayah_id: targetWilayahId, role_admin: finalRoleAdmin };
     mutasiSimpan.mutate(payload);
   }
 
@@ -628,51 +653,104 @@ function KelolaPegawaiContent({ adminProfile }) {
               <Shield className="h-4 w-4 text-navy-500" />
               Akses Sistem & Role
             </h4>
-            
             <div className="space-y-4">
+              {/* Dropdown Role */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Role Admin</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <label className="relative flex cursor-pointer rounded-lg border bg-white p-3 shadow-sm focus:outline-none">
-                    <input type="radio" name="role_admin" value="TIDAK_ADA" checked={formData.role_admin === 'TIDAK_ADA'} onChange={(e) => handleRoleAdminChange(e.target.value)} className="sr-only" />
-                    <span className="flex flex-1">
-                      <span className="flex flex-col">
-                        <span className={`block text-sm font-medium ${formData.role_admin === 'TIDAK_ADA' ? 'text-navy-900' : 'text-slate-900'}`}>Bukan Admin</span>
-                        <span className="mt-1 flex items-center text-xs text-slate-500">Pegawai biasa.</span>
-                      </span>
-                    </span>
-                    <span className={`pointer-events-none absolute -inset-px rounded-lg border-2 ${formData.role_admin === 'TIDAK_ADA' ? 'border-navy-600' : 'border-transparent'}`} aria-hidden="true" />
-                  </label>
-                  <label className="relative flex cursor-pointer rounded-lg border bg-white p-3 shadow-sm focus:outline-none">
-                    <input type="radio" name="role_admin" value="ADMIN_KABKOTA" checked={formData.role_admin === 'ADMIN_KABKOTA'} onChange={(e) => handleRoleAdminChange(e.target.value)} className="sr-only" />
-                    <span className="flex flex-1">
-                      <span className="flex flex-col">
-                        <span className={`block text-sm font-medium ${formData.role_admin === 'ADMIN_KABKOTA' ? 'text-navy-900' : 'text-slate-900'}`}>Admin Kab/Kota</span>
-                        <span className="mt-1 flex items-center text-xs text-slate-500">Kelola periode wilayahnya.</span>
-                      </span>
-                    </span>
-                    <span className={`pointer-events-none absolute -inset-px rounded-lg border-2 ${formData.role_admin === 'ADMIN_KABKOTA' ? 'border-navy-600' : 'border-transparent'}`} aria-hidden="true" />
-                  </label>
-                </div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Peran Pegawai</label>
+                <select 
+                  className="input cursor-pointer"
+                  value={formData.is_kakan ? 'KAKAN' : (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA' ? 'ADMIN' : 'BIASA')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'BIASA') {
+                      setFormData(prev => ({ ...prev, role_admin: 'USER_BIASA', is_kakan: false }));
+                    } else if (val === 'ADMIN') {
+                      setFormData(prev => ({ ...prev, role_admin: 'ADMIN_KABKOTA', is_kakan: false }));
+                    } else if (val === 'KAKAN') {
+                      setFormData(prev => ({ ...prev, role_admin: 'USER_BIASA', is_kakan: true }));
+                    }
+                  }}
+                >
+                  <option value="BIASA">Pegawai Biasa (Hanya Peserta / Voter)</option>
+                  <option value="ADMIN">Administrator (Pengelola Data & Periode)</option>
+                  <option value="KAKAN">Kepala Kantor (Pimpinan Pengambil Keputusan)</option>
+                </select>
+                
+                {/* Dynamic Help Text based on selection */}
+                {formData.is_kakan ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    <strong className="text-navy-600">Kepala Kantor:</strong> Memberikan akses dasbor khusus untuk memantau rekapitulasi nilai dan menetapkan juara final.
+                  </p>
+                ) : (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA') ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    <strong className="text-navy-600">Administrator:</strong> Berwenang mengelola data pegawai dan jadwal pemilihan. Akan otomatis menjadi Admin Provinsi atau Kab/Kota sesuai wilayah di atas.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-500">
+                    <strong className="text-slate-600">Pegawai Biasa:</strong> Tidak memiliki hak akses ke Dasbor Pengelola.
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-start">
-                <div className="flex h-6 items-center">
-                  <input id="is_kakan" name="is_kakan" type="checkbox" checked={formData.is_kakan} onChange={(e) => handleRoleAdminChange(formData.role_admin, e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-600" />
+              {/* Input Auth UID - Tampil hanya jika Admin atau Kakan */}
+              {(formData.is_kakan || (formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA' && !!formData.role_admin)) && (
+                <div className="animate-fade-in bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                    Auth User ID (UID Supabase)
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={formData.user_id} 
+                      onChange={(e) => setFormData({ ...formData, user_id: e.target.value })} 
+                      placeholder="Paste UID dari menu Supabase Authentication"
+                      className="input bg-white flex-1" 
+                    />
+                    <button 
+                      type="button"
+                      disabled={isSearchingUid || !formData.email}
+                      onClick={async () => {
+                        if (!formData.email) return;
+                        setIsSearchingUid(true);
+                        const uid = await cariUidByEmail(formData.email);
+                        if (uid) {
+                          setFormData(prev => ({ ...prev, user_id: uid }));
+                        } else {
+                          alert(`Akun login untuk email ${formData.email} tidak ditemukan di database Supabase.`);
+                        }
+                        setIsSearchingUid(false);
+                      }}
+                      className="btn-secondary whitespace-nowrap !px-3"
+                      title="Cari UID otomatis berdasarkan email"
+                    >
+                      {isSearchingUid ? <Loader2 className="h-4 w-4 animate-spin text-slate-500" /> : <Search className="h-4 w-4 text-slate-500" />}
+                      <span className="ml-1.5 text-sm font-medium">Cari via Email</span>
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Wajib diisi agar Admin / Kakan bisa login ke dashboard.
+                  </p>
                 </div>
-                <div className="ml-3 text-sm leading-6">
-                  <label htmlFor="is_kakan" className="font-medium text-slate-900">Jadikan Kepala Kantor (Kakan)</label>
-                  <p className="text-slate-500">Memberikan akses dashboard Kakan untuk melihat rekapitulasi penilaian dan menetapkan juara final.</p>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start pt-2 border-t border-slate-100">
-                <div className="flex h-6 items-center">
-                  <input id="is_active" name="is_active" type="checkbox" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600" />
+              {/* Toggle Aktif */}
+              <div className="flex items-start pt-3 border-t border-slate-100">
+                <div className="flex h-6 items-center mr-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.is_active}
+                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                    className={`${formData.is_active ? 'bg-emerald-500' : 'bg-slate-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
+                  >
+                    <span aria-hidden="true" className={`${formData.is_active ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`} />
+                  </button>
                 </div>
-                <div className="ml-3 text-sm leading-6">
-                  <label htmlFor="is_active" className="font-medium text-slate-900">Status Pegawai Aktif</label>
-                  <p className="text-slate-500">Hapus centang untuk menonaktifkan pegawai (soft delete). Pegawai tidak aktif tidak akan muncul di daftar pilihan periode.</p>
+                <div className="text-sm leading-6">
+                  <label className="font-medium text-slate-900 cursor-pointer" onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}>
+                    Status Pegawai Aktif
+                  </label>
+                  <p className="text-slate-500">Nonaktifkan sakelar ini untuk <i>soft delete</i> (pegawai disembunyikan dari daftar pilihan).</p>
                 </div>
               </div>
             </div>

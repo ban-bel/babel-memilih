@@ -10,12 +10,12 @@
  * @module pages/admin/DashboardKakan
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, Crown } from 'lucide-react';
 
-import { fetchPeriodeList } from '../../services/adminService';
+import { fetchPeriodeList, fetchWilayahList } from '../../services/adminService';
 import {
   fetchRekapMode1A,
   fetchRekapMode1B,
@@ -128,13 +128,36 @@ function DashboardKakanContent({ adminProfile }) {
   const [selectedKategoriTab, setSelectedKategoriTab] = useState(null); // null = overview, number = kategori id
   const queryClient = useQueryClient();
 
-  const filterWilayahId = adminProfile?.role_admin === 'ADMIN_KABKOTA' ? adminProfile.wilayah_id : null;
-
-  // Fetch daftar periode
-  const { data: periodeList = [] } = useQuery({
-    queryKey: ['periode-list', filterWilayahId],
-    queryFn: () => fetchPeriodeList(filterWilayahId),
+  const { data: wilayahList = [] } = useQuery({
+    queryKey: ['wilayah-list'],
+    queryFn: fetchWilayahList,
   });
+
+  const { data: rawPeriodeList = [] } = useQuery({
+    queryKey: ['periode-list'],
+    queryFn: () => fetchPeriodeList(),
+  });
+
+  const periodeList = useMemo(() => {
+    if (wilayahList.length === 0 || rawPeriodeList.length === 0) return [];
+    
+    // Cari tahu level wilayah Kakan ini (Provinsi atau KabKota)
+    const kakanWilayah = wilayahList.find(w => String(w.id) === String(adminProfile.wilayah_id));
+    if (!kakanWilayah) return rawPeriodeList;
+
+    if (kakanWilayah.level === 'KABKOTA') {
+      // Kakan Kab/Kota HANYA boleh melihat periodenya sendiri
+      return rawPeriodeList.filter(p => String(p.wilayah_id) === String(kakanWilayah.id));
+    } else if (kakanWilayah.level === 'PROVINSI') {
+      // Kakan Provinsi boleh melihat Provinsinya sendiri DAN seluruh Kab/Kota di bawahnya
+      return rawPeriodeList.filter(p => 
+        String(p.wilayah_id) === String(kakanWilayah.id) || 
+        String(wilayahList.find(w => String(w.id) === String(p.wilayah_id))?.parent_id) === String(kakanWilayah.id)
+      );
+    }
+    
+    return rawPeriodeList;
+  }, [rawPeriodeList, wilayahList, adminProfile]);
 
   const periode = periodeList.find((p) => p.id === Number(periodeId));
   const mode = periode?.mode_penilaian;
@@ -203,8 +226,14 @@ function DashboardKakanContent({ adminProfile }) {
   const mutasiKunci = useMutation({
     mutationFn: ({ pemenangId, catatan: catatanPertimbangan }) =>
       kuncikanPemenang(Number(periodeId), adminProfile.id, pemenangId, catatanPertimbangan),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['keputusan-kakan', periodeId] }),
-    onError: (err) => setError(err.message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['keputusan-kakan', periodeId] });
+      toast.success('Keputusan pemenang berhasil dikunci!');
+    },
+    onError: (err) => {
+      setError(err.message);
+      toast.error('Gagal mengunci pemenang: ' + err.message);
+    },
   });
 
   // =============================================================================
@@ -837,10 +866,16 @@ function DashboardKakanContent({ adminProfile }) {
 
           <div className="mb-12">
             <h3 className="text-lg font-bold text-navy-900 mb-3 border-b border-slate-200 pb-2">Keputusan Kepala Kantor</h3>
-            {keputusanSaatIni?.keputusan_teks ? (
-              <p className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
-                {keputusanSaatIni.keputusan_teks}
-              </p>
+            {keputusanSaatIni?.pemenang_id ? (
+              <div className="space-y-2">
+                <p className="text-base text-slate-800">
+                  <span className="font-semibold">Pemenang Terpilih:</span> {keputusanSaatIni.pemenang?.nama}
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed">
+                  <span className="font-semibold">Catatan Pertimbangan:</span><br/>
+                  {keputusanSaatIni.catatan_pertimbangan}
+                </p>
+              </div>
             ) : (
               <p className="text-sm text-slate-500 italic">Belum ada keputusan yang dikunci pada sistem.</p>
             )}

@@ -112,7 +112,7 @@ function FormWilayah({ editData, onSubmit, onCancel, isPending }) {
             className="input"
           >
             <option value="">Pilih...</option>
-            {wilayahProvinsi.map((w) => (
+            {wilayahProvinsi.filter(w => w.level === 'PROVINSI').map((w) => (
               <option key={w.id} value={w.id}>{w.nama_wilayah}</option>
             ))}
           </select>
