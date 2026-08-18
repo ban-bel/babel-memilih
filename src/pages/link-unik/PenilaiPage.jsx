@@ -283,7 +283,7 @@ export default function PenilaiPage() {
           <div>
             <h4 className="text-xl font-bold text-navy-900">Selamat Datang, {akses.penilai.nama}!</h4>
             <p className="mt-2 text-slate-600">
-              Berikut adalah pemilihan buat <span className="font-semibold text-navy-800">{akses.periode.nama_periode}</span> nih!
+              Pada pemilihan <span className="font-semibold text-navy-800">{akses.periode.nama_periode}</span>
             </p>
           </div>
           <button
