@@ -128,6 +128,22 @@ export async function fetchTokenJuri(token) {
   if (error || !data) {
     throw new Error('Token juri tidak ditemukan atau tidak valid.');
   }
+
+  // Tambahkan is_can_vote_own_region dan wilayah_id
+  if (data.periode?.id && data.juri?.id) {
+    const [jpRes, pgRes] = await Promise.all([
+      supabase.from('juri_periode').select('is_can_vote_own_region').eq('periode_id', data.periode.id).eq('pegawai_id', data.juri.id).single(),
+      supabase.from('pegawai').select('wilayah_id').eq('id', data.juri.id).single()
+    ]);
+      
+    if (jpRes.data) {
+      data.is_can_vote_own_region = jpRes.data.is_can_vote_own_region;
+    }
+    if (pgRes.data) {
+      data.juri.wilayah_id = pgRes.data.wilayah_id;
+    }
+  }
+
   return data;
 }
 
@@ -256,7 +272,7 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
       video_profil_link,
       dokumen_link,
       tabel_kehadiran,
-      nominee:pegawai ( id, nama, nip, nip_baru, foto_url, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      nominee:pegawai ( id, nama, nip, nip_baru, foto_url, wilayah_id, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `
     )
     .eq('periode_id', periodeId)
@@ -269,7 +285,7 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
   return (data ?? []).map(item => {
     const p = item.nominee;
     const unitKerja = p?.wilayah?.nama_unit_kerja || p?.wilayah?.nama_wilayah || '-';
-    return p ? { ...p, unit_kerja: unitKerja, video_profil_link: item.video_profil_link, dokumen_link: item.dokumen_link, tabel_kehadiran: item.tabel_kehadiran } : null;
+    return p ? { ...p, unit_kerja: unitKerja, wilayah_id: p.wilayah_id, video_profil_link: item.video_profil_link, dokumen_link: item.dokumen_link, tabel_kehadiran: item.tabel_kehadiran } : null;
   }).filter(Boolean);
 }
 

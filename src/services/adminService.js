@@ -764,6 +764,7 @@ export async function tugaskanJuriMode2(periodeId, daftarJuri) {
     periode_id: periodeId,
     pegawai_id: j.pegawai_id,
     is_ketua_juri: Boolean(j.is_ketua_juri),
+    is_can_vote_own_region: j.is_can_vote_own_region ?? true,
   }));
 
   const { error } = await supabase.from('juri_periode').insert(payload);

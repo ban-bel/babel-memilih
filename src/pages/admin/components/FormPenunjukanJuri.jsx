@@ -29,9 +29,17 @@ export default function FormPenunjukanJuri({ wilayahIds, daftar, onChange }) {
         unit_kerja: pegawai.unit_kerja,
         foto_url: pegawai.foto_url,
         is_ketua_juri: daftar.length === 0,
+        is_can_vote_own_region: true,
       },
     ]);
     setKataKunci('');
+  }
+
+  function toggleCanVoteOwnRegion(pegawaiId) {
+    onChange(daftar.map((j) => ({ 
+      ...j, 
+      is_can_vote_own_region: j.pegawai_id === pegawaiId ? !(j.is_can_vote_own_region ?? true) : (j.is_can_vote_own_region ?? true) 
+    })));
   }
 
   function hapus(pegawaiId) {
@@ -103,6 +111,15 @@ export default function FormPenunjukanJuri({ wilayahIds, daftar, onChange }) {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-slate-800 truncate">{j.nama}</p>
               <p className="text-xs text-slate-500 truncate">{j.unit_kerja}</p>
+              <label className="flex items-center gap-1.5 mt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={j.is_can_vote_own_region ?? true}
+                  onChange={() => toggleCanVoteOwnRegion(j.pegawai_id)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-[11px] font-medium text-slate-600">Bisa nilai kandidat dari wilayah asalnya</span>
+              </label>
             </div>
             <button
               type="button"

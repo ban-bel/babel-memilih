@@ -55,11 +55,15 @@ export default function JuriPage() {
   const periodeId = akses?.periode?.id;
   const isKetuaJuri = Boolean(akses?.is_ketua_juri);
 
-  const { data: nominee = [], isLoading: loadingNominee } = useQuery({
+  const { data: rawNominee = [], isLoading: loadingNominee } = useQuery({
     queryKey: ['daftar-nominee', periodeId, akses?.juri?.id],
     queryFn: () => fetchDaftarNominee(periodeId, akses.juri.id),
     enabled: aktif && Boolean(periodeId),
   });
+
+  const nominee = rawNominee.filter(n => 
+    akses?.is_can_vote_own_region === false ? n.wilayah_id !== akses?.juri?.wilayah_id : true
+  );
 
   const { data: kategori = [], isLoading: loadingKategori } = useQuery({
     queryKey: ['kategori-mode2', periodeId],
