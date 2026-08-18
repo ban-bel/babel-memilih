@@ -295,9 +295,15 @@ export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit,
                               className="rounded-lg border border-blue-100/50 bg-white p-3 shadow-sm"
                             >
                               {j.teks_jawaban && (
-                                <p className="mb-2 text-sm leading-relaxed text-slate-700 italic">
-                                  "{j.teks_jawaban}"
-                                </p>
+                                <div className="mb-2 text-sm leading-relaxed text-slate-700">
+                                  {j.teks_jawaban.match(/https?:\/\/[^\s]+/) ? (
+                                    <a href={j.teks_jawaban.match(/https?:\/\/[^\s]+/)[0]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100 inline-flex">
+                                      Buka Link Dokumen
+                                    </a>
+                                  ) : (
+                                    <p className="italic">"{j.teks_jawaban}"</p>
+                                  )}
+                                </div>
                               )}
                               {j.file_url && (
                                 <button

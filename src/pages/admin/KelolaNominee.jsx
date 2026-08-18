@@ -610,6 +610,7 @@ export function KelolaNomineeContent({ adminProfile, periodeId }) {
         onClose={() => { setShowEditModal(false); setEditNomineeData(null); }}
         nominee={editNomineeData}
         periodeId={periodeId}
+        isTabelKehadiranEnabled={activePeriode?.is_tabel_kehadiran}
       />
     </div>
   );

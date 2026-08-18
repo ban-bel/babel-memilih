@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Modal from '../../../components/common/Modal';
 import { updateProfilTambahanNominee } from '../../../services/votingService';
 
-export default function ModalEditProfilNominee({ isOpen, onClose, nominee, periodeId }) {
+export default function ModalEditProfilNominee({ isOpen, onClose, nominee, periodeId, isTabelKehadiranEnabled }) {
   const queryClient = useQueryClient();
   const [dokumenLink, setDokumenLink] = useState('');
   const [tabelKehadiran, setTabelKehadiran] = useState([]);
@@ -92,8 +92,9 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
         <hr className="border-slate-200" />
 
         {/* Tabel Kehadiran */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        {isTabelKehadiranEnabled && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm font-semibold text-navy-900">
               <Table className="h-4 w-4 text-navy-500" />
               Tabel Kehadiran (Opsional)
@@ -186,9 +187,10 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
             </div>
           )}
         </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"

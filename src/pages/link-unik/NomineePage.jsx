@@ -98,14 +98,14 @@ export default function NomineePage() {
   const nomineeId = akses?.nominee?.id;
   const modePenilaian = akses?.periode?.mode_penilaian;
 
-  // Fetch pertanyaan untuk Mode 1A
+  // Fetch pertanyaan untuk Mode 1A & Mode 2
   const { data: pertanyaan = [], isLoading: loadingPertanyaan } = useQuery({
     queryKey: ['pertanyaan-periode', periodeId],
     queryFn: () => fetchPertanyaanPeriode(periodeId),
-    enabled: aktif && Boolean(periodeId) && modePenilaian === MODE_PENILAIAN.MODE_1A,
+    enabled: aktif && Boolean(periodeId) && (modePenilaian === MODE_PENILAIAN.MODE_1A || modePenilaian === MODE_PENILAIAN.MODE_2),
   });
 
-  // Fetch jawaban tersimpan untuk Mode 1A
+  // Fetch jawaban tersimpan untuk Mode 1A & Mode 2
   const {
     data: jawaban = [],
     isLoading: loadingJawaban,
@@ -113,7 +113,7 @@ export default function NomineePage() {
   } = useQuery({
     queryKey: ['jawaban-nominee', periodeId, nomineeId],
     queryFn: () => fetchJawabanNominee(periodeId, nomineeId),
-    enabled: aktif && Boolean(periodeId) && Boolean(nomineeId) && modePenilaian === MODE_PENILAIAN.MODE_1A,
+    enabled: aktif && Boolean(periodeId) && Boolean(nomineeId) && (modePenilaian === MODE_PENILAIAN.MODE_1A || modePenilaian === MODE_PENILAIAN.MODE_2),
   });
 
   // Map jawaban berdasarkan pertanyaan_id
@@ -152,7 +152,9 @@ export default function NomineePage() {
   });
 
   const isKirimDisabledMode1A = mutasiSelesai.isPending || (akses?.periode?.is_video_profil && !videoProfilLink);
-  const isKirimDisabledMode2 = mutasiSelesai.isPending || !fileUrlTersimpan || (akses?.periode?.is_video_profil && !videoProfilLink);
+  
+  // Di Mode 2, jika admin sudah menset form link (pertanyaan > 0), upload file fisik opsional/dihilangkan wajibnya.
+  const isKirimDisabledMode2 = mutasiSelesai.isPending || (pertanyaan.length === 0 && !fileUrlTersimpan) || (akses?.periode?.is_video_profil && !videoProfilLink);
 
   // Token tidak ada
   if (!token) return <StatusScreen status={STATUS_AKSES_TOKEN.TOKEN_TIDAK_VALID} />;
@@ -271,17 +273,45 @@ export default function NomineePage() {
                   </div>
                 )}
 
-                {/* Form Upload Bukti */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-                  <FormBuktiTunggalNominee
-                    fileUrlTersimpan={fileUrlTersimpan}
-                    onUpload={async (file) => {
-                      await submitBuktiNomineeMode2(token, file);
-                      await muatUlangBukti();
-                    }}
-                    getSignedUrl={getSignedUrlBuktiMode2}
-                  />
-                </div>
+                {/* Daftar Link Drive / Pertanyaan Tambahan Mode 2 */}
+                {pertanyaan.length > 0 && (
+                  <div className="space-y-4 mb-4">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0 rounded-full bg-amber-100 p-1">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <p>
+                        <strong>PENTING:</strong> Pastikan seluruh link Google Drive yang Anda kumpulkan telah diubah aksesnya menjadi <strong>"Siapa saja yang memiliki link" (Anyone with the link)</strong>. Dewan Juri tidak dapat menilai dokumen yang terkunci (Restricted).
+                      </p>
+                    </div>
+                    {pertanyaan.map((p) => (
+                      <FormNarasiNominee
+                        key={p.id}
+                        pertanyaan={p}
+                        jawabanTersimpan={jawabanByPertanyaanId[p.id]}
+                        isDriveLinkOnly={true}
+                        onSimpan={async (teks) => {
+                          await submitJawabanNominee(token, p.id, teks);
+                          await muatUlangJawaban();
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Form Upload Bukti Fisik Tunggal (Hanya muncul jika admin TIDAK membuat field/pertanyaan custom) */}
+                {pertanyaan.length === 0 && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+                    <FormBuktiTunggalNominee
+                      fileUrlTersimpan={fileUrlTersimpan}
+                      onUpload={async (file) => {
+                        await submitBuktiNomineeMode2(token, file);
+                        await muatUlangBukti();
+                      }}
+                      getSignedUrl={getSignedUrlBuktiMode2}
+                    />
+                  </div>
+                )}
 
                 {/* Tombol Selesai */}
                 <button
@@ -298,11 +328,11 @@ export default function NomineePage() {
                   Selesai & Kirim
                 </button>
 
-                {/* Warning jika belum upload */}
-                {!fileUrlTersimpan && (
-                  <p className="text-center text-xs text-amber-600">
+                {/* Warning jika belum upload (dan tidak ada custom fields) */}
+                {pertanyaan.length === 0 && !fileUrlTersimpan && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700 text-center">
                     ⚠️ Harap upload bukti inovasi terlebih dahulu sebelum mengirim.
-                  </p>
+                  </div>
                 )}
               </>
             )}

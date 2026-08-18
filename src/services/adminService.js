@@ -465,6 +465,7 @@ export async function buatPeriodePenilaian(periode) {
       is_video_profil: periode.is_video_profil || false,
       is_nominee_can_vote: periode.is_nominee_can_vote ?? false,
       is_allow_abstain: periode.is_allow_abstain ?? false,
+      is_tabel_kehadiran: periode.is_tabel_kehadiran ?? false,
     })
     .select('id')
     .single();

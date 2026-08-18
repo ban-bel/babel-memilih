@@ -28,7 +28,7 @@ import { FileText, CheckCircle2, Loader2, Clock } from 'lucide-react';
  * @param {string} [props.jawabanTersimpan.teks_jawaban] - Teks jawaban tersimpan
  * @param {Function} props.onSimpan - Handler untuk menyimpan teks jawaban
  */
-export default function FormNarasiNominee({ pertanyaan, jawabanTersimpan, onSimpan }) {
+export default function FormNarasiNominee({ pertanyaan, jawabanTersimpan, onSimpan, isDriveLinkOnly = false }) {
   const [teks, setTeks] = useState(jawabanTersimpan?.teks_jawaban ?? '');
   const [status, setStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [error, setError] = useState(null);
@@ -57,6 +57,14 @@ export default function FormNarasiNominee({ pertanyaan, jawabanTersimpan, onSimp
         // Kosong dan sebelumnya juga kosong, tidak perlu save
         setStatus('idle');
         return;
+      }
+
+      if (isDriveLinkOnly && teks.trim()) {
+        if (!teks.includes('drive.google.com') && !teks.startsWith('http')) {
+          setStatus('error');
+          setError('Harap masukkan link dokumen / Google Drive yang valid (berawalan http:// atau https://).');
+          return;
+        }
       }
 
       setStatus('saving');
@@ -134,12 +142,12 @@ export default function FormNarasiNominee({ pertanyaan, jawabanTersimpan, onSimp
         </div>
       )}
 
-      {/* Textarea */}
+      {/* Textarea / Input */}
       <textarea
-        rows={4}
+        rows={isDriveLinkOnly ? 2 : 4}
         value={teks}
         onChange={handleChange}
-        placeholder="Tuliskan jawaban Anda di sini..."
+        placeholder={isDriveLinkOnly ? "Tempel (paste) link Google Drive Anda di sini..." : "Tuliskan jawaban Anda di sini..."}
         className="input resize-none"
       />
 

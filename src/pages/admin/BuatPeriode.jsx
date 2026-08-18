@@ -52,6 +52,7 @@ function nilaiAwalForm() {
     is_video_profil: false,
     is_nominee_can_vote: true,
     is_allow_abstain: false,
+    is_tabel_kehadiran: false,
   };
 }
 
@@ -287,30 +288,6 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                 <textarea rows={3} value={form.petunjuk_penilaian} onChange={(e) => ubah('petunjuk_penilaian', e.target.value)} className="input resize-none" />
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
-                  <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai (diberi hak pilih).</p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input type="checkbox" className="peer sr-only" checked={form.is_nominee_can_vote} onChange={(e) => ubah('is_nominee_can_vote', e.target.checked)} />
-                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
-                </label>
-              </div>
-
-              {/* Toggle Abstain */}
-              {(form.mode_penilaian === MODE_PENILAIAN.MODE_1B || form.mode_penilaian === MODE_PENILAIAN.MODE_1A) && (
-                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
-                  <div>
-                    <h4 className="font-semibold text-slate-800">Izinkan Suara Abstain / Kotak Kosong</h4>
-                    <p className="text-xs text-slate-500">Penilai diperbolehkan untuk memilih opsi Abstain (suara tidak sah) tanpa menunjuk kandidat mana pun.</p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input type="checkbox" className="peer sr-only" checked={form.is_allow_abstain} onChange={(e) => ubah('is_allow_abstain', e.target.checked)} />
-                    <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
-                  </label>
-                </div>
-              )}
             </div>
           )}
 
@@ -343,8 +320,35 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                 </div>
               )}
 
+              {/* Opsi khusus Quick Vote (MODE_1B) */}
+              {form.mode_penilaian === MODE_PENILAIAN.MODE_1B && (
+                <div className="space-y-4 mb-4">
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
+                      <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai (diberi hak pilih).</p>
+                    </div>
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input type="checkbox" className="peer sr-only" checked={form.is_nominee_can_vote} onChange={(e) => ubah('is_nominee_can_vote', e.target.checked)} />
+                      <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                    <div>
+                      <h4 className="font-semibold text-slate-800">Izinkan Suara Abstain / Kotak Kosong</h4>
+                      <p className="text-xs text-slate-500">Penilai diperbolehkan untuk memilih opsi Abstain (suara tidak sah) tanpa menunjuk kandidat mana pun.</p>
+                    </div>
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input type="checkbox" className="peer sr-only" checked={form.is_allow_abstain} onChange={(e) => ubah('is_allow_abstain', e.target.checked)} />
+                      <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {(form.mode_penilaian === MODE_PENILAIAN.MODE_1A || form.mode_penilaian === MODE_PENILAIAN.MODE_2) && (
-                <div className="rounded-xl border border-navy-200 bg-navy-50/30 p-4 mb-4">
+                <div className="rounded-xl border border-navy-200 bg-navy-50/30 p-4 mb-4 space-y-4">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -359,11 +363,34 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                       </p>
                     </div>
                   </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
+                    <input
+                      type="checkbox"
+                      checked={form.is_tabel_kehadiran}
+                      onChange={(e) => ubah('is_tabel_kehadiran', e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
+                    />
+                    <div>
+                      <span className="font-medium text-navy-900">Gunakan Tabel Kehadiran</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Admin dapat mengisi rekapitulasi kehadiran nominee, dan data ini akan ditampilkan ke penilai/juri.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               )}
 
               {(form.mode_penilaian === MODE_PENILAIAN.MODE_1A || form.mode_penilaian === MODE_PENILAIAN.MODE_2) && (
-                <FormPertanyaanBuilder daftar={form.pertanyaan} onChange={(d) => ubah('pertanyaan', d)} />
+                <div className="mt-4">
+                  {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+                    <div className="mb-2">
+                      <h4 className="font-bold text-navy-900">Form Input Dokumen / Link Drive</h4>
+                      <p className="text-xs text-slate-500">Anda dapat menentukan berapa banyak link dokumen yang harus dikumpulkan nominee (contoh: Link Makalah, Link Bukti, dll) menggunakan fitur di bawah ini.</p>
+                    </div>
+                  )}
+                  <FormPertanyaanBuilder daftar={form.pertanyaan} onChange={(d) => ubah('pertanyaan', d)} />
+                </div>
               )}
 
               {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (

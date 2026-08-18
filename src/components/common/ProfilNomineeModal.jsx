@@ -10,7 +10,7 @@ const getPreviewUrl = (url) => {
   return url;
 };
 
-export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteClick }) {
+export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteClick, isTabelKehadiranEnabled = false }) {
   const [mounted, setMounted] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
@@ -179,7 +179,7 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
             <hr className="my-8 border-slate-200 border-dashed" />
           )}
 
-          {showTabelTab && (
+          {showTabelTab && isTabelKehadiranEnabled && (
             <div className="space-y-4 animate-fade-in">
               <h4 className="font-semibold text-navy-900 flex items-center gap-2">
                 <Table className="w-4 h-4 text-navy-500" />

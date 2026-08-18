@@ -130,7 +130,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
               <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{n.unit_kerja}</p>
 
               {/* Lihat Profil Button (Only if has data) */}
-              {(n.dokumen_link || hasTabel(n.tabel_kehadiran)) && (
+              {(n.dokumen_link || (periode?.is_tabel_kehadiran && hasTabel(n.tabel_kehadiran))) && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -200,7 +200,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
           if (pilihan != null) {
             if (pilihan !== 'abstain') {
               const selectedN = nominee.find((n) => n.id === pilihan);
-              const requiresReading = selectedN && (selectedN.dokumen_link || hasTabel(selectedN.tabel_kehadiran));
+              const requiresReading = selectedN && (selectedN.dokumen_link || (periode?.is_tabel_kehadiran && hasTabel(selectedN.tabel_kehadiran)));
               if (requiresReading && !readProfiles.has(pilihan)) {
                 setWarningNominee(selectedN);
                 return;
@@ -281,6 +281,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
         isOpen={Boolean(profilNominee)}
         onClose={() => setProfilNominee(null)}
         nominee={profilNominee}
+        isTabelKehadiranEnabled={periode?.is_tabel_kehadiran}
         onVoteClick={() => {
           const n = profilNominee;
           setPilihan(n.id);

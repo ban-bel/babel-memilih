@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, FileSignature, Gavel, Edit2, Trash2, X, Loader2 } from 'lucide-react';
+import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, Users, FileSignature, Gavel, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Modal from '../../../components/common/Modal';
@@ -14,6 +14,7 @@ import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../../utils/constants';
 import { BuatPeriodeWizard } from '../BuatPeriode';
 import { KelolaNomineeContent } from '../KelolaNominee';
 import { PartisipanPeriodeContent } from '../PartisipanPeriode';
+import KelolaJuriContent from './components/KelolaJuriContent';
 
 function InfoDasarPeriode({ periode }) {
   if (!periode) return null;
@@ -154,6 +155,8 @@ function ManajemenPeriodeContent({ adminProfile }) {
       status: p.status || 'DRAFT',
       is_nominee_can_vote: p.is_nominee_can_vote ?? true,
       is_allow_abstain: p.is_allow_abstain ?? false,
+      is_video_profil: p.is_video_profil ?? false,
+      is_tabel_kehadiran: p.is_tabel_kehadiran ?? false,
     });
     setShowEditModal(true);
   }
@@ -422,24 +425,35 @@ function ManajemenPeriodeContent({ adminProfile }) {
               </div>
 
               {/* Tabs */}
-              <div className="mb-6 flex overflow-x-auto gap-2 border-b border-slate-200 pb-2 scrollbar-hide">
+              <div className="flex gap-2 border-b border-slate-200">
                 <button
                   onClick={() => setActiveTab('info')}
                   className={`tab ${activeTab === 'info' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
                 >
-                  <Calendar className="h-4 w-4" /> Info Dasar
+                  <Activity className="h-4 w-4" /> Info & Pengaturan
                 </button>
                 <button
                   onClick={() => setActiveTab('nominee')}
                   className={`tab ${activeTab === 'nominee' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
                 >
-                  <UserCheck className="h-4 w-4" /> Kandidat / Nominee
+                  <Users className="h-4 w-4" /> Kelola Nominee
                 </button>
+                
+                {/* Tab Juri khusus Mode 2 */}
+                {activePeriode.mode_penilaian === 'MODE_2' && (
+                  <button
+                    onClick={() => setActiveTab('juri')}
+                    className={`tab ${activeTab === 'juri' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
+                  >
+                    <Gavel className="h-4 w-4" /> Kelola Juri
+                  </button>
+                )}
+
                 <button
                   onClick={() => setActiveTab('partisipan')}
                   className={`tab ${activeTab === 'partisipan' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
                 >
-                  {activePeriode.mode_penilaian === MODE_PENILAIAN.MODE_2 ? <Gavel className="h-4 w-4" /> : <FileSignature className="h-4 w-4" />} 
+                  {activePeriode.mode_penilaian === 'MODE_2' ? <Gavel className="h-4 w-4" /> : <FileSignature className="h-4 w-4" />} 
                   Partisipan & Token
                 </button>
               </div>
@@ -448,6 +462,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
               <div className="mt-4">
                 {activeTab === 'info' && <InfoDasarPeriode periode={activePeriode} />}
                 {activeTab === 'nominee' && <KelolaNomineeContent adminProfile={adminProfile} periodeId={activePeriode.id} />}
+                {activeTab === 'juri' && activePeriode.mode_penilaian === 'MODE_2' && <KelolaJuriContent periodeId={activePeriode.id} />}
                 {activeTab === 'partisipan' && <PartisipanPeriodeContent adminProfile={adminProfile} periode={activePeriode} />}
               </div>
             </div>
@@ -511,28 +526,30 @@ function ManajemenPeriodeContent({ adminProfile }) {
             </select>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
-              <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai.</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input type="checkbox" className="peer sr-only" checked={editForm.is_nominee_can_vote} onChange={(e) => setEditForm({ ...editForm, is_nominee_can_vote: e.target.checked })} />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
-            </label>
-          </div>
-
-          {/* Toggle Abstain in Edit */}
-          {(activePeriode?.mode_penilaian === 'MODE_1B' || activePeriode?.mode_penilaian === 'MODE_1A') && (
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 mb-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700">Izinkan Suara Abstain / Kotak Kosong</label>
-                <p className="text-xs text-slate-500">Jika aktif, penilai dapat memilih opsi abstain jika tersedia.</p>
+          {/* Opsi Khusus Quick Vote (MODE_1B) */}
+          {activePeriode?.mode_penilaian === 'MODE_1B' && (
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Nominee Berhak Voting</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee akan otomatis di-generate sebagai Penilai.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_nominee_can_vote} onChange={(e) => setEditForm({ ...editForm, is_nominee_can_vote: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
               </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input type="checkbox" className="peer sr-only" checked={editForm.is_allow_abstain} onChange={(e) => setEditForm({ ...editForm, is_allow_abstain: e.target.checked })} />
-                <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
-              </label>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Izinkan Suara Abstain / Kotak Kosong</label>
+                  <p className="text-xs text-slate-500">Jika aktif, penilai dapat memilih opsi abstain jika tersedia.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_allow_abstain} onChange={(e) => setEditForm({ ...editForm, is_allow_abstain: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
             </div>
           )}
 
@@ -542,9 +559,36 @@ function ManajemenPeriodeContent({ adminProfile }) {
               rows={3}
               value={editForm.petunjuk_penilaian}
               onChange={(e) => setEditForm({ ...editForm, petunjuk_penilaian: e.target.value })}
-              className="input"
+              className="input resize-none"
             />
           </div>
+
+          {/* Opsi Video Profil dan Tabel Kehadiran untuk Mode 1A dan Mode 2 */}
+          {(activePeriode?.mode_penilaian === 'MODE_1A' || activePeriode?.mode_penilaian === 'MODE_2') && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Minta Link Video Profil (YouTube)</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee wajib menyertakan link video YouTube (muncul di halaman penilaian juri).</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_video_profil} onChange={(e) => setEditForm({ ...editForm, is_video_profil: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Gunakan Tabel Kehadiran</label>
+                  <p className="text-xs text-slate-500">Jika aktif, admin dapat menginput tabel kehadiran untuk ditampilkan ke penilai.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_tabel_kehadiran} onChange={(e) => setEditForm({ ...editForm, is_tabel_kehadiran: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-6">
             <button

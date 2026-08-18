@@ -600,7 +600,9 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   // Tab config
   const availableTabs = [
     { key: 'nominee', data: daftarNominee, label: 'Nominee', dotColor: 'bg-emerald-500', kategori: 'NOMINEE', rolePath: 'nominee' },
-    { key: 'penilai', data: daftarPenilai, label: 'Penilai', dotColor: 'bg-blue-500', kategori: 'PENILAI', rolePath: 'penilai' },
+    ...(periode?.mode_penilaian !== MODE_PENILAIAN.MODE_2
+      ? [{ key: 'penilai', data: daftarPenilai, label: 'Penilai', dotColor: 'bg-blue-500', kategori: 'PENILAI', rolePath: 'penilai' }]
+      : []),
     ...(periode?.mode_penilaian === MODE_PENILAIAN.MODE_2
       ? [{ key: 'juri', data: daftarJuri, label: 'Juri', dotColor: 'bg-amber-500', kategori: 'JURI', rolePath: 'juri' }]
       : []),
