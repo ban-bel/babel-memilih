@@ -445,10 +445,8 @@ export async function buatPeriodePenilaian(periode) {
   // Ensure proper timestamp format: append seconds if missing, add timezone
   const formatTimestamp = (val) => {
     if (!val) return null;
-    // datetime-local returns "YYYY-MM-DDTHH:MM", need to ensure valid timestamp
-    const formatted = val.includes(':') && !val.includes(':00:') ? `${val}:00` : val;
-    // Convert to ISO string with timezone (append Z if no timezone)
-    return formatted.endsWith('Z') ? formatted : `${formatted}+00`;
+    // val is like "2026-08-18T10:00". Parse it as local time, then convert to ISO UTC.
+    return new Date(val).toISOString();
   };
 
   const { data, error } = await supabase
@@ -522,9 +520,17 @@ export async function updateStatusPeriode(periodeId, statusBaru) {
  * });
  */
 export async function updatePeriodePenilaian(periodeId, payload) {
+  const updatedPayload = { ...payload };
+  if (updatedPayload.tgl_mulai) {
+    updatedPayload.tgl_mulai = new Date(updatedPayload.tgl_mulai).toISOString();
+  }
+  if (updatedPayload.tgl_selesai) {
+    updatedPayload.tgl_selesai = new Date(updatedPayload.tgl_selesai).toISOString();
+  }
+
   const { error } = await supabase
     .from('periode_penilaian')
-    .update(payload)
+    .update(updatedPayload)
     .eq('id', periodeId);
 
   if (error) throw new Error(`Gagal memperbarui periode: ${error.message}`);

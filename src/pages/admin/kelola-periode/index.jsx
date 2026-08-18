@@ -137,12 +137,19 @@ function ManajemenPeriodeContent({ adminProfile }) {
     mutasiHapus.mutate(deleteTarget.id);
   }
 
+  const toLocalDatetimeString = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
   function bukaModalEdit(p) {
     setEditForm({
       id: p.id,
       nama_periode: p.nama_periode || '',
-      tgl_mulai: p.tgl_mulai ? p.tgl_mulai.substring(0, 16) : '',
-      tgl_selesai: p.tgl_selesai ? p.tgl_selesai.substring(0, 16) : '',
+      tgl_mulai: toLocalDatetimeString(p.tgl_mulai),
+      tgl_selesai: toLocalDatetimeString(p.tgl_selesai),
       petunjuk_penilaian: p.petunjuk_penilaian || '',
       status: p.status || 'DRAFT',
       is_nominee_can_vote: p.is_nominee_can_vote ?? true,
