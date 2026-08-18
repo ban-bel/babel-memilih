@@ -11,6 +11,7 @@ export default function KelolaJuriContent({ periodeId }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [pegawaiList, setPegawaiList] = useState([]);
   const [loadingPegawai, setLoadingPegawai] = useState(false);
+  const [canVoteOwnRegion, setCanVoteOwnRegion] = useState(true);
 
   // Fetch Juri
   const { data: daftarJuri = [], isLoading: loadingJuri } = useQuery({
@@ -49,7 +50,8 @@ export default function KelolaJuriContent({ periodeId }) {
       const payload = {
         periode_id: periodeId,
         pegawai_id: pegawai.id,
-        is_ketua_juri: isKetua
+        is_ketua_juri: isKetua,
+        is_can_vote_own_region: canVoteOwnRegion
       };
 
       const { data, error } = await supabase
@@ -182,6 +184,23 @@ export default function KelolaJuriContent({ periodeId }) {
                 <button onClick={cariPegawai} className="btn-primary px-3">
                   {loadingPegawai ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </button>
+              </div>
+
+              <div className="mb-4 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={canVoteOwnRegion}
+                    onChange={(e) => setCanVoteOwnRegion(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm font-medium text-slate-700">
+                    Bisa menilai kandidat dari wilayah asalnya
+                  </span>
+                </label>
+                <p className="text-xs text-slate-500 mt-1 pl-6">
+                  Jika dimatikan, juri ini tidak akan bisa melihat dan menilai kandidat yang berasal dari wilayah kerja yang sama dengannya.
+                </p>
               </div>
 
               {pegawaiList.length > 0 && (
