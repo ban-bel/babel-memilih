@@ -1348,8 +1348,6 @@ export async function resetAksesPenilaiUniversal(periodeId, pegawaiId, adminId, 
   }
 
   // Untuk Penilai & Juri (Menggunakan RPC yang sudah menangani Mode 1A, 1B, 2)
-  // TODO: RPC perlu diupdate juga untuk reset notifikasi_wa_sent_at jika diperlukan
-
   const { error } = await supabase.rpc('reset_akses_penilai_universal', {
     p_periode_id: periodeId,
     p_pegawai_id: pegawaiId,

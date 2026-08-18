@@ -523,16 +523,26 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   // Generate token mutation
   const generateMut = useMutation({
     mutationFn: async () => {
-      let wilayahIds = [periode.wilayah_id];
+      let wilayahIds = new Set([periode.wilayah_id]);
       try {
         const units = await fetchUnitKerjaPeriode(periode.id);
         if (units && units.length > 0) {
-          wilayahIds = units.map(u => u.wilayah_id);
+          units.forEach(u => wilayahIds.add(u.wilayah_id));
         }
       } catch (err) {
         console.warn('Gagal memuat unit kerja multi-wilayah', err);
       }
-      return generateTokenPenilaianMultiUnit(periode.id, wilayahIds);
+      
+      // Pastikan wilayah dari daftar nominee (lintas wilayah) juga diikutsertakan
+      if (daftarNominee && daftarNominee.length > 0) {
+        daftarNominee.forEach(n => {
+          if (n.pegawai?.wilayah_id) {
+            wilayahIds.add(n.pegawai.wilayah_id);
+          }
+        });
+      }
+      
+      return generateTokenPenilaianMultiUnit(periode.id, Array.from(wilayahIds));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partisipan-nominee', periode?.id] });
