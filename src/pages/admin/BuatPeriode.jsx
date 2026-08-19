@@ -397,7 +397,8 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                         title: 'Daftar Dokumen yang Diperlukan',
                         item: 'Dokumen',
                         placeholder: 'Tulis nama dokumen (misal: Link Makalah)...',
-                        addBtn: 'Tambah Dokumen'
+                        addBtn: 'Tambah Dokumen',
+                        hideScores: true
                       }}
                     />
                   ) : (

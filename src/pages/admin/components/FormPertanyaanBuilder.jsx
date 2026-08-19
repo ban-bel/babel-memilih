@@ -16,7 +16,8 @@ export default function FormPertanyaanBuilder({
     title: 'Daftar Pertanyaan',
     item: 'Pertanyaan',
     placeholder: 'Tulis pertanyaan...',
-    addBtn: 'Tambah Pertanyaan'
+    addBtn: 'Tambah Pertanyaan',
+    hideScores: false
   }
 }) {
   function tambah() {
@@ -51,16 +52,18 @@ export default function FormPertanyaanBuilder({
                   placeholder={labels.placeholder}
                   className="input resize-none text-sm"
                 />
-                <div className="flex items-center gap-4 text-sm">
-                  <label className="flex items-center gap-2 text-slate-600">
-                    <span>Min:</span>
-                    <input type="number" value={p.skor_min} onChange={(e) => ubah(p.key, 'skor_min', Number(e.target.value))} className="input w-20 text-center" />
-                  </label>
-                  <label className="flex items-center gap-2 text-slate-600">
-                    <span>Max:</span>
-                    <input type="number" value={p.skor_max} onChange={(e) => ubah(p.key, 'skor_max', Number(e.target.value))} className="input w-20 text-center" />
-                  </label>
-                </div>
+                {!labels.hideScores && (
+                  <div className="flex items-center gap-4 text-sm">
+                    <label className="flex items-center gap-2 text-slate-600">
+                      <span>Min:</span>
+                      <input type="number" value={p.skor_min} onChange={(e) => ubah(p.key, 'skor_min', Number(e.target.value))} className="input w-20 text-center" />
+                    </label>
+                    <label className="flex items-center gap-2 text-slate-600">
+                      <span>Max:</span>
+                      <input type="number" value={p.skor_max} onChange={(e) => ubah(p.key, 'skor_max', Number(e.target.value))} className="input w-20 text-center" />
+                    </label>
+                  </div>
+                )}
               </div>
               <button
                 type="button"
