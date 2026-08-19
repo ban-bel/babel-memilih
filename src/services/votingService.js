@@ -919,7 +919,7 @@ export async function fetchJawabanNominee(periodeId, nomineeId) {
 export async function fetchAllJawabanNominee(periodeId) {
   const { data, error } = await supabase
     .from('jawaban_nominee')
-    .select('nominee_id, pertanyaan_id, teks_jawaban, file_url, updated_at')
+    .select('nominee_id, pertanyaan_id, teks_jawaban, file_url, updated_at, pertanyaan:pertanyaan_id(teks_pertanyaan)')
     .eq('periode_id', periodeId);
 
   if (error) throw new Error(`Gagal memuat seluruh jawaban nominee: ${error.message}`);
@@ -1063,6 +1063,32 @@ export async function fetchCatatanKualitatifJuri(periodeId) {
     .not('catatan_juri', 'is', null);
 
   if (error) throw new Error(`Gagal memuat catatan kualitatif juri: ${error.message}`);
+  return data ?? [];
+}
+
+/**
+ * Mengambil rincian penilaian juri per nominee (Mode 2) untuk Dashboard Kakan.
+ *
+ * @async
+ * @function fetchDetailPenilaianJuri
+ * @param {number} periodeId - ID periode
+ * @returns {Promise<Object[]>} Array detail nilai per juri
+ */
+export async function fetchDetailPenilaianJuri(periodeId) {
+  const { data, error } = await supabase
+    .from('penilaian_juri')
+    .select(`
+      nominee_id,
+      kategori_id,
+      skor,
+      catatan_juri,
+      juri_id,
+      juri:pegawai!penilaian_juri_juri_id_fkey(nama),
+      kategori:kategori_penilaian!penilaian_juri_kategori_id_fkey(nama_kategori, bobot_persen)
+    `)
+    .eq('periode_id', periodeId);
+
+  if (error) throw new Error(`Gagal memuat rincian penilaian juri: ${error.message}`);
   return data ?? [];
 }
 

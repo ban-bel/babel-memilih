@@ -24,6 +24,7 @@ import {
   fetchRekapMode2A,
   fetchVotingKategori,
   fetchCatatanKualitatifJuri,
+  fetchDetailPenilaianJuri,
   fetchKeputusanKakan,
   kuncikanPemenang,
   fetchPemenangPerKategori,
@@ -36,6 +37,7 @@ import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../utils/constants';
 
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
+import RekapDetailJuri from './components/RekapDetailJuri';
 import FormKunciPemenang from '../../components/common/FormKunciPemenang';
 import Podium from '../../components/common/Podium';
 
@@ -205,6 +207,13 @@ function DashboardKakanContent({ adminProfile }) {
   const { data: catatan = [] } = useQuery({
     queryKey: ['catatan-juri', periodeId],
     queryFn: () => fetchCatatanKualitatifJuri(Number(periodeId)),
+    enabled: Boolean(periodeId) && mode === MODE_PENILAIAN.MODE_2,
+  });
+
+  // Fetch rincian nilai juri (Mode 2)
+  const { data: detailJuri = [], isLoading: loadingDetailJuri } = useQuery({
+    queryKey: ['detail-juri', periodeId],
+    queryFn: () => fetchDetailPenilaianJuri(Number(periodeId)),
     enabled: Boolean(periodeId) && mode === MODE_PENILAIAN.MODE_2,
   });
 
@@ -738,25 +747,13 @@ function DashboardKakanContent({ adminProfile }) {
             </table>
           </div>
 
-          {/* Catatan Juri */}
-          {mode === MODE_PENILAIAN.MODE_2 && catatan.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-              <h2 className="mb-3 flex items-center gap-2 font-semibold text-navy-900">
-                <MessageSquare className="h-5 w-5 text-slate-500" />
-                Catatan Juri
-              </h2>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {catatan.map((c, idx) => (
-                  <div key={idx} className="rounded-lg bg-slate-50 p-3 text-sm">
-                    <p className="mb-1 text-xs text-slate-400">
-                      {rekap.find((r) => r.nominee_id === c.nominee_id)?.nama_nominee} ·{' '}
-                      {c.kategori?.nama_kategori} · {c.juri?.nama}
-                    </p>
-                    <p className="text-slate-700">{c.catatan_juri}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Rincian Detail Juri & Catatan (Mode 2) */}
+          {mode === MODE_PENILAIAN.MODE_2 && (
+            <RekapDetailJuri 
+              detailJuri={detailJuri} 
+              loading={loadingDetailJuri} 
+              nominees={rekapTopN} 
+            />
           )}
 
           {/* Form Kunci Pemenang */}
