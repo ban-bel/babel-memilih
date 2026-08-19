@@ -122,15 +122,15 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
                           <td className="px-4 py-4 font-medium text-slate-900 align-top min-w-[150px]">
                             {juri.nama_juri}
                           </td>
-                          <td className="px-4 py-4 align-top min-w-[250px]">
-                            <ul className="space-y-1.5">
+                          <td className="px-4 py-4 align-top min-w-[300px]">
+                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2">
                               {juri.kategori.map((k, kIdx) => (
-                                <li key={kIdx} className="flex justify-between items-center text-xs">
-                                  <span className="text-slate-600 truncate mr-2" title={k.nama_kategori}>{k.nama_kategori} ({k.bobot}%)</span>
-                                  <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">{k.skor}</span>
-                                </li>
+                                <div key={kIdx} className="flex items-center justify-between text-xs border border-slate-100 bg-slate-50 rounded-md px-2.5 py-1.5">
+                                  <span className="text-slate-600 truncate mr-2 font-medium" title={k.nama_kategori}>{k.nama_kategori} <span className="text-[10px] text-slate-400 font-normal">({k.bobot}%)</span></span>
+                                  <span className="font-bold text-navy-800">{k.skor}</span>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           </td>
                           <td className="px-4 py-4 align-top text-center">
                             <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-navy-50 text-navy-700 font-bold text-base shadow-sm">
