@@ -47,7 +47,7 @@ function KelolaPegawaiContent({ adminProfile }) {
     jabatan: '',
     unit_kerja: '',
     wilayah_id: defaultWilayahId,
-    role_admin: 'TIDAK_ADA',
+    role_admin: 'USER_BIASA',
     is_kakan: false,
     is_active: true,
   });
@@ -190,7 +190,7 @@ function KelolaPegawaiContent({ adminProfile }) {
       jabatan: '',
       unit_kerja: '',
       wilayah_id: isKabKotaAdmin ? String(adminProfile.wilayah_id) : (wilayahList[0]?.id || ''),
-      role_admin: 'TIDAK_ADA',
+      role_admin: 'USER_BIASA',
       is_kakan: false,
       is_active: true,
     });
@@ -213,7 +213,7 @@ function KelolaPegawaiContent({ adminProfile }) {
       jabatan: p.jabatan || '',
       unit_kerja: p.unit_kerja || '',
       wilayah_id: isKabKotaAdmin ? String(adminProfile.wilayah_id) : (p.wilayah_id || ''),
-      role_admin: p.role_admin || 'TIDAK_ADA',
+      role_admin: p.role_admin || 'USER_BIASA',
       is_kakan: Boolean(p.is_kakan),
       is_active: p.is_active ?? true,
     });
@@ -357,21 +357,21 @@ function KelolaPegawaiContent({ adminProfile }) {
       parsed.push({
         lineNum: i + 1,
         nama,
-        nip,
-        nip_baru: nipBaru,
-        email,
-        no_hp: noHp,
-        golongan,
-        jabatan,
-        unit_kerja: unitKerja,
-        foto_url: fotoUrl,
+        nip: nip || null,
+        nip_baru: nipBaru || null,
+        email: email || null,
+        no_hp: noHp || null,
+        golongan: golongan || null,
+        jabatan: jabatan || null,
+        unit_kerja: unitKerja || null,
+        foto_url: fotoUrl || null,
         kode_wilayah: kodeWilayah,
         wilayah_id: resolvedWilayahId,
         wilayah_nama: resolvedWilayahNama,
         status: rowStatus,
         errorMsg,
         warningMsg,
-        role_admin: 'TIDAK_ADA',
+        role_admin: 'USER_BIASA',
         is_kakan: false,
         is_active: true,
       });
@@ -401,7 +401,7 @@ function KelolaPegawaiContent({ adminProfile }) {
     
     // Auto-detect role_admin based on the toggle and wilayah level
     let finalRoleAdmin = 'USER_BIASA';
-    if (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA') {
+    if (formData.role_admin && formData.role_admin !== 'USER_BIASA') {
       const targetW = wilayahList.find((w) => String(w.id) === String(targetWilayahId));
       if (targetW) {
         finalRoleAdmin = targetW.level === 'PROVINSI' ? 'ADMIN_PROVINSI' : 'ADMIN_KABKOTA';
@@ -410,6 +410,12 @@ function KelolaPegawaiContent({ adminProfile }) {
 
     const { unit_kerja, wilayah, ...cleanFormData } = formData;
     const payload = { ...cleanFormData, user_id: formData.user_id?.trim() || null, wilayah_id: targetWilayahId, role_admin: finalRoleAdmin };
+    
+    // Konversi string kosong menjadi null agar tidak gagal validasi di Supabase
+    Object.keys(payload).forEach(k => {
+      if (payload[k] === '') payload[k] = null;
+    });
+
     mutasiSimpan.mutate(payload);
   }
 
@@ -659,7 +665,7 @@ function KelolaPegawaiContent({ adminProfile }) {
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Peran Pegawai</label>
                 <select 
                   className="input cursor-pointer"
-                  value={formData.is_kakan ? 'KAKAN' : (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA' ? 'ADMIN' : 'BIASA')}
+                  value={formData.is_kakan ? 'KAKAN' : (formData.role_admin && formData.role_admin !== 'USER_BIASA' ? 'ADMIN' : 'BIASA')}
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === 'BIASA') {
@@ -681,7 +687,7 @@ function KelolaPegawaiContent({ adminProfile }) {
                   <p className="mt-2 text-xs text-slate-500">
                     <strong className="text-navy-600">Kepala Kantor:</strong> Memberikan akses dasbor khusus untuk memantau rekapitulasi nilai dan menetapkan juara final.
                   </p>
-                ) : (formData.role_admin && formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA') ? (
+                ) : (formData.role_admin && formData.role_admin !== 'USER_BIASA') ? (
                   <p className="mt-2 text-xs text-slate-500">
                     <strong className="text-navy-600">Administrator:</strong> Berwenang mengelola data pegawai dan jadwal pemilihan. Akan otomatis menjadi Admin Provinsi atau Kab/Kota sesuai wilayah di atas.
                   </p>
@@ -693,7 +699,7 @@ function KelolaPegawaiContent({ adminProfile }) {
               </div>
 
               {/* Input Auth UID - Tampil hanya jika Admin atau Kakan */}
-              {(formData.is_kakan || (formData.role_admin !== 'USER_BIASA' && formData.role_admin !== 'TIDAK_ADA' && !!formData.role_admin)) && (
+              {(formData.is_kakan || (formData.role_admin !== 'USER_BIASA' && !!formData.role_admin)) && (
                 <div className="animate-fade-in bg-slate-50 p-4 rounded-lg border border-slate-200">
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
                     Auth User ID (UID Supabase)
