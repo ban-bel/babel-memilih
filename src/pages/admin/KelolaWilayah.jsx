@@ -51,11 +51,7 @@ function FormWilayah({ editData, onSubmit, onCancel, isPending }) {
       parent_id: parentId ? Number(parentId) : null,
     };
 
-    if (isEditing) {
-      onSubmit(payload);
-    } else {
-      onSubmit(kodeWilayah, namaWilayah, level, parentId ? Number(parentId) : null, namaUnitKerja);
-    }
+    onSubmit(payload);
   }
 
   return (
@@ -203,9 +199,13 @@ function KelolaWilayahContent({ adminProfile }) {
       if (editId) {
         return updateWilayah(editId, payload);
       } else {
-        // payload adalah parameter terpisah untuk tambahWilayah
-        const [kode, nama, lv, parent, unit] = arguments;
-        return tambahWilayah(kode, nama, lv, parent, unit);
+        return tambahWilayah(
+          payload.kode_wilayah,
+          payload.nama_wilayah,
+          payload.level,
+          payload.parent_id,
+          payload.nama_unit_kerja
+        );
       }
     },
     onSuccess: () => {
