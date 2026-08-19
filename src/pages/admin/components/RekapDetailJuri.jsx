@@ -83,16 +83,16 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
               >
                 <div className="flex items-center gap-4">
                   <img
-                    src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : 'https://ui-avatars.com/api/?name='+encodeURIComponent(n.nama_nominee))}
-                    alt={n.nama_nominee}
+                    src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : 'https://ui-avatars.com/api/?name='+encodeURIComponent(n.nama_nominee || n.nama || '-'))}
+                    alt={n.nama_nominee || n.nama || '-'}
                     className="h-10 w-10 rounded-full object-cover border border-slate-200"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama_nominee)}&background=16324a&color=fff&size=128`;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama_nominee || n.nama || '-')}&background=16324a&color=fff&size=128`;
                     }}
                   />
                   <div className="text-left">
-                    <p className="font-bold text-navy-900 text-base">{n.nama_nominee}</p>
+                    <p className="font-bold text-navy-900 text-base">{n.nama_nominee || n.nama || '-'}</p>
                     <p className="text-xs text-slate-500">{n.unit_kerja}</p>
                   </div>
                 </div>

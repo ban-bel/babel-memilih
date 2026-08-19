@@ -410,7 +410,7 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
               {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
                 <>
                   <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700">
-                    <strong>Catatan:</strong> Pertanyaan di bawah untuk narasi Nominee.
+                    <strong>Catatan:</strong> Tentukan kriteria penilaian dan bobot (persentase) yang akan digunakan juri untuk menilai kandidat.
                   </div>
                   <FormKategoriBuilder daftar={form.kategori} onChange={(d) => ubah('kategori', d)} />
                   <FormPenunjukanJuri wilayahIds={form.wilayah_ids} daftar={form.juri} onChange={(d) => ubah('juri', d)} />
