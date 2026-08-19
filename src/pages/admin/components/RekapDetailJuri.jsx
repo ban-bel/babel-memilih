@@ -123,11 +123,15 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
                             {juri.nama_juri}
                           </td>
                           <td className="px-4 py-4 align-top min-w-[300px]">
-                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {juri.kategori.map((k, kIdx) => (
-                                <div key={kIdx} className="flex items-center justify-between text-xs border border-slate-100 bg-slate-50 rounded-md px-2.5 py-1.5">
-                                  <span className="text-slate-600 truncate mr-2 font-medium" title={k.nama_kategori}>{k.nama_kategori} <span className="text-[10px] text-slate-400 font-normal">({k.bobot}%)</span></span>
-                                  <span className="font-bold text-navy-800">{k.skor}</span>
+                                <div key={kIdx} className="inline-flex items-center gap-1.5 rounded border border-slate-200/70 bg-slate-50 px-2 py-1 text-[11px]">
+                                  <span className="text-slate-600 truncate max-w-[140px]" title={`${k.nama_kategori} (${k.bobot}%)`}>
+                                    {k.nama_kategori}
+                                  </span>
+                                  <span className="font-bold text-navy-800 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100">
+                                    {k.skor}
+                                  </span>
                                 </div>
                               ))}
                             </div>
