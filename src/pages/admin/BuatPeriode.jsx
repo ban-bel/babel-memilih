@@ -389,7 +389,20 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                       <p className="text-xs text-slate-500">Anda dapat menentukan berapa banyak link dokumen yang harus dikumpulkan nominee (contoh: Link Makalah, Link Bukti, dll) menggunakan fitur di bawah ini.</p>
                     </div>
                   )}
-                  <FormPertanyaanBuilder daftar={form.pertanyaan} onChange={(d) => ubah('pertanyaan', d)} />
+                  {form.mode_penilaian === MODE_PENILAIAN.MODE_2 ? (
+                    <FormPertanyaanBuilder 
+                      daftar={form.pertanyaan} 
+                      onChange={(d) => ubah('pertanyaan', d)} 
+                      labels={{
+                        title: 'Daftar Dokumen yang Diperlukan',
+                        item: 'Dokumen',
+                        placeholder: 'Tulis nama dokumen (misal: Link Makalah)...',
+                        addBtn: 'Tambah Dokumen'
+                      }}
+                    />
+                  ) : (
+                    <FormPertanyaanBuilder daftar={form.pertanyaan} onChange={(d) => ubah('pertanyaan', d)} />
+                  )}
                 </div>
               )}
 

@@ -9,7 +9,16 @@ function buatBaris() {
 /**
  * Form Pertanyaan untuk Mode 1A — daftar dinamis (tambah/hapus baris).
  */
-export default function FormPertanyaanBuilder({ daftar, onChange }) {
+export default function FormPertanyaanBuilder({ 
+  daftar, 
+  onChange,
+  labels = {
+    title: 'Daftar Pertanyaan',
+    item: 'Pertanyaan',
+    placeholder: 'Tulis pertanyaan...',
+    addBtn: 'Tambah Pertanyaan'
+  }
+}) {
   function tambah() {
     onChange([...daftar, buatBaris()]);
   }
@@ -23,8 +32,8 @@ export default function FormPertanyaanBuilder({ daftar, onChange }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-700">Daftar Pertanyaan</p>
-        <span className="badge badge-primary">{daftar.length} pertanyaan</span>
+        <p className="text-sm font-semibold text-slate-700">{labels.title}</p>
+        <span className="badge badge-primary">{daftar.length} {labels.item}</span>
       </div>
 
       <div className="space-y-3">
@@ -39,7 +48,7 @@ export default function FormPertanyaanBuilder({ daftar, onChange }) {
                   rows={2}
                   value={p.teks_pertanyaan}
                   onChange={(e) => ubah(p.key, 'teks_pertanyaan', e.target.value)}
-                  placeholder="Tulis pertanyaan..."
+                  placeholder={labels.placeholder}
                   className="input resize-none text-sm"
                 />
                 <div className="flex items-center gap-4 text-sm">
@@ -68,7 +77,7 @@ export default function FormPertanyaanBuilder({ daftar, onChange }) {
 
       <button type="button" onClick={tambah} className="w-full rounded-xl border-2 border-dashed border-navy-300 bg-navy-50/50 p-4 text-sm font-medium text-navy-700 transition-all hover:bg-navy-100 hover:border-navy-400">
         <Plus className="h-4 w-4 inline mr-2" />
-        Tambah Pertanyaan
+        {labels.addBtn}
       </button>
     </div>
   );
