@@ -272,6 +272,9 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
       video_profil_link,
       dokumen_link,
       tabel_kehadiran,
+      portofolio_pengembangan,
+      portofolio_inovasi,
+      portofolio_penghargaan,
       nominee:pegawai ( id, nama, nip, nip_baru, foto_url, wilayah_id, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `
     )
@@ -282,10 +285,20 @@ export async function fetchDaftarNominee(periodeId, excludePegawaiId) {
     throw new Error(`Gagal memuat daftar nominee: ${error.message}`);
   }
 
-  return (data ?? []).map(item => {
+  return data.map((item) => {
     const p = item.nominee;
     const unitKerja = p?.wilayah?.nama_unit_kerja || p?.wilayah?.nama_wilayah || '-';
-    return p ? { ...p, unit_kerja: unitKerja, wilayah_id: p.wilayah_id, video_profil_link: item.video_profil_link, dokumen_link: item.dokumen_link, tabel_kehadiran: item.tabel_kehadiran } : null;
+    return p ? { 
+      ...p, 
+      unit_kerja: unitKerja, 
+      wilayah_id: p.wilayah_id, 
+      video_profil_link: item.video_profil_link, 
+      dokumen_link: item.dokumen_link, 
+      tabel_kehadiran: item.tabel_kehadiran,
+      portofolio_pengembangan: item.portofolio_pengembangan,
+      portofolio_inovasi: item.portofolio_inovasi,
+      portofolio_penghargaan: item.portofolio_penghargaan
+    } : null;
   }).filter(Boolean);
 }
 
@@ -1175,6 +1188,9 @@ export async function fetchNomineeByPeriode(periodeId) {
         pegawai_id,
         dokumen_link,
         tabel_kehadiran,
+        portofolio_pengembangan,
+        portofolio_inovasi,
+        portofolio_penghargaan,
         pegawai:pegawai_id (
           id,
           nama,
@@ -2048,6 +2064,69 @@ export async function fetchVideoProfilNominee(periodeId, nomineeId) {
     throw new Error(`Gagal memuat link video profil: ${error.message}`);
   }
   return data?.video_profil_link ?? null;
+}
+
+/**
+ * Update data portofolio nominee (Pengembangan Diri, Inovasi, Penghargaan).
+ * @async
+ * @param {string} token 
+ * @param {'portofolio_pengembangan' | 'portofolio_inovasi' | 'portofolio_penghargaan'} portofolioType 
+ * @param {Object[]} data 
+ */
+export async function submitPortofolioNominee(token, portofolioType, data) {
+  const { data: akses, error: errAkses } = await supabase.rpc('get_akses_nominee_by_token', {
+    p_token: token,
+  });
+
+  if (errAkses || !akses || akses.length === 0) {
+    throw new Error('Token tidak valid atau sudah kadaluarsa.');
+  }
+
+  const nomineePeriodeId = akses[0].nominee.id;
+  const updateData = {};
+  updateData[portofolioType] = data || [];
+
+  const { error } = await supabase
+    .from('nominee_periode')
+    .update(updateData)
+    .eq('id', nomineePeriodeId);
+
+  if (error) {
+    throw new Error(`Gagal menyimpan ${portofolioType}: ${error.message}`);
+  }
+}
+
+/**
+ * Fetch data portofolio nominee dari nominee_periode.
+ * @async
+ * @param {string} token 
+ * @returns {Promise<Object>} { portofolio_pengembangan, portofolio_inovasi, portofolio_penghargaan }
+ */
+export async function fetchPortofolioNominee(token) {
+  const { data: akses, error: errAkses } = await supabase.rpc('get_akses_nominee_by_token', {
+    p_token: token,
+  });
+
+  if (errAkses || !akses || akses.length === 0) {
+    throw new Error('Token tidak valid atau sudah kadaluarsa.');
+  }
+
+  const nomineePeriodeId = akses[0].nominee.id;
+  const { data, error } = await supabase
+    .from('nominee_periode')
+    .select('portofolio_pengembangan, portofolio_inovasi, portofolio_penghargaan')
+    .eq('id', nomineePeriodeId)
+    .single();
+
+  if (error) {
+    throw new Error(`Gagal memuat portofolio: ${error.message}`);
+  }
+
+  return {
+    portofolio_pengembangan: data?.portofolio_pengembangan || [],
+    portofolio_inovasi: data?.portofolio_inovasi || [],
+    portofolio_penghargaan: data?.portofolio_penghargaan || [],
+  };
 }
 
 /**

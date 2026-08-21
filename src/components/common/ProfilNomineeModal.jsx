@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, FileText, Table, Send, Loader2, CheckSquare } from 'lucide-react';
+import PortofolioViewer from './PortofolioViewer';
 
 const getPreviewUrl = (url) => {
   if (!url) return '';
@@ -216,6 +217,29 @@ export default function ProfilNomineeModal({ isOpen, onClose, nominee, onVoteCli
               </div>
             </div>
           )}
+
+          <div className="mt-8 space-y-4">
+            <PortofolioViewer 
+              type="portofolio_pengembangan" 
+              title="Pengembangan Diri" 
+              icon="📚" 
+              portofolio={nominee?.portofolio_pengembangan} 
+            />
+            
+            <PortofolioViewer 
+              type="portofolio_inovasi" 
+              title="Inovasi" 
+              icon="💡" 
+              portofolio={nominee?.portofolio_inovasi} 
+            />
+            
+            <PortofolioViewer 
+              type="portofolio_penghargaan" 
+              title="Penghargaan" 
+              icon="🏆" 
+              portofolio={nominee?.portofolio_penghargaan} 
+            />
+          </div>
         </div>
 
         {/* Footer Action */}

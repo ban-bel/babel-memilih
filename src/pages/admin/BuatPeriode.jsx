@@ -53,6 +53,9 @@ function nilaiAwalForm() {
     is_nominee_can_vote: true,
     is_allow_abstain: false,
     is_tabel_kehadiran: false,
+    is_portofolio_pengembangan: false,
+    is_portofolio_inovasi: false,
+    is_portofolio_penghargaan: false,
   };
 }
 
@@ -375,6 +378,51 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                       <span className="font-medium text-navy-900">Gunakan Tabel Kehadiran</span>
                       <p className="text-xs text-slate-500 mt-0.5">
                         Admin dapat mengisi rekapitulasi kehadiran nominee, dan data ini akan ditampilkan ke penilai/juri.
+                      </p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
+                    <input
+                      type="checkbox"
+                      checked={form.is_portofolio_pengembangan}
+                      onChange={(e) => ubah('is_portofolio_pengembangan', e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
+                    />
+                    <div>
+                      <span className="font-medium text-navy-900">Form Portofolio: Pengembangan Diri</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Nominee dapat melengkapi rekam jejak pengembangan diri mereka di form pengisian nominee.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
+                    <input
+                      type="checkbox"
+                      checked={form.is_portofolio_inovasi}
+                      onChange={(e) => ubah('is_portofolio_inovasi', e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
+                    />
+                    <div>
+                      <span className="font-medium text-navy-900">Form Portofolio: Inovasi</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Nominee dapat mengisi daftar inovasi yang telah mereka kembangkan.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
+                    <input
+                      type="checkbox"
+                      checked={form.is_portofolio_penghargaan}
+                      onChange={(e) => ubah('is_portofolio_penghargaan', e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
+                    />
+                    <div>
+                      <span className="font-medium text-navy-900">Form Portofolio: Penghargaan</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Nominee dapat mengunggah daftar penghargaan atau apresiasi yang pernah diraih.
                       </p>
                     </div>
                   </label>

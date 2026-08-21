@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Send, Loader2, ChevronDown, Star, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import PortofolioViewer from '../../../components/common/PortofolioViewer';
 
 function kunciSkor(nomineeId, pertanyaanId) {
   return `${nomineeId}:${pertanyaanId}`;
@@ -281,6 +283,28 @@ export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubm
                       ></iframe>
                     </div>
                   )}
+
+                  <PortofolioViewer 
+                    type="portofolio_pengembangan" 
+                    title="Pengembangan Diri" 
+                    icon="📚" 
+                    portofolio={n.portofolio_pengembangan} 
+                  />
+                  
+                  <PortofolioViewer 
+                    type="portofolio_inovasi" 
+                    title="Inovasi" 
+                    icon="💡" 
+                    portofolio={n.portofolio_inovasi} 
+                  />
+                  
+                  <PortofolioViewer 
+                    type="portofolio_penghargaan" 
+                    title="Penghargaan" 
+                    icon="🏆" 
+                    portofolio={n.portofolio_penghargaan} 
+                  />
+
                   {pertanyaan.map((p, pIdx) => {
                     const nilai = skor[kunciSkor(n.id, p.id)];
                     const percent = ((nilai - p.skor_min) / (p.skor_max - p.skor_min)) * 100;

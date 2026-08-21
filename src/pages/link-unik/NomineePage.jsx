@@ -34,6 +34,8 @@ import {
   selesaikanPengisianNominee,
   fetchVideoProfilNominee,
   submitVideoProfilNominee,
+  fetchPortofolioNominee,
+  submitPortofolioNominee,
 } from '../../services/votingService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN, MODE_PENILAIAN } from '../../utils/constants';
@@ -45,6 +47,7 @@ import SuccessScreen from '../../components/common/SuccessScreen';
 import FormNarasiNominee from './components/FormNarasiNominee';
 import FormBuktiTunggalNominee from './components/FormBuktiTunggalNominee';
 import FormVideoProfilNominee from './components/FormVideoProfilNominee';
+import FormPortofolioNominee from './components/FormPortofolioNominee';
 
 /**
  * Halaman utama nominee.
@@ -141,6 +144,20 @@ export default function NomineePage() {
     enabled: aktif && Boolean(periodeId) && Boolean(nomineeId) && (modePenilaian === MODE_PENILAIAN.MODE_1A || modePenilaian === MODE_PENILAIAN.MODE_2) && akses?.periode?.is_video_profil,
   });
 
+  const {
+    data: portofolio,
+    isLoading: loadingPortofolio,
+    refetch: muatUlangPortofolio,
+  } = useQuery({
+    queryKey: ['portofolio-nominee', token],
+    queryFn: () => fetchPortofolioNominee(token),
+    enabled: aktif && Boolean(token) && Boolean(
+      akses?.periode?.is_portofolio_pengembangan ||
+      akses?.periode?.is_portofolio_inovasi ||
+      akses?.periode?.is_portofolio_penghargaan
+    ),
+  });
+
   // Mutation: Selesai dan kirim
   const mutasiSelesai = useMutation({
     mutationFn: () => selesaikanPengisianNominee(token),
@@ -232,6 +249,39 @@ export default function NomineePage() {
                       }}
                     />
                   ))}
+                  
+                  {akses.periode.is_portofolio_pengembangan && (
+                    <FormPortofolioNominee
+                      type="portofolio_pengembangan"
+                      dataTersimpan={portofolio?.portofolio_pengembangan}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_pengembangan', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
+
+                  {akses.periode.is_portofolio_inovasi && (
+                    <FormPortofolioNominee
+                      type="portofolio_inovasi"
+                      dataTersimpan={portofolio?.portofolio_inovasi}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_inovasi', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
+
+                  {akses.periode.is_portofolio_penghargaan && (
+                    <FormPortofolioNominee
+                      type="portofolio_penghargaan"
+                      dataTersimpan={portofolio?.portofolio_penghargaan}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_penghargaan', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
                 </div>
 
                 {/* Tombol Selesai */}
@@ -312,6 +362,41 @@ export default function NomineePage() {
                     />
                   </div>
                 )}
+
+                <div className="space-y-4 mb-4">
+                  {akses.periode.is_portofolio_pengembangan && (
+                    <FormPortofolioNominee
+                      type="portofolio_pengembangan"
+                      dataTersimpan={portofolio?.portofolio_pengembangan}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_pengembangan', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
+
+                  {akses.periode.is_portofolio_inovasi && (
+                    <FormPortofolioNominee
+                      type="portofolio_inovasi"
+                      dataTersimpan={portofolio?.portofolio_inovasi}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_inovasi', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
+
+                  {akses.periode.is_portofolio_penghargaan && (
+                    <FormPortofolioNominee
+                      type="portofolio_penghargaan"
+                      dataTersimpan={portofolio?.portofolio_penghargaan}
+                      onSimpan={async (data) => {
+                        await submitPortofolioNominee(token, 'portofolio_penghargaan', data);
+                        await muatUlangPortofolio();
+                      }}
+                    />
+                  )}
+                </div>
 
                 {/* Tombol Selesai */}
                 <button

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import PortofolioViewer from '../../../components/common/PortofolioViewer';
 import { getSignedUrlBuktiPDF } from '../../../services/votingService';
 
 function kunciSkor(nomineeId, kategoriId) {
@@ -335,6 +336,27 @@ export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit,
                       </div>
                     </div>
                   )}
+
+                  <PortofolioViewer 
+                    type="portofolio_pengembangan" 
+                    title="Pengembangan Diri" 
+                    icon="📚" 
+                    portofolio={n.portofolio_pengembangan} 
+                  />
+                  
+                  <PortofolioViewer 
+                    type="portofolio_inovasi" 
+                    title="Inovasi" 
+                    icon="💡" 
+                    portofolio={n.portofolio_inovasi} 
+                  />
+                  
+                  <PortofolioViewer 
+                    type="portofolio_penghargaan" 
+                    title="Penghargaan" 
+                    icon="🏆" 
+                    portofolio={n.portofolio_penghargaan} 
+                  />
 
                   {/* Kategori Penilaian */}
                   <div className="space-y-4">

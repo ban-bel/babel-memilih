@@ -157,6 +157,9 @@ function ManajemenPeriodeContent({ adminProfile }) {
       is_allow_abstain: p.is_allow_abstain ?? false,
       is_video_profil: p.is_video_profil ?? false,
       is_tabel_kehadiran: p.is_tabel_kehadiran ?? false,
+      is_portofolio_pengembangan: p.is_portofolio_pengembangan ?? false,
+      is_portofolio_inovasi: p.is_portofolio_inovasi ?? false,
+      is_portofolio_penghargaan: p.is_portofolio_penghargaan ?? false,
     });
     setShowEditModal(true);
   }
@@ -584,6 +587,39 @@ function ManajemenPeriodeContent({ adminProfile }) {
                 </div>
                 <label className="relative inline-flex cursor-pointer items-center">
                   <input type="checkbox" className="peer sr-only" checked={editForm.is_tabel_kehadiran} onChange={(e) => setEditForm({ ...editForm, is_tabel_kehadiran: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Form Portofolio: Pengembangan Diri</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee dapat mengisi riwayat pengembangan diri di form pengisian nominee.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_portofolio_pengembangan} onChange={(e) => setEditForm({ ...editForm, is_portofolio_pengembangan: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Form Portofolio: Inovasi</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee dapat mengisi daftar inovasi yang telah mereka kembangkan.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_portofolio_inovasi} onChange={(e) => setEditForm({ ...editForm, is_portofolio_inovasi: e.target.checked })} />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Form Portofolio: Penghargaan</label>
+                  <p className="text-xs text-slate-500">Jika aktif, nominee dapat mengunggah daftar penghargaan atau apresiasi yang pernah diraih.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input type="checkbox" className="peer sr-only" checked={editForm.is_portofolio_penghargaan} onChange={(e) => setEditForm({ ...editForm, is_portofolio_penghargaan: e.target.checked })} />
                   <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-navy-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-navy-300"></div>
                 </label>
               </div>

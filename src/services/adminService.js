@@ -466,6 +466,9 @@ export async function buatPeriodePenilaian(periode) {
       is_nominee_can_vote: periode.is_nominee_can_vote ?? false,
       is_allow_abstain: periode.is_allow_abstain ?? false,
       is_tabel_kehadiran: periode.is_tabel_kehadiran ?? false,
+      is_portofolio_pengembangan: periode.is_portofolio_pengembangan ?? false,
+      is_portofolio_inovasi: periode.is_portofolio_inovasi ?? false,
+      is_portofolio_penghargaan: periode.is_portofolio_penghargaan ?? false,
     })
     .select('id')
     .single();
