@@ -403,6 +403,11 @@ export async function fetchPeriodeList(wilayahId = null) {
       tgl_selesai,
       is_nominee_can_vote,
       is_allow_abstain,
+      is_video_profil,
+      is_tabel_kehadiran,
+      is_portofolio_pengembangan,
+      is_portofolio_inovasi,
+      is_portofolio_penghargaan,
       wilayah:wilayah_id ( nama_wilayah )
     `);
 

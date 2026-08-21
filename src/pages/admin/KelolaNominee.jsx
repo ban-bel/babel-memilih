@@ -611,6 +611,10 @@ export function KelolaNomineeContent({ adminProfile, periodeId }) {
         nominee={editNomineeData}
         periodeId={periodeId}
         isTabelKehadiranEnabled={periode?.is_tabel_kehadiran}
+        isVideoProfilEnabled={periode?.is_video_profil}
+        isPortofolioPengembanganEnabled={periode?.is_portofolio_pengembangan}
+        isPortofolioInovasiEnabled={periode?.is_portofolio_inovasi}
+        isPortofolioPenghargaanEnabled={periode?.is_portofolio_penghargaan}
       />
     </div>
   );

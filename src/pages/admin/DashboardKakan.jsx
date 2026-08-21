@@ -896,7 +896,7 @@ export default function DashboardKakan() {
     <AdminLoginGate>
       {(adminProfile) => (
         <AdminLayout adminProfile={adminProfile}>
-          <div className="w-full py-6">
+          <div className="max-w-5xl mx-auto py-6">
             <DashboardKakanContent adminProfile={adminProfile} />
           </div>
         </AdminLayout>

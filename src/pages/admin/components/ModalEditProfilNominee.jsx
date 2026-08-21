@@ -1,18 +1,38 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, X, Link as LinkIcon, Save, Table, Trash2 } from 'lucide-react';
+import { Plus, X, Link as LinkIcon, Save, Table, Trash2, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/common/Modal';
 import { updateProfilTambahanNominee } from '../../../services/votingService';
+import FormPortofolioNominee from '../../link-unik/components/FormPortofolioNominee';
 
-export default function ModalEditProfilNominee({ isOpen, onClose, nominee, periodeId, isTabelKehadiranEnabled }) {
+export default function ModalEditProfilNominee({ 
+  isOpen, 
+  onClose, 
+  nominee, 
+  periodeId, 
+  isTabelKehadiranEnabled,
+  isVideoProfilEnabled,
+  isPortofolioPengembanganEnabled,
+  isPortofolioInovasiEnabled,
+  isPortofolioPenghargaanEnabled
+}) {
   const queryClient = useQueryClient();
   const [dokumenLink, setDokumenLink] = useState('');
   const [tabelKehadiran, setTabelKehadiran] = useState([]);
+  const [videoProfilLink, setVideoProfilLink] = useState('');
+  const [portofolioPengembangan, setPortofolioPengembangan] = useState([]);
+  const [portofolioInovasi, setPortofolioInovasi] = useState([]);
+  const [portofolioPenghargaan, setPortofolioPenghargaan] = useState([]);
 
   useEffect(() => {
     if (nominee) {
       setDokumenLink(nominee.dokumen_link || '');
+      setVideoProfilLink(nominee.video_profil_link || '');
+      setPortofolioPengembangan(nominee.portofolio_pengembangan || []);
+      setPortofolioInovasi(nominee.portofolio_inovasi || []);
+      setPortofolioPenghargaan(nominee.portofolio_penghargaan || []);
+      
       // Ensure tabel_kehadiran is an array
       let initialTable = [];
       if (Array.isArray(nominee.tabel_kehadiran)) {
@@ -29,7 +49,15 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
   }, [nominee]);
 
   const mutasiSimpan = useMutation({
-    mutationFn: () => updateProfilTambahanNominee(nominee.id, dokumenLink, tabelKehadiran),
+    mutationFn: () => updateProfilTambahanNominee(
+      nominee.id, 
+      dokumenLink, 
+      tabelKehadiran,
+      videoProfilLink,
+      portofolioPengembangan,
+      portofolioInovasi,
+      portofolioPenghargaan
+    ),
     onSuccess: () => {
       toast.success('Profil tambahan berhasil disimpan!');
       const pid = Number(periodeId);
@@ -90,6 +118,50 @@ export default function ModalEditProfilNominee({ isOpen, onClose, nominee, perio
         </div>
 
         <hr className="border-slate-200" />
+
+        {/* Link Video Profil */}
+        {isVideoProfilEnabled && (
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-navy-900">
+              <Video className="h-4 w-4 text-navy-500" />
+              Link Video Profil (YouTube)
+            </label>
+            <input
+              type="url"
+              value={videoProfilLink}
+              onChange={(e) => setVideoProfilLink(e.target.value)}
+              placeholder="https://youtube.com/watch?v=..."
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-100"
+            />
+          </div>
+        )}
+
+        {/* Portofolio Pengembangan Diri */}
+        {isPortofolioPengembanganEnabled && (
+          <FormPortofolioNominee 
+            type="portofolio_pengembangan" 
+            dataTersimpan={portofolioPengembangan} 
+            onSimpan={async (rows) => setPortofolioPengembangan(rows)} 
+          />
+        )}
+
+        {/* Portofolio Inovasi */}
+        {isPortofolioInovasiEnabled && (
+          <FormPortofolioNominee 
+            type="portofolio_inovasi" 
+            dataTersimpan={portofolioInovasi} 
+            onSimpan={async (rows) => setPortofolioInovasi(rows)} 
+          />
+        )}
+
+        {/* Portofolio Penghargaan */}
+        {isPortofolioPenghargaanEnabled && (
+          <FormPortofolioNominee 
+            type="portofolio_penghargaan" 
+            dataTersimpan={portofolioPenghargaan} 
+            onSimpan={async (rows) => setPortofolioPenghargaan(rows)} 
+          />
+        )}
 
         {/* Tabel Kehadiran */}
         {isTabelKehadiranEnabled && (

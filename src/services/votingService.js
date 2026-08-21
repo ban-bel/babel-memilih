@@ -104,6 +104,26 @@ export async function fetchTokenPenilai(token) {
   if (error || !data) {
     throw new Error('Token tidak ditemukan atau tidak valid.');
   }
+
+  // SUPPLEMENTARY FETCH FOR MISSING COLUMNS
+  if (data?.periode?.id) {
+    const { data: periodeInfo } = await supabase
+      .from('periode_penilaian')
+      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+      .eq('id', data.periode.id)
+      .single();
+      
+    if (periodeInfo) {
+      return {
+        ...data,
+        periode: {
+          ...data.periode,
+          ...periodeInfo
+        }
+      };
+    }
+  }
+
   return data;
 }
 
@@ -129,19 +149,36 @@ export async function fetchTokenJuri(token) {
     throw new Error('Token juri tidak ditemukan atau tidak valid.');
   }
 
-  // Tambahkan is_can_vote_own_region dan wilayah_id
+  // Tambahkan is_can_vote_own_region, wilayah_id, dan kolom periode yang hilang
   if (data.periode?.id && data.juri?.id) {
-    const [jpRes, pgRes] = await Promise.all([
+    const [jpRes, pgRes, pRes] = await Promise.all([
       supabase.from('juri_periode').select('is_can_vote_own_region').eq('periode_id', data.periode.id).eq('pegawai_id', data.juri.id).single(),
-      supabase.from('pegawai').select('wilayah_id').eq('id', data.juri.id).single()
+      supabase.from('pegawai').select('wilayah_id').eq('id', data.juri.id).single(),
+      supabase.from('periode_penilaian').select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan').eq('id', data.periode.id).single()
     ]);
       
+    let isCanVoteOwnRegion = null;
+    let juriWilayahId = null;
+
     if (jpRes.data) {
-      data.is_can_vote_own_region = jpRes.data.is_can_vote_own_region;
+      isCanVoteOwnRegion = jpRes.data.is_can_vote_own_region;
     }
     if (pgRes.data) {
-      data.juri.wilayah_id = pgRes.data.wilayah_id;
+      juriWilayahId = pgRes.data.wilayah_id;
     }
+    
+    return {
+      ...data,
+      is_can_vote_own_region: isCanVoteOwnRegion,
+      juri: {
+        ...data.juri,
+        wilayah_id: juriWilayahId
+      },
+      periode: {
+        ...data.periode,
+        ...(pRes.data || {})
+      }
+    };
   }
 
   return data;
@@ -168,6 +205,26 @@ export async function fetchTokenNominee(token) {
   if (error || !data) {
     throw new Error('Token nominee tidak ditemukan atau tidak valid.');
   }
+
+  // SUPPLEMENTARY FETCH FOR MISSING COLUMNS
+  if (data?.periode?.id) {
+    const { data: periodeInfo } = await supabase
+      .from('periode_penilaian')
+      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+      .eq('id', data.periode.id)
+      .single();
+      
+    if (periodeInfo) {
+      return {
+        ...data,
+        periode: {
+          ...data.periode,
+          ...periodeInfo
+        }
+      };
+    }
+  }
+
   return data;
 }
 
@@ -1187,6 +1244,7 @@ export async function fetchNomineeByPeriode(periodeId) {
         id,
         pegawai_id,
         dokumen_link,
+        video_profil_link,
         tabel_kehadiran,
         portofolio_pengembangan,
         portofolio_inovasi,
@@ -1228,10 +1286,28 @@ export async function fetchNomineeByPeriode(periodeId) {
  * @param {Object[]} tabelKehadiran - Array object tabel kehadiran
  * @returns {Promise<void>}
  */
-export async function updateProfilTambahanNominee(nomineePeriodeId, dokumenLink, tabelKehadiran) {
+export async function updateProfilTambahanNominee(
+  nomineePeriodeId,
+  dokumenLink,
+  tabelKehadiran,
+  videoProfilLink = null,
+  portofolioPengembangan = null,
+  portofolioInovasi = null,
+  portofolioPenghargaan = null
+) {
+  const payload = {
+    dokumen_link: dokumenLink || null,
+    tabel_kehadiran: tabelKehadiran || [],
+  };
+
+  if (videoProfilLink !== null) payload.video_profil_link = videoProfilLink;
+  if (portofolioPengembangan !== null) payload.portofolio_pengembangan = portofolioPengembangan;
+  if (portofolioInovasi !== null) payload.portofolio_inovasi = portofolioInovasi;
+  if (portofolioPenghargaan !== null) payload.portofolio_penghargaan = portofolioPenghargaan;
+
   const { error } = await supabase
     .from('nominee_periode')
-    .update({ dokumen_link: dokumenLink || null, tabel_kehadiran: tabelKehadiran || [] })
+    .update(payload)
     .eq('id', nomineePeriodeId);
 
   if (error) throw new Error(`Gagal menyimpan profil tambahan: ${error.message}`);
@@ -2078,11 +2154,11 @@ export async function submitPortofolioNominee(token, portofolioType, data) {
     p_token: token,
   });
 
-  if (errAkses || !akses || akses.length === 0) {
+  if (errAkses || !akses) {
     throw new Error('Token tidak valid atau sudah kadaluarsa.');
   }
 
-  const nomineePeriodeId = akses[0].nominee.id;
+  const nomineePeriodeId = akses.nominee.id;
   const updateData = {};
   updateData[portofolioType] = data || [];
 
@@ -2107,11 +2183,11 @@ export async function fetchPortofolioNominee(token) {
     p_token: token,
   });
 
-  if (errAkses || !akses || akses.length === 0) {
+  if (errAkses || !akses) {
     throw new Error('Token tidak valid atau sudah kadaluarsa.');
   }
 
-  const nomineePeriodeId = akses[0].nominee.id;
+  const nomineePeriodeId = akses.nominee.id;
   const { data, error } = await supabase
     .from('nominee_periode')
     .select('portofolio_pengembangan, portofolio_inovasi, portofolio_penghargaan')
