@@ -159,10 +159,10 @@ export default function VerifikasiPenilai() {
                       value={nip5digit}
                       onChange={handleNipChange}
                       placeholder="Contoh: 12345"
-                      className="w-full px-5 py-4 text-center text-3xl font-mono tracking-[0.3em] text-navy-900
+                      className="w-full px-4 py-3 sm:px-5 sm:py-4 text-center text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-navy-900
                                bg-white/50 border-2 border-slate-200 rounded-2xl
                                focus:outline-none focus:border-navy-500 focus:bg-white focus:shadow-glow
-                               placeholder:text-slate-300 placeholder:tracking-normal placeholder:text-lg
+                               placeholder:text-slate-300 placeholder:tracking-normal placeholder:text-base sm:placeholder:text-lg
                                transition-all duration-300"
                       maxLength={5}
                       disabled={isLoading}
@@ -189,10 +189,10 @@ export default function VerifikasiPenilai() {
                       value={hp5digit}
                       onChange={handleHpChange}
                       placeholder="Contoh: 81234"
-                      className="w-full px-5 py-4 text-center text-3xl font-mono tracking-[0.3em] text-navy-900
+                      className="w-full px-4 py-3 sm:px-5 sm:py-4 text-center text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-navy-900
                                bg-white/50 border-2 border-slate-200 rounded-2xl
                                focus:outline-none focus:border-navy-500 focus:bg-white focus:shadow-glow
-                               placeholder:text-slate-300 placeholder:tracking-normal placeholder:text-lg
+                               placeholder:text-slate-300 placeholder:tracking-normal placeholder:text-base sm:placeholder:text-lg
                                transition-all duration-300"
                       maxLength={5}
                       disabled={isLoading}

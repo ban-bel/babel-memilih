@@ -489,8 +489,8 @@ function KelolaPegawaiContent({ adminProfile }) {
         </select>
       </div>
 
-      <div className="table-container">
-        <table className="w-full text-left text-sm">
+      <div className="table-container overflow-x-auto -mx-4 sm:mx-0">
+        <table className="w-full text-left text-sm min-w-[900px]">
           <thead className="table-header">
             <tr>
               <th className="px-4 py-3">Pegawai</th>

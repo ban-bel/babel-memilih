@@ -272,15 +272,16 @@ export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubm
                   
                   {n.video_profil_link && (
                     <div className="mb-4 overflow-hidden rounded-xl bg-slate-900 shadow-md">
-                      <iframe
-                        width="100%"
-                        height="315"
-                        src={getEmbedUrl(n.video_profil_link)}
-                        title="Video Profil"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
+                      <div className="relative w-full pt-[56.25%]">
+                        <iframe
+                          className="absolute inset-0 w-full h-full"
+                          src={getEmbedUrl(n.video_profil_link)}
+                          title="Video Profil"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -359,10 +360,7 @@ export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubm
                                 ubahSkor(n.id, p.id, val);
                                 setEditingId(null);
                               }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') e.target.blur();
-                              }}
-                              className="w-16 shrink-0 rounded-xl border-2 border-navy-200 bg-white py-1.5 text-center text-xl font-black text-navy-900 shadow-inner transition-all focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/20"
+                              className="w-20 shrink-0 rounded-xl border-2 border-navy-200 bg-white py-2 text-center text-lg font-black transition-colors focus:border-navy-500 focus:outline-none"
                             />
                             <button
                               type="button"

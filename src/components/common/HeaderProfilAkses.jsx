@@ -78,8 +78,7 @@ export default function HeaderProfilAkses({ profil, modePenilaian, namaPeriode }
                   (nipAvatar ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${nipAvatar}.jpg` : null)
                 }
                 alt={`Foto ${profil?.nama ?? 'pegawai'}`}
-                className="h-18 w-18 shrink-0 rounded-full border-3 border-gold-300 object-cover shadow-lg"
-                style={{ width: '72px', height: '72px' }}
+                className="h-20 w-20 shrink-0 rounded-full border-4 border-gold-300 object-cover shadow-lg"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profil?.nama || 'Pegawai')}&background=16324a&color=fff&size=128`;

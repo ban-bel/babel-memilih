@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save, CloudDownload, Check, Link as LinkIcon } from 'lucide-react';
+import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save, CloudDownload, Check, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import Modal from '../../../components/common/Modal';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -246,7 +246,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
           {nominee.map((n, idx) => {
             const sudahTerisi =
               tersentuh.has(n.id) && kategori.every((k) => skor[kunciSkor(n.id, k.id)] != null);
@@ -256,90 +256,103 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                 type="button"
                 key={n.id}
                 onClick={() => setOpenedNominee(n)}
-                className={`flex flex-col h-full group relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 text-center transition-all duration-300 ${
-                  sudahTerisi
-                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-soft-lg scale-[1.02]'
-                    : 'border-slate-200 bg-white shadow-soft hover:border-navy-300 hover:shadow-card-hover'
+                className={`group relative flex flex-row items-center gap-4 p-4 rounded-2xl bg-white border-2 transition-all duration-300 w-full text-left overflow-hidden ${
+                  sudahTerisi 
+                    ? 'border-emerald-400 bg-gradient-to-br from-emerald-50/50 to-white shadow-soft hover:shadow-md hover:-translate-y-0.5' 
+                    : 'border-slate-100 shadow-soft hover:border-navy-400 hover:shadow-card-hover hover:-translate-y-0.5'
                 }`}
-                style={{ animationDelay: `${idx * 50}ms` }}
               >
-                {/* Selection Indicator */}
-                {sudahTerisi && (
-                  <div className="absolute inset-0 bg-emerald-800/5 pointer-events-none"></div>
-                )}
-                
-                <div className={`relative mx-auto mb-3 sm:mb-4 w-fit transition-all duration-300 ${sudahTerisi ? 'scale-110' : 'group-hover:scale-105'}`}>
+                {/* Background glow on hover (Voting Mode aesthetic) */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
+                  sudahTerisi ? 'bg-emerald-500/5' : 'bg-navy-900/5'
+                }`}></div>
+
+                {/* Photo */}
+                <div className="relative shrink-0">
+                  <div className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
+                    sudahTerisi ? 'border-emerald-400' : 'border-slate-100 group-hover:border-navy-200'
+                  }`}></div>
                   <img
                     src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
                     alt={n.nama}
-                    className={`relative w-20 sm:w-28 aspect-square h-auto rounded-full border-4 ${
-                      sudahTerisi ? 'border-emerald-400 shadow-emerald-200' : 'border-white'
-                    } object-cover shadow-lg transition-all duration-300`}
+                    className="w-14 h-14 rounded-full object-cover p-0.5 bg-white"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=64`;
                     }}
                   />
                   {sudahTerisi && (
-                    <div className="absolute bottom-0 right-0 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg border-[3px] border-white animate-bounce-in">
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 text-white rounded-full p-1 shadow-sm border-2 border-white transform transition-transform group-hover:scale-110">
+                      <CheckCircle className="w-3.5 h-3.5" />
                     </div>
                   )}
                 </div>
   
-                <p className={`text-[13px] sm:text-[15px] font-bold transition-colors duration-200 leading-[1.15] mt-1.5 mb-0.5 ${
-                  sudahTerisi ? 'text-emerald-900' : 'text-slate-800 group-hover:text-navy-800'
-                }`}>
-                  {n.nama}
-                </p>
-                <p className="text-[10px] sm:text-[11px] text-slate-500 leading-[1.15] mb-2">{n.unit_kerja}</p>
+                {/* Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center relative z-10">
+                  <p className={`text-[15px] font-bold truncate leading-tight transition-colors duration-200 ${
+                    sudahTerisi ? 'text-emerald-900' : 'text-navy-900'
+                  }`} title={n.nama}>
+                    {n.nama}
+                  </p>
+                  <p className="text-xs font-medium text-slate-500 truncate mt-1" title={n.unit_kerja}>
+                    {n.unit_kerja}
+                  </p>
+                </div>
   
-                <div className={`relative z-10 mt-auto w-full py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 border-none leading-tight ${
+                {/* Action Button */}
+                <div className={`relative z-10 shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm ${
                   sudahTerisi 
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' 
-                    : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white'
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200' 
+                    : 'bg-gradient-to-r from-navy-800 to-navy-700 text-white hover:from-navy-700 hover:to-navy-600 hover:shadow-md'
                 }`}>
-                  {sudahTerisi ? 'Ubah Penilaian' : 'Mulai Penilaian'}
+                  {sudahTerisi ? 'Ubah' : 'Nilai'}
                 </div>
               </button>
             );
           })}
         </div>
 
-        <Modal isOpen={!!openedNominee} onClose={() => setOpenedNominee(null)} title="Lembar Penilaian Juri" maxWidth="max-w-4xl">
-          {openedNominee && (
-            <div className="space-y-8 -mt-2">
-              
-              {/* Profile Header */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-5 sm:p-6 bg-gradient-to-br from-navy-50 to-slate-50 rounded-2xl border-2 border-navy-100 shadow-sm">
+        <Modal 
+          isOpen={!!openedNominee} 
+          onClose={() => setOpenedNominee(null)} 
+          title={
+            openedNominee ? (
+              <div className="flex items-center gap-3 -my-1">
                 <img
-                    src={openedNominee.foto_url || (openedNominee.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${openedNominee.nip}.jpg` : null)}
-                    alt={openedNominee.nama}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(openedNominee.nama || 'N')}&background=16324a&color=fff&size=64`;
-                    }}
+                  src={openedNominee.foto_url || (openedNominee.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${openedNominee.nip}.jpg` : null)}
+                  alt={openedNominee.nama}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(openedNominee.nama || 'N')}&background=16324a&color=fff&size=64`;
+                  }}
                 />
-                <div className="flex-1 text-center sm:text-left flex flex-col justify-center min-h-[6rem]">
-                   <h2 className="text-xl sm:text-3xl font-bold text-navy-900 leading-tight mb-2">{openedNominee.nama}</h2>
-                   <p className="text-sm sm:text-base font-medium text-slate-600 bg-white/60 inline-flex items-center sm:self-start px-3 py-1.5 rounded-lg border border-slate-200">
-                     🏢 {openedNominee.unit_kerja}
-                   </p>
+                <div className="flex flex-col">
+                  <span className="text-base sm:text-lg font-black text-navy-900 leading-none">{openedNominee.nama}</span>
+                  <span className="text-xs font-medium text-slate-500 mt-1">🏢 {openedNominee.unit_kerja}</span>
                 </div>
               </div>
-
+            ) : "Lembar Penilaian Juri"
+          }
+          maxWidth="max-w-[1600px] w-[98vw]"
+        >
+          {openedNominee && (
+            <div className="flex flex-col lg:flex-row gap-3 lg:gap-6 -mt-3">
+              {/* KIRI: Area Membaca (Dokumen, Profil, Portofolio) */}
+              <div className="flex-1 space-y-3 lg:space-y-6 lg:max-w-[60%]">
+              
               
               {(() => {
                 const showPdfTab = Boolean(openedNominee.dokumen_link);
                 const previewUrl = getPreviewUrl(openedNominee.dokumen_link);
                 return showPdfTab && (
-                  <div className="mt-8 flex-1 flex flex-col min-h-[500px] animate-fade-in">
+                  <div className="flex-1 animate-fade-in">
                     <h4 className="font-semibold text-navy-900 flex items-center gap-2 mb-3">
                       <FileText className="w-4 h-4 text-navy-500" />
                       Preview Dokumen: Paparan
                     </h4>
-                    <div className="flex-1 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white min-h-[400px]">
+                    <div className="w-full rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white h-[250px] sm:h-[500px] xl:h-[650px]">
                       <iframe
                         src={previewUrl}
                         title="PDF Viewer"
@@ -354,14 +367,14 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
 
               {/* Daftar Isian / Pertanyaan Dinamis */}
               {pertanyaan?.length > 0 && (
-                <div className="space-y-4 mt-8">
+                <div className="space-y-4">
                   {pertanyaan.map((p) => {
                     const jaw = jawaban?.find((j) => j.nominee_id === openedNominee.id && j.pertanyaan_id === p.id);
                     const isLink = jaw?.teks_jawaban && jaw.teks_jawaban.trim().match(/^https?:\/\//);
                     return (
-                      <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                         <h4 className="text-sm font-bold text-slate-700">{p.urutan}. {p.teks_pertanyaan}</h4>
-                        <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap break-all">
+                        <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg whitespace-pre-wrap break-words">
                           {jaw?.teks_jawaban ? (
                             <div className="space-y-2">
                               {isLink ? (
@@ -382,7 +395,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                 </div>
               )}
 
-              <div className="mt-8 space-y-4">
+              <div className="space-y-4">
                 <PortofolioViewer 
                   type="portofolio_pengembangan" 
                   title="Pengembangan Diri" 
@@ -405,8 +418,11 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                 />
               </div>
               
-              <div className="mt-8">
-                <h3 className="text-2xl font-bold text-navy-900 mb-6">Formulir Penilaian</h3>
+</div>
+
+              {/* KANAN: Area Menilai (Form, Slider, Catatan) */}
+              <div className="w-full lg:w-[40%] shrink-0 space-y-3 lg:space-y-4 lg:sticky lg:top-0 lg:max-h-[calc(100vh-6rem)] overflow-y-auto lg:rounded-xl lg:bg-slate-50/90 lg:p-4 lg:border border-slate-200/60 lg:shadow-sm custom-scrollbar">
+                <h3 className="text-base font-bold text-navy-900 mb-4 border-b border-slate-200 pb-2">Formulir Penilaian</h3>
                 <div className="space-y-6">
                   {kategori.map((k) => {
                     if (!k) return null;
@@ -416,32 +432,27 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                     return (
                       <div
                         key={k.id}
-                        className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-navy-200"
                       >
-                        <div className="mb-3 flex flex-col sm:flex-row items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-100 text-xs font-bold text-gold-700">
-                                <Star className="h-4 w-4" />
-                              </span>
-                              <label htmlFor={`skor-${n.id}-${k.id}`} className="text-base sm:text-lg font-bold text-slate-800">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <label htmlFor={`skor-${n.id}-${k.id}`} className="text-sm font-bold text-slate-800 break-words leading-tight block">
                                 {k.nama_kategori}
                               </label>
+                              <span className="inline-block mt-1 rounded bg-gold-50 border border-gold-200 px-1.5 py-0.5 text-[10px] font-bold text-gold-700">
+                                Bobot {k.bobot_persen}%
+                              </span>
                             </div>
-                            {k.deskripsi && <p className="ml-10 mt-1 text-sm text-slate-500">{k.deskripsi}</p>}
-                          </div>
-                          <div className="flex items-center justify-end gap-3">
-                            <div className="flex flex-col items-end">
-                              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-sm font-bold text-gold-700">Bobot {k.bobot_persen}%</span>
-                            </div>
-                            <div className="flex items-center gap-2">
+                            
+                            <div className="flex items-center gap-1 shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-200">
                               <button
                                 type="button"
                                 onClick={() => {
                                   const val = Math.max(k.skor_min, nilai - 1);
                                   ubahSkor(n.id, k.id, val);
                                 }}
-                                className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-2xl sm:text-3xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
+                                className="flex h-8 w-8 items-center justify-center rounded bg-white text-lg font-bold text-navy-700 shadow-sm border border-slate-200 transition-colors hover:bg-navy-50 hover:text-navy-900 active:scale-95"
                               >
                                 -
                               </button>
@@ -470,7 +481,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') e.target.blur();
                                 }}
-                                className="w-20 sm:w-24 shrink-0 rounded-xl border-2 border-navy-200 bg-white py-2 sm:py-2.5 text-center text-2xl sm:text-3xl font-black text-navy-900 shadow-inner transition-all focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/20"
+                                className="w-12 h-8 text-center text-lg font-black text-navy-900 bg-transparent focus:outline-none"
                               />
                               <button
                                 type="button"
@@ -478,12 +489,16 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                                   const val = Math.min(k.skor_max, nilai + 1);
                                   ubahSkor(n.id, k.id, val);
                                 }}
-                                className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-2xl sm:text-3xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
+                                className="flex h-8 w-8 items-center justify-center rounded bg-white text-lg font-bold text-navy-700 shadow-sm border border-slate-200 transition-colors hover:bg-navy-50 hover:text-navy-900 active:scale-95"
                               >
                                 +
                               </button>
                             </div>
                           </div>
+                          
+                          {k.deskripsi && !k.deskripsi.toLowerCase().includes('otomatis ditambahkan dari form kelengkapan') && (
+                            <p className="text-xs text-slate-500 leading-snug mt-2">{k.deskripsi}</p>
+                          )}
                         </div>
 
                         {/* Custom Slider */}
@@ -522,10 +537,10 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                 </div>
 
                 {/* Catatan Kualitatif */}
-                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                   <label
                     htmlFor={`catatan-${openedNominee.id}`}
-                    className="mb-2 flex items-center gap-2 text-base font-bold text-slate-700"
+                    className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-700"
                   >
                     <MessageSquare className="h-4 w-4 text-slate-500" />
                     Catatan Kualitatif / Kritik & Saran
@@ -540,18 +555,18 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                       setHasDraft(true);
                     }}
                     placeholder="Tuliskan catatan kualitatif untuk nominee ini (opsional)..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-800 placeholder:text-slate-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
                   />
                   <p className="mt-2 text-sm text-slate-400">
                     Catatan ini akan dibaca oleh Kepala Kantor
                   </p>
                 </div>
                 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-4 flex justify-end">
                   <button
                     type="button"
                     onClick={() => setOpenedNominee(null)}
-                    className="btn-primary py-4 px-10 text-lg shadow-lg bg-gradient-to-r from-navy-800 to-navy-700 hover:from-navy-700 hover:to-navy-600"
+                    className="btn-primary py-3 px-6 text-sm font-bold shadow-md bg-gradient-to-r from-navy-800 to-navy-700 hover:from-navy-700 hover:to-navy-600 w-full lg:w-auto"
                   >
                     Selesai Menilai {openedNominee.nama}
                   </button>

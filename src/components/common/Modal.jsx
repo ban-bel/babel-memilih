@@ -39,7 +39,7 @@ export default function Modal({
       {/* Modal Dialog */}
       <div className={`relative w-full ${maxWidth} glass-premium rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 bg-white/50">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200/60 bg-white/50">
           <h3 className="font-display text-lg font-bold text-navy-900">{title}</h3>
           <button
             onClick={onClose}
@@ -50,7 +50,7 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto">
+        <div className="p-4 sm:p-6 overflow-y-auto">
           {children}
         </div>
       </div>

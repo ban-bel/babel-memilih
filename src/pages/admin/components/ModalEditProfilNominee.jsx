@@ -40,13 +40,13 @@ export default function ModalEditProfilNominee({
   });
 
   useEffect(() => {
-    if (jawabanList.length > 0) {
-      const initialJawaban = {};
+    const initialJawaban = {};
+    if (jawabanList && jawabanList.length > 0) {
       jawabanList.forEach(j => {
         initialJawaban[j.pertanyaan_id] = j.teks_jawaban || '';
       });
-      setJawabanTambahan(initialJawaban);
     }
+    setJawabanTambahan(initialJawaban);
   }, [jawabanList]);
 
   useEffect(() => {

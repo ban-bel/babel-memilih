@@ -44,22 +44,22 @@ function PortalLandingPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiLz48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=')] opacity-30" />
       </div>
 
-      {/* Floating Avatar Left */}
+      {/* Floating Avatar Left - Same position as VerifikasiPenilai */}
       <div className="absolute top-1/2 -translate-y-[35%] z-0 pointer-events-none left-1/2 -translate-x-[80%] opacity-20 lg:left-auto lg:right-1/2 lg:translate-x-0 lg:mr-[270px] xl:mr-[320px] lg:opacity-100">
-        <img 
-          src={girlAvatarSrc} 
-          alt="Pegawai Perempuan" 
-          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float" 
+        <img
+          src={girlAvatarSrc}
+          alt="Pegawai Perempuan"
+          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float"
           style={{ animationDelay: '1s' }}
         />
       </div>
 
-      {/* Floating Avatar Right */}
+      {/* Floating Avatar Right - Same position as VerifikasiPenilai */}
       <div className="absolute top-1/2 -translate-y-[35%] z-0 pointer-events-none right-1/2 translate-x-[80%] opacity-20 lg:right-auto lg:left-1/2 lg:translate-x-0 lg:ml-[270px] xl:ml-[320px] lg:opacity-100">
-        <img 
-          src={boyAvatarSrc} 
-          alt="Pegawai Laki-laki" 
-          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float" 
+        <img
+          src={boyAvatarSrc}
+          alt="Pegawai Laki-laki"
+          className="h-[400px] lg:h-[500px] xl:h-[620px] w-auto drop-shadow-2xl animate-float"
           style={{ animationDelay: '0.5s' }}
         />
       </div>
@@ -101,7 +101,7 @@ function PortalLandingPage() {
                   <p className="text-sm text-slate-500 font-medium">Manajemen sistem & Kakan</p>
                 </div>
               </div>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-navy-100 group-hover:text-navy-700 transition-colors">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-400 group-hover:bg-navy-100 group-hover:text-navy-700 transition-colors">
                 <ArrowRight className="w-5 h-5" />
               </div>
             </a>
@@ -124,7 +124,7 @@ function PortalLandingPage() {
                   <p className="text-sm text-emerald-700/80 font-medium">Masuk dengan NIP & HP</p>
                 </div>
               </div>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100/50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100/50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5" />
               </div>
             </a>

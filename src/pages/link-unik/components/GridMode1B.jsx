@@ -81,6 +81,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
               onMouseEnter={() => setHoveredId(n.id)}
               onMouseLeave={() => setHoveredId(null)}
               aria-pressed={terpilih}
+              aria-label={`Pilih ${n.nama} sebagai nominee`}
               className={`w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] group relative overflow-hidden rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
                 terpilih
                   ? 'border-navy-800 bg-gradient-to-br from-navy-50 to-navy-100/50 shadow-soft-lg scale-[1.02]'
@@ -106,7 +107,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
                 <img
                   src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
                   alt={n.nama}
-                  className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300"
+                  className="relative h-28 w-28 sm:h-36 sm:w-36 md:h-40 md:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=128`;
@@ -180,7 +181,7 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
               <img
                 src="https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png"
                 alt="Abstain"
-                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300 bg-white grayscale opacity-[.92]"
+                className="relative h-28 w-28 sm:h-36 sm:w-36 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300 bg-white grayscale opacity-[.92]"
               />
             </div>
             <p className={`truncate text-sm font-semibold transition-colors duration-200 ${

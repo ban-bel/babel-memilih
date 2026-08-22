@@ -134,7 +134,7 @@ export default function AdminLayout({ adminProfile, children }) {
 
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 border-b border-white/40 bg-white/70 backdrop-blur-xl shadow-soft">
-        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo & Brand */}
             <Link 
@@ -237,6 +237,7 @@ export default function AdminLayout({ adminProfile, children }) {
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden flex items-center justify-center h-10 w-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
               >
                 {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
