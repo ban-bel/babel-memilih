@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 /**
  * @fileoverview Service layer untuk operasi voting dan penilaian.
  *
@@ -2158,14 +2159,14 @@ export async function submitPortofolioNominee(token, portofolioType, data) {
     throw new Error('Token tidak valid atau sudah kadaluarsa.');
   }
 
-  const nomineePeriodeId = akses.nominee.id;
   const updateData = {};
   updateData[portofolioType] = data || [];
 
   const { error } = await supabase
     .from('nominee_periode')
     .update(updateData)
-    .eq('id', nomineePeriodeId);
+    .eq('periode_id', akses.periode.id)
+    .eq('pegawai_id', akses.nominee.id);
 
   if (error) {
     throw new Error(`Gagal menyimpan ${portofolioType}: ${error.message}`);
@@ -2187,21 +2188,28 @@ export async function fetchPortofolioNominee(token) {
     throw new Error('Token tidak valid atau sudah kadaluarsa.');
   }
 
-  const nomineePeriodeId = akses.nominee.id;
   const { data, error } = await supabase
     .from('nominee_periode')
     .select('portofolio_pengembangan, portofolio_inovasi, portofolio_penghargaan')
-    .eq('id', nomineePeriodeId)
+    .eq('periode_id', akses.periode.id)
+    .eq('pegawai_id', akses.nominee.id)
     .single();
 
   if (error) {
     throw new Error(`Gagal memuat portofolio: ${error.message}`);
   }
 
+  const parseIfString = (val) => {
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch (e) { return []; }
+    }
+    return val || [];
+  };
+
   return {
-    portofolio_pengembangan: data?.portofolio_pengembangan || [],
-    portofolio_inovasi: data?.portofolio_inovasi || [],
-    portofolio_penghargaan: data?.portofolio_penghargaan || [],
+    portofolio_pengembangan: parseIfString(data?.portofolio_pengembangan),
+    portofolio_inovasi: parseIfString(data?.portofolio_inovasi),
+    portofolio_penghargaan: parseIfString(data?.portofolio_penghargaan),
   };
 }
 
@@ -2215,7 +2223,6 @@ export async function fetchPortofolioNominee(token) {
  * @throws {Error} Jika gagal
  */
 export async function submitVideoProfilNominee(token, videoLink) {
-  pastikanTokenValid(token);
   const { error: rpcError } = await supabase.rpc('submit_video_profil_nominee', {
     p_token: token,
     p_video_link: videoLink,
@@ -2223,5 +2230,87 @@ export async function submitVideoProfilNominee(token, videoLink) {
 
   if (rpcError) {
     throw new Error(`Gagal menyimpan link video profil: ${rpcError.message}`);
+  }
+}
+
+/**
+ * Menyimpan draft ke server (Cloud Draft)
+ * @async
+ * @param {string} token 
+ * @param {string} mode - "1A", "1C", "2", "2A"
+ * @param {Object} data - Objek JSON draft
+ */
+export async function saveDraftToServer(token, mode, data) {
+  const { error } = await supabase.rpc('save_draft_penilai', {
+    p_token: token,
+    p_mode: mode,
+    p_draft_data: data
+  });
+  if (error) throw new Error('Gagal menyimpan draft ke server: ' + error.message);
+}
+
+/**
+ * Mengambil draft dari server
+ * @async
+ * @param {string} token 
+ * @param {string} mode - "1A", "1C", "2", "2A"
+ * @returns {Promise<Object|null>} Objek JSON draft
+ */
+export async function getDraftFromServer(token, mode) {
+  const { data, error } = await supabase.rpc('get_draft_penilai', {
+    p_token: token,
+    p_mode: mode
+  });
+  if (error) throw new Error('Gagal mengambil draft dari server: ' + error.message);
+  return data;
+}
+
+
+
+const getAdminSupabase = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    return createClient(url, serviceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+  }
+  return supabase; // fallback to anon key if service key not available
+};
+
+export async function adminUpdateDaftarJawaban(periodeId, nomineeId, daftarJawaban) {
+  const adminDb = getAdminSupabase();
+  for (const item of daftarJawaban) {
+    const { data: existing, error: errExisting } = await adminDb
+      .from('jawaban_nominee')
+      .select('id')
+      .eq('periode_id', periodeId)
+      .eq('nominee_id', nomineeId)
+      .eq('pertanyaan_id', item.pertanyaan_id)
+      .maybeSingle();
+    
+    if (errExisting) throw new Error(errExisting.message);
+    
+    if (existing) {
+      if (item.teks_jawaban) {
+        const { error } = await adminDb.from('jawaban_nominee').update({ teks_jawaban: item.teks_jawaban }).eq('id', existing.id);
+        if (error) throw new Error("Gagal update: " + error.message);
+      } else {
+        const { error } = await adminDb.from('jawaban_nominee').delete().eq('id', existing.id);
+        if (error) throw new Error("Gagal delete: " + error.message);
+      }
+    } else if (item.teks_jawaban) {
+      const { error } = await adminDb.from('jawaban_nominee').insert({
+        periode_id: periodeId,
+        nominee_id: nomineeId,
+        pertanyaan_id: item.pertanyaan_id,
+        teks_jawaban: item.teks_jawaban
+      });
+      if (error) throw new Error("Gagal insert: " + error.message);
+    }
   }
 }

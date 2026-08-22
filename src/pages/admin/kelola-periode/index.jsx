@@ -15,6 +15,7 @@ import { BuatPeriodeWizard } from '../BuatPeriode';
 import { KelolaNomineeContent } from '../KelolaNominee';
 import { PartisipanPeriodeContent } from '../PartisipanPeriode';
 import KelolaJuriContent from './components/KelolaJuriContent';
+import KelolaKategoriContent from './components/KelolaKategoriContent';
 
 function InfoDasarPeriode({ periode }) {
   if (!periode) return null;
@@ -441,15 +442,22 @@ function ManajemenPeriodeContent({ adminProfile }) {
                 >
                   <Users className="h-4 w-4" /> Kelola Nominee
                 </button>
-                
-                {/* Tab Juri khusus Mode 2 */}
+                {/* Tab Khusus Mode 2 */}
                 {activePeriode.mode_penilaian === 'MODE_2' && (
-                  <button
-                    onClick={() => setActiveTab('juri')}
-                    className={`tab ${activeTab === 'juri' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
-                  >
-                    <Gavel className="h-4 w-4" /> Kelola Juri
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setActiveTab('kategori')}
+                      className={`tab ${activeTab === 'kategori' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >
+                      <ListFilter className="h-4 w-4" /> Kategori & Bobot
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('juri')}
+                      className={`tab ${activeTab === 'juri' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >
+                      <Gavel className="h-4 w-4" /> Kelola Juri
+                    </button>
+                  </>
                 )}
 
                 <button
@@ -465,6 +473,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
               <div className="mt-4">
                 {activeTab === 'info' && <InfoDasarPeriode periode={activePeriode} />}
                 {activeTab === 'nominee' && <KelolaNomineeContent adminProfile={adminProfile} periodeId={activePeriode.id} />}
+                {activeTab === 'kategori' && activePeriode.mode_penilaian === 'MODE_2' && <KelolaKategoriContent periodeId={activePeriode.id} periode={activePeriode} />}
                 {activeTab === 'juri' && activePeriode.mode_penilaian === 'MODE_2' && <KelolaJuriContent periodeId={activePeriode.id} />}
                 {activeTab === 'partisipan' && <PartisipanPeriodeContent adminProfile={adminProfile} periode={activePeriode} />}
               </div>

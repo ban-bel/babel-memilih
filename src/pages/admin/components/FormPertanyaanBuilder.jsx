@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 let idBaru = 0;
 function buatBaris() {
   idBaru += 1;
-  return { key: `baru-${idBaru}`, teks_pertanyaan: '', skor_min: 1, skor_max: 100 };
+  return { key: `baru-${idBaru}`, teks_pertanyaan: '', skor_min: 1, skor_max: 100, is_dinilai: false };
 }
 
 /**
@@ -13,11 +13,12 @@ export default function FormPertanyaanBuilder({
   daftar, 
   onChange,
   labels = {
-    title: 'Daftar Pertanyaan',
-    item: 'Pertanyaan',
-    placeholder: 'Tulis pertanyaan...',
-    addBtn: 'Tambah Pertanyaan',
-    hideScores: false
+    title: 'Daftar Isian / Pertanyaan',
+    item: 'Isian',
+    placeholder: 'Tulis instruksi isian atau pertanyaan...',
+    addBtn: 'Tambah Isian / Pertanyaan',
+    hideScores: false,
+    showDinilaiToggle: false
   }
 }) {
   function tambah() {
@@ -65,14 +66,26 @@ export default function FormPertanyaanBuilder({
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => hapus(p.key)}
-                className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition shrink-0"
-                aria-label="Hapus"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {labels.showDinilaiToggle && (
+                  <select 
+                    className="input input-sm w-44 text-xs bg-white cursor-pointer"
+                    value={p.is_dinilai ? 'score' : 'info'}
+                    onChange={(e) => ubah(p.key, 'is_dinilai', e.target.value === 'score')}
+                  >
+                    <option value="info">Hanya Kelengkapan</option>
+                    <option value="score">Masuk Penilaian</option>
+                  </select>
+                )}
+                <button
+                  type="button"
+                  onClick={() => hapus(p.key)}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                  aria-label="Hapus"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}

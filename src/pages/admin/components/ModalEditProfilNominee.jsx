@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, X, Link as LinkIcon, Save, Table, Trash2, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/common/Modal';
-import { updateProfilTambahanNominee } from '../../../services/votingService';
+import { updateProfilTambahanNominee, fetchPertanyaanMode1A, fetchJawabanNominee, adminUpdateDaftarJawaban } from '../../../services/votingService';
+import { useQuery } from '@tanstack/react-query';
 import FormPortofolioNominee from '../../link-unik/components/FormPortofolioNominee';
 
 export default function ModalEditProfilNominee({ 
@@ -24,6 +25,29 @@ export default function ModalEditProfilNominee({
   const [portofolioPengembangan, setPortofolioPengembangan] = useState([]);
   const [portofolioInovasi, setPortofolioInovasi] = useState([]);
   const [portofolioPenghargaan, setPortofolioPenghargaan] = useState([]);
+  const [jawabanTambahan, setJawabanTambahan] = useState({});
+
+  const { data: pertanyaanList = [] } = useQuery({
+    queryKey: ['pertanyaan-periode', periodeId],
+    queryFn: () => fetchPertanyaanMode1A(periodeId),
+    enabled: Boolean(periodeId),
+  });
+
+  const { data: jawabanList = [] } = useQuery({
+    queryKey: ['jawaban-nominee', periodeId, nominee?.pegawai_id],
+    queryFn: () => fetchJawabanNominee(periodeId, nominee?.pegawai_id),
+    enabled: Boolean(periodeId) && Boolean(nominee?.pegawai_id),
+  });
+
+  useEffect(() => {
+    if (jawabanList.length > 0) {
+      const initialJawaban = {};
+      jawabanList.forEach(j => {
+        initialJawaban[j.pertanyaan_id] = j.teks_jawaban || '';
+      });
+      setJawabanTambahan(initialJawaban);
+    }
+  }, [jawabanList]);
 
   useEffect(() => {
     if (nominee) {
@@ -49,15 +73,25 @@ export default function ModalEditProfilNominee({
   }, [nominee]);
 
   const mutasiSimpan = useMutation({
-    mutationFn: () => updateProfilTambahanNominee(
-      nominee.id, 
-      dokumenLink, 
-      tabelKehadiran,
-      videoProfilLink,
-      portofolioPengembangan,
-      portofolioInovasi,
-      portofolioPenghargaan
-    ),
+    mutationFn: async () => {
+      await updateProfilTambahanNominee(
+        nominee.id, 
+        dokumenLink, 
+        tabelKehadiran,
+        videoProfilLink,
+        portofolioPengembangan,
+        portofolioInovasi,
+        portofolioPenghargaan
+      );
+      
+      const daftarJawaban = Object.entries(jawabanTambahan).map(([pid, teks]) => ({
+        pertanyaan_id: Number(pid),
+        teks_jawaban: teks
+      }));
+      if (daftarJawaban.length > 0) {
+        await adminUpdateDaftarJawaban(periodeId, nominee.pegawai_id, daftarJawaban);
+      }
+    },
     onSuccess: () => {
       toast.success('Profil tambahan berhasil disimpan!');
       const pid = Number(periodeId);
@@ -101,10 +135,10 @@ export default function ModalEditProfilNominee({
       <div className="space-y-6">
         {/* Link Dokumen / PDF */}
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-semibold text-navy-900">
-            <LinkIcon className="h-4 w-4 text-navy-500" />
+          <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <LinkIcon className="h-5 w-5 text-navy-500" />
             Link Google Drive (PDF Dokumen)
-          </label>
+          </h3>
           <input
             type="url"
             value={dokumenLink}
@@ -119,13 +153,40 @@ export default function ModalEditProfilNominee({
 
         <hr className="border-slate-200" />
 
+                {/* Daftar Isian / Pertanyaan Dinamis */}
+        {pertanyaanList.length > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft space-y-4">
+          <div className="space-y-4">
+            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-navy-500" />
+              Daftar Isian / Pertanyaan Dinamis
+            </h3>
+            {pertanyaanList.map((p) => (
+              <div key={p.id} className="space-y-2 pl-6">
+                <label className="block text-xs font-medium text-slate-600">
+                  {p.urutan}. {p.teks_pertanyaan}
+                </label>
+                <textarea
+                  rows={2}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-100"
+                  placeholder="Isi jawaban atau tempel link dokumen di sini..."
+                  value={jawabanTambahan[p.id] || ''}
+                  onChange={(e) => setJawabanTambahan({ ...jawabanTambahan, [p.id]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
+
         {/* Link Video Profil */}
         {isVideoProfilEnabled && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft space-y-3">
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-semibold text-navy-900">
-              <Video className="h-4 w-4 text-navy-500" />
+            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <Video className="h-5 w-5 text-navy-500" />
               Link Video Profil (YouTube)
-            </label>
+            </h3>
             <input
               type="url"
               value={videoProfilLink}
@@ -134,6 +195,7 @@ export default function ModalEditProfilNominee({
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-100"
             />
           </div>
+        </div>
         )}
 
         {/* Portofolio Pengembangan Diri */}
@@ -165,12 +227,13 @@ export default function ModalEditProfilNominee({
 
         {/* Tabel Kehadiran */}
         {isTabelKehadiranEnabled && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm font-semibold text-navy-900">
-              <Table className="h-4 w-4 text-navy-500" />
+            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <Table className="h-5 w-5 text-navy-500" />
               Tabel Kehadiran (Opsional)
-            </label>
+            </h3>
             <button
               onClick={tambahBaris}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
@@ -258,6 +321,7 @@ export default function ModalEditProfilNominee({
               </table>
             </div>
           )}
+          </div>
         </div>
         )}
 

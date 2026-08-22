@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save } from 'lucide-react';
+import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save, CloudDownload, Check, Link as LinkIcon } from 'lucide-react';
+import Modal from '../../../components/common/Modal';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import PortofolioViewer from '../../../components/common/PortofolioViewer';
@@ -14,6 +15,14 @@ function getEmbedUrl(url) {
   const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
   if (videoIdMatch && videoIdMatch[1]) {
     return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+  }
+  return url;
+}
+
+function getPreviewUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com/file/d/')) {
+    return url.replace(/\/view.*$/, '/preview');
   }
   return url;
 }
@@ -35,7 +44,7 @@ function getEmbedUrl(url) {
  * @param {(daftarPenilaian: {nominee_id:number,kategori_id:number,skor:number,catatan_juri:string}[]) => void} onSubmit
  * @param {boolean} isSubmitting
  */
-export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit, isSubmitting }) {
+export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaban, onSubmit, isSubmitting }) {
   const [downloadingUrl, setDownloadingUrl] = useState(null);
   
   const loadDraft = () => {
@@ -76,7 +85,7 @@ export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit,
   const [skor, setSkor] = useState(nilaiAwal);
   const [catatan, setCatatan] = useState(() => draft?.catatan || {});
   const [hasDraft, setHasDraft] = useState(!!draft);
-  const [nomineeTerbuka, setNomineeTerbuka] = useState(() => nominee[0]?.id ?? null);
+  const [openedNominee, setOpenedNominee] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [tersentuh, setTersentuh] = useState(() => {
     if (draft && draft.tersentuh) {
@@ -97,6 +106,34 @@ export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit,
       }));
     }
   }, [skor, catatan, tersentuh, hasDraft, token]);
+
+  // Sinkronisasi Cloud Draft saat pertama kali dimuat
+  useEffect(() => {
+    async function syncCloudDraft() {
+      if (!token) return;
+      try {
+        const { getDraftFromServer } = await import('../../../services/votingService');
+        const cloudDraft = await getDraftFromServer(token, '2');
+        if (cloudDraft && Object.keys(cloudDraft).length > 0) {
+          const cloudSentuhCount = cloudDraft.tersentuh ? cloudDraft.tersentuh.length : 0;
+          if (cloudSentuhCount >= tersentuh.size) {
+            setSkor((prev) => ({ ...prev, ...cloudDraft.skor }));
+            if (cloudDraft.catatan) setCatatan((prev) => ({ ...prev, ...cloudDraft.catatan }));
+            if (cloudDraft.tersentuh) setTersentuh(new Set(cloudDraft.tersentuh));
+            toast.success('Progress dikembalikan dari Cloud (Server)!', {
+              icon: '☁️',
+              duration: 3000
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal load cloud draft:', e);
+      }
+    }
+    syncCloudDraft();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   // Track which input is being edited and its temporary value
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
@@ -163,380 +200,401 @@ export default function FormMode2({ token, nominee, kategori, jawaban, onSubmit,
 
   return (
     <div className="space-y-5">
-      {/* Progress Header */}
-      <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-soft">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Gavel className="h-5 w-5 text-navy-700" />
-            <span className="text-sm font-medium text-slate-700">Progress Penilaian Juri</span>
-            {hasDraft && sudahDinilai < nominee.length && (
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1 ml-2">
-                <Save className="h-3 w-3" />
-                DRAF TERSIMPAN
-              </span>
-            )}
+      {/* Progress Header & Action */}
+      <div className="flex flex-col md:flex-row gap-4 items-stretch mb-2">
+        <div className="flex-1 rounded-2xl bg-white border border-slate-200 p-4 shadow-soft flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Gavel className="h-5 w-5 text-navy-700" />
+              <span className="text-sm font-medium text-slate-700">Progress Penilaian Juri</span>
+              {hasDraft && sudahDinilai < nominee.length && (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1">
+                  <Save className="h-3 w-3" />
+                  DRAF TERSIMPAN
+                </span>
+              )}
+            </div>
+            <span className="text-sm font-bold text-navy-800 ml-2">
+              {sudahDinilai} / {nominee.length}
+            </span>
           </div>
-          <span className="text-sm font-bold text-navy-800">
-            {sudahDinilai} / {nominee.length} Nominee
-          </span>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-navy-700 to-gold-500 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-navy-700 to-gold-500 transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+
+        <button
+          type="button"
+          onClick={async () => {
+            const loadingToast = toast.loading('Menyimpan draft ke server...');
+            try {
+              const { saveDraftToServer } = await import('../../../services/votingService');
+              await saveDraftToServer(token, '2', { skor, catatan, tersentuh: Array.from(tersentuh) });
+              toast.success('Draft berhasil disimpan ke server!', { id: loadingToast });
+            } catch (e) {
+              toast.error('Gagal menyimpan ke server. ' + e.message, { id: loadingToast });
+            }
+          }}
+          className="flex md:w-auto w-full items-center justify-center gap-2 rounded-2xl border-2 border-navy-200 bg-white px-6 py-4 text-sm font-bold text-navy-700 shadow-soft hover:bg-navy-50 hover:border-navy-400 transition-all active:scale-[0.98]"
+        >
+          <CloudDownload className="h-5 w-5" />
+          Simpan Draft (Cloud)
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {nominee.map((n, idx) => {
-          const terbuka = nomineeTerbuka === n.id;
-          const sudahTerisi =
-            tersentuh.has(n.id) && kategori.every((k) => skor[kunciSkor(n.id, k.id)] != null);
-          const jawabanNominee = jawaban?.filter((j) => j.nominee_id === n.id);
-          const hasJawaban = jawabanNominee?.some((j) => j.teks_jawaban || j.file_url);
-
-          return (
-            <div
-              key={n.id}
-              className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
-                terbuka
-                  ? 'border-navy-300 bg-white shadow-soft-lg'
-                  : sudahTerisi
-                    ? 'border-emerald-200 bg-emerald-50/30 shadow-soft hover:shadow-card-hover'
-                    : 'border-slate-200 bg-white shadow-soft hover:shadow-card-hover'
-              }`}
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          {nominee.map((n, idx) => {
+            const sudahTerisi =
+              tersentuh.has(n.id) && kategori.every((k) => skor[kunciSkor(n.id, k.id)] != null);
+            
+            return (
               <button
                 type="button"
-                onClick={() => handleBukaNominee(n.id)}
-                className="flex w-full items-center gap-4 p-4 text-left transition-all duration-200"
+                key={n.id}
+                onClick={() => setOpenedNominee(n)}
+                className={`flex flex-col h-full group relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 text-center transition-all duration-300 ${
+                  sudahTerisi
+                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-soft-lg scale-[1.02]'
+                    : 'border-slate-200 bg-white shadow-soft hover:border-navy-300 hover:shadow-card-hover'
+                }`}
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
-                <div className="relative">
+                {/* Selection Indicator */}
+                {sudahTerisi && (
+                  <div className="absolute inset-0 bg-emerald-800/5 pointer-events-none"></div>
+                )}
+                
+                <div className={`relative mx-auto mb-3 sm:mb-4 w-fit transition-all duration-300 ${sudahTerisi ? 'scale-110' : 'group-hover:scale-105'}`}>
                   <img
                     src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
                     alt={n.nama}
-                    className="h-14 w-14 rounded-full border-2 border-slate-200 object-cover shadow-md transition-transform duration-200 hover:scale-105"
+                    className={`relative w-20 sm:w-28 aspect-square h-auto rounded-full border-4 ${
+                      sudahTerisi ? 'border-emerald-400 shadow-emerald-200' : 'border-white'
+                    } object-cover shadow-lg transition-all duration-300`}
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama)}&background=16324a&color=fff&size=128`;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=64`;
                     }}
                   />
-                  {hasJawaban && (
-                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white shadow">
-                      <FileText className="h-3 w-3" />
-                    </div>
-                  )}
                   {sudahTerisi && (
-                    <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
+                    <div className="absolute bottom-0 right-0 flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg border-[3px] border-white animate-bounce-in">
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                   )}
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate font-semibold text-slate-900">{n.nama}</p>
-                    <span className="shrink-0 rounded-full bg-navy-100 px-2 py-0.5 text-[10px] font-semibold text-navy-700">
-                      {kategori.length} Kategori
-                    </span>
-                  </div>
-                  <p className="truncate text-sm text-slate-500">{n.unit_kerja}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {sudahTerisi && !terbuka && (
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                      Lengkap
-                    </span>
-                  )}
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${
-                      terbuka ? 'rotate-180' : ''
-                    }`}
-                    aria-hidden="true"
-                  />
+  
+                <p className={`text-[13px] sm:text-[15px] font-bold transition-colors duration-200 leading-[1.15] mt-1.5 mb-0.5 ${
+                  sudahTerisi ? 'text-emerald-900' : 'text-slate-800 group-hover:text-navy-800'
+                }`}>
+                  {n.nama}
+                </p>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 leading-[1.15] mb-2">{n.unit_kerja}</p>
+  
+                <div className={`relative z-10 mt-auto w-full py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 border-none leading-tight ${
+                  sudahTerisi 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' 
+                    : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white'
+                }`}>
+                  {sudahTerisi ? 'Ubah Penilaian' : 'Mulai Penilaian'}
                 </div>
               </button>
+            );
+          })}
+        </div>
 
-              {terbuka && (
-                <div className="space-y-5 border-t border-slate-100 bg-gradient-to-b from-white to-slate-50/50 px-4 pb-5 pt-4 animate-fade-in">
-                  
-                  {/* Video Profil (jika ada) */}
-                  {n.video_profil_link && (
-                    <div className="rounded-xl overflow-hidden bg-black aspect-video shadow-md border border-slate-800/20">
+        <Modal isOpen={!!openedNominee} onClose={() => setOpenedNominee(null)} title="Lembar Penilaian Juri" maxWidth="max-w-4xl">
+          {openedNominee && (
+            <div className="space-y-8 -mt-2">
+              
+              {/* Profile Header */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 p-5 sm:p-6 bg-gradient-to-br from-navy-50 to-slate-50 rounded-2xl border-2 border-navy-100 shadow-sm">
+                <img
+                    src={openedNominee.foto_url || (openedNominee.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${openedNominee.nip}.jpg` : null)}
+                    alt={openedNominee.nama}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white shadow-md"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(openedNominee.nama || 'N')}&background=16324a&color=fff&size=64`;
+                    }}
+                />
+                <div className="flex-1 text-center sm:text-left flex flex-col justify-center min-h-[6rem]">
+                   <h2 className="text-xl sm:text-3xl font-bold text-navy-900 leading-tight mb-2">{openedNominee.nama}</h2>
+                   <p className="text-sm sm:text-base font-medium text-slate-600 bg-white/60 inline-flex items-center sm:self-start px-3 py-1.5 rounded-lg border border-slate-200">
+                     🏢 {openedNominee.unit_kerja}
+                   </p>
+                </div>
+              </div>
+
+              
+              {(() => {
+                const showPdfTab = Boolean(openedNominee.dokumen_link);
+                const previewUrl = getPreviewUrl(openedNominee.dokumen_link);
+                return showPdfTab && (
+                  <div className="mt-8 flex-1 flex flex-col min-h-[500px] animate-fade-in">
+                    <h4 className="font-semibold text-navy-900 flex items-center gap-2 mb-3">
+                      <FileText className="w-4 h-4 text-navy-500" />
+                      Preview Dokumen: Paparan
+                    </h4>
+                    <div className="flex-1 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white min-h-[400px]">
                       <iframe
-                        className="w-full h-full"
-                        src={getEmbedUrl(n.video_profil_link)}
-                        title="Video Profil"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
+                        src={previewUrl}
+                        title="PDF Viewer"
+                        className="w-full h-full border-none"
+                        allow="autoplay"
                       ></iframe>
                     </div>
-                  )}
+                  </div>
+                );
+              })()}
 
-                  {/* Bukti Dukung dari Nominee */}
-                  {hasJawaban && (
-                    <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/50 to-blue-100/30 p-4">
-                      <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-blue-800">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100">
-                          <FileText className="h-3.5 w-3.5 text-blue-600" />
-                        </div>
-                        Bukti Dukung & Portofolio Nominee
-                      </h4>
-                      <div className="space-y-3">
-                        {jawabanNominee
-                          .filter((j) => j.teks_jawaban || j.file_url)
-                          .map((j, jIdx) => (
-                            <div
-                              key={jIdx}
-                              className="rounded-lg border border-blue-100/50 bg-white p-3 shadow-sm"
-                            >
-                              {j.teks_jawaban && (
-                                <div className="mb-2 text-sm leading-relaxed text-slate-700">
-                                  {j.teks_jawaban.match(/https?:\/\/[^\s]+/) ? (
-                                    <a href={j.teks_jawaban.match(/https?:\/\/[^\s]+/)[0]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 font-medium bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100 inline-flex">
-                                      {j.pertanyaan?.teks_pertanyaan || 'Buka Link Dokumen'}
-                                    </a>
-                                  ) : (
-                                    <p className="italic">"{j.teks_jawaban}"</p>
-                                  )}
-                                </div>
-                              )}
-                              {j.file_url && (
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    try {
-                                      setDownloadingUrl(j.file_url);
-                                      const url = await getSignedUrlBuktiPDF(j.file_url);
-                                      window.open(url, '_blank');
-                                    } catch (e) {
-                                      alert(e.message);
-                                    } finally {
-                                      setDownloadingUrl(null);
-                                    }
-                                  }}
-                                  disabled={downloadingUrl === j.file_url}
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-200 disabled:opacity-50"
-                                >
-                                  {downloadingUrl === j.file_url ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Download className="h-3.5 w-3.5" />
-                                  )}
-                                  {j.pertanyaan?.teks_pertanyaan ? `Unduh ${j.pertanyaan.teks_pertanyaan}` : 'Unduh Dokumen Bukti'}
-                                </button>
+
+              {/* Daftar Isian / Pertanyaan Dinamis */}
+              {pertanyaan?.length > 0 && (
+                <div className="space-y-4 mt-8">
+                  {pertanyaan.map((p) => {
+                    const jaw = jawaban?.find((j) => j.nominee_id === openedNominee.id && j.pertanyaan_id === p.id);
+                    const isLink = jaw?.teks_jawaban && jaw.teks_jawaban.trim().match(/^https?:\/\//);
+                    return (
+                      <div key={p.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <h4 className="text-sm font-bold text-slate-700">{p.urutan}. {p.teks_pertanyaan}</h4>
+                        <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg whitespace-pre-wrap break-all">
+                          {jaw?.teks_jawaban ? (
+                            <div className="space-y-2">
+                              {isLink ? (
+                                <a href={jaw.teks_jawaban.trim()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                                  <LinkIcon className="h-4 w-4" /> Buka Tautan ({p.teks_pertanyaan})
+                                </a>
+                              ) : (
+                                <div>{jaw.teks_jawaban}</div>
                               )}
                             </div>
-                          ))}
+                          ) : (
+                            <span className="text-slate-400 italic">Belum ada isian/jawaban.</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  <PortofolioViewer 
-                    type="portofolio_pengembangan" 
-                    title="Pengembangan Diri" 
-                    icon="📚" 
-                    portofolio={n.portofolio_pengembangan} 
-                  />
-                  
-                  <PortofolioViewer 
-                    type="portofolio_inovasi" 
-                    title="Inovasi" 
-                    icon="💡" 
-                    portofolio={n.portofolio_inovasi} 
-                  />
-                  
-                  <PortofolioViewer 
-                    type="portofolio_penghargaan" 
-                    title="Penghargaan" 
-                    icon="🏆" 
-                    portofolio={n.portofolio_penghargaan} 
-                  />
-
-                  {/* Kategori Penilaian */}
-                  <div className="space-y-4">
-                    {kategori.map((k, kIdx) => {
-                      const nilai = skor[kunciSkor(n.id, k.id)];
-                      const percent =
-                        ((nilai - k.skor_min) / (k.skor_max - k.skor_min)) * 100;
-
-                      return (
-                        <div
-                          key={k.id}
-                          className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
-                          style={{ animationDelay: `${kIdx * 30}ms` }}
-                        >
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-100 text-[10px] font-bold text-gold-700">
-                                  {kIdx + 1}
-                                </span>
-                                <label
-                                  htmlFor={`skor-${n.id}-${k.id}`}
-                                  className="text-sm font-semibold text-slate-800"
-                                >
-                                  {k.nama_kategori}
-                                </label>
-                              </div>
-                              {k.deskripsi && (
-                                <p className="ml-8 mt-0.5 text-xs text-slate-500">{k.deskripsi}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-end gap-3">
-                              <div className="flex flex-col items-end">
-                                <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-bold text-gold-700">
-                                  Bobot {k.bobot_persen}%
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const val = Math.max(k.skor_min, nilai - 1);
-                                    ubahSkor(n.id, k.id, val);
-                                  }}
-                                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
-                                >
-                                  -
-                                </button>
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  value={editingId === `${n.id}-${k.id}` ? editingValue : nilai}
-                                  onFocus={() => {
-                                    setEditingId(`${n.id}-${k.id}`);
-                                    setEditingValue(String(nilai));
-                                  }}
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(/[^0-9]/g, "");
-                                    setEditingValue(raw);
-                                  }}
-                                  onBlur={() => {
-                                    const raw = editingValue.replace(/[^0-9]/g, "");
-                                    let val = parseInt(raw, 10);
-                                    if (isNaN(val)) val = nilai;
-                                    if (val > k.skor_max) val = k.skor_max;
-                                    if (val < k.skor_min) val = k.skor_min;
-                                    ubahSkor(n.id, k.id, val);
-                                    setEditingId(null);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') e.target.blur();
-                                  }}
-                                  className="w-16 shrink-0 rounded-xl border-2 border-navy-200 bg-white py-1.5 text-center text-xl font-black text-navy-900 shadow-inner transition-all focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/20"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const val = Math.min(k.skor_max, nilai + 1);
-                                    ubahSkor(n.id, k.id, val);
-                                  }}
-                                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Custom Slider */}
-                          <div className={`relative pt-1 transition-opacity duration-200 ${isConfirmOpen ? 'opacity-0' : 'opacity-100'}`}>
-                            <div className="mb-2 flex justify-between text-xs text-slate-400">
-                              <span>{k.skor_min}</span>
-                              <span>{k.skor_max}</span>
-                            </div>
-                            <div className="relative">
-                              <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-200"
-                                  style={{ width: `${percent}%` }}
-                                />
-                              </div>
-                              <input
-                                id={`skor-${n.id}-${k.id}`}
-                                type="range"
-                                min={k.skor_min}
-                                max={k.skor_max}
-                                value={nilai}
-                                onChange={(e) => ubahSkor(n.id, k.id, Number(e.target.value))}
-                                className="absolute inset-0 w-full cursor-pointer opacity-0"
-                              />
-                              <div
-                                className="pointer-events-none absolute top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-gold-600 shadow-lg transition-all duration-100"
-                                style={{ left: `calc(${percent}% - 10px)` }}
-                              >
-                                <div className="h-2 w-2 rounded-full bg-white" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Catatan Kualitatif */}
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                    <label
-                      htmlFor={`catatan-${n.id}`}
-                      className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"
-                    >
-                      <MessageSquare className="h-4 w-4 text-slate-500" />
-                      Catatan Kualitatif / Kritik & Saran
-                    </label>
-                    <textarea
-                      id={`catatan-${n.id}`}
-                      rows={3}
-                      value={catatan[n.id] ?? ''}
-                      onChange={(e) => {
-                        setCatatan((prev) => ({ ...prev, [n.id]: e.target.value }));
-                        setTersentuh((prev) => new Set(prev).add(n.id));
-                        setHasDraft(true);
-                      }}
-                      placeholder="Tuliskan catatan kualitatif untuk nominee ini (opsional)..."
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
-                    />
-                    <p className="mt-1.5 text-xs text-slate-400">
-                      Catatan ini akan dibaca oleh Kepala Kantor
-                    </p>
-                  </div>
+                    );
+                  })}
                 </div>
               )}
+
+              <div className="mt-8 space-y-4">
+                <PortofolioViewer 
+                  type="portofolio_pengembangan" 
+                  title="Pengembangan Diri" 
+                  icon="📚" 
+                  portofolio={openedNominee?.portofolio_pengembangan} 
+                />
+                
+                <PortofolioViewer 
+                  type="portofolio_inovasi" 
+                  title="Inovasi" 
+                  icon="💡" 
+                  portofolio={openedNominee?.portofolio_inovasi} 
+                />
+                
+                <PortofolioViewer 
+                  type="portofolio_penghargaan" 
+                  title="Penghargaan" 
+                  icon="🏆" 
+                  portofolio={openedNominee?.portofolio_penghargaan} 
+                />
+              </div>
+              
+              <div className="mt-8">
+                <h3 className="text-2xl font-bold text-navy-900 mb-6">Formulir Penilaian</h3>
+                <div className="space-y-6">
+                  {kategori.map((k) => {
+                    if (!k) return null;
+                    const n = openedNominee;
+                    const nilai = skor[kunciSkor(n.id, k.id)];
+                    const percent = ((nilai - k.skor_min) / (k.skor_max - k.skor_min)) * 100;
+                    return (
+                      <div
+                        key={k.id}
+                        className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
+                      >
+                        <div className="mb-3 flex flex-col sm:flex-row items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-100 text-xs font-bold text-gold-700">
+                                <Star className="h-4 w-4" />
+                              </span>
+                              <label htmlFor={`skor-${n.id}-${k.id}`} className="text-base sm:text-lg font-bold text-slate-800">
+                                {k.nama_kategori}
+                              </label>
+                            </div>
+                            {k.deskripsi && <p className="ml-10 mt-1 text-sm text-slate-500">{k.deskripsi}</p>}
+                          </div>
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="flex flex-col items-end">
+                              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-sm font-bold text-gold-700">Bobot {k.bobot_persen}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = Math.max(k.skor_min, nilai - 1);
+                                  ubahSkor(n.id, k.id, val);
+                                }}
+                                className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-2xl sm:text-3xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={editingId === `${n.id}-${k.id}` ? editingValue : nilai}
+                                onFocus={() => {
+                                  setEditingId(`${n.id}-${k.id}`);
+                                  setEditingValue(String(nilai));
+                                }}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                                  setEditingValue(raw);
+                                }}
+                                onBlur={() => {
+                                  const raw = editingValue.replace(/[^0-9]/g, "");
+                                  let val = parseInt(raw, 10);
+                                  if (isNaN(val)) val = nilai;
+                                  if (val > k.skor_max) val = k.skor_max;
+                                  if (val < k.skor_min) val = k.skor_min;
+                                  ubahSkor(n.id, k.id, val);
+                                  setEditingId(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') e.target.blur();
+                                }}
+                                className="w-20 sm:w-24 shrink-0 rounded-xl border-2 border-navy-200 bg-white py-2 sm:py-2.5 text-center text-2xl sm:text-3xl font-black text-navy-900 shadow-inner transition-all focus:border-gold-400 focus:outline-none focus:ring-4 focus:ring-gold-400/20"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = Math.min(k.skor_max, nilai + 1);
+                                  ubahSkor(n.id, k.id, val);
+                                }}
+                                className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl bg-navy-100 text-2xl sm:text-3xl font-bold text-navy-700 transition-colors hover:bg-navy-200 active:scale-95"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Custom Slider */}
+                        <div className={`relative pt-1 transition-opacity duration-200 ${isConfirmOpen ? 'opacity-0' : 'opacity-100'}`}>
+                          <div className="mb-2 flex justify-between text-xs text-slate-400">
+                            <span>{k.skor_min}</span>
+                            <span>{k.skor_max}</span>
+                          </div>
+                          <div className="relative">
+                            <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-200"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                            <input
+                              id={`skor-${n.id}-${k.id}`}
+                              type="range"
+                              min={k.skor_min}
+                              max={k.skor_max}
+                              value={nilai}
+                              onChange={(e) => ubahSkor(n.id, k.id, Number(e.target.value))}
+                              className="absolute inset-0 w-full cursor-pointer opacity-0"
+                            />
+                            <div
+                              className="pointer-events-none absolute top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-gold-600 shadow-lg transition-all duration-100"
+                              style={{ left: `calc(${percent}% - 10px)` }}
+                            >
+                              <div className="h-2 w-2 rounded-full bg-white" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Catatan Kualitatif */}
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                  <label
+                    htmlFor={`catatan-${openedNominee.id}`}
+                    className="mb-2 flex items-center gap-2 text-base font-bold text-slate-700"
+                  >
+                    <MessageSquare className="h-4 w-4 text-slate-500" />
+                    Catatan Kualitatif / Kritik & Saran
+                  </label>
+                  <textarea
+                    id={`catatan-${openedNominee.id}`}
+                    rows={3}
+                    value={catatan[openedNominee.id] ?? ''}
+                    onChange={(e) => {
+                      setCatatan((prev) => ({ ...prev, [openedNominee.id]: e.target.value }));
+                      setTersentuh((prev) => new Set(prev).add(openedNominee.id));
+                      setHasDraft(true);
+                    }}
+                    placeholder="Tuliskan catatan kualitatif untuk nominee ini (opsional)..."
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-base text-slate-800 placeholder:text-slate-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
+                  />
+                  <p className="mt-2 text-sm text-slate-400">
+                    Catatan ini akan dibaca oleh Kepala Kantor
+                  </p>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setOpenedNominee(null)}
+                    className="btn-primary py-4 px-10 text-lg shadow-lg bg-gradient-to-r from-navy-800 to-navy-700 hover:from-navy-700 hover:to-navy-600"
+                  >
+                    Selesai Menilai {openedNominee.nama}
+                  </button>
+                </div>
+              </div>
             </div>
-          );
-        })}
-
-        <button
-          type="submit"
-          disabled={isSubmitting || sudahDinilai < nominee.length}
-          className="btn-primary w-full py-4 text-base shadow-lg"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Mengirim Penilaian...
-            </>
-          ) : (
-            <>
-              <Gavel className="h-5 w-5" />
-              Kirim Penilaian Juri ({sudahDinilai}/{nominee.length} nominee)
-            </>
           )}
-        </button>
+        </Modal>
 
-        {sudahDinilai < nominee.length && (
-          <p className="text-center text-xs text-slate-400">
-            Selesaikan penilaian semua nominee untuk mengirim
-          </p>
-        )}
+        <div className="flex flex-col gap-3">
+          {sudahDinilai === nominee.length ? (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary w-full py-5 text-lg font-bold shadow-lg animate-fade-in"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Mengirim Penilaian...
+                </>
+              ) : (
+                <>
+                  <Gavel className="h-5 w-5" />
+                  Kirim Penilaian Juri ({sudahDinilai}/{nominee.length} nominee)
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+              <p className="text-base font-medium text-slate-500">
+                Tombol kirim akan muncul setelah Anda menyelesaikan penilaian untuk semua nominee.
+              </p>
+              <p className="mt-2 text-sm text-slate-400">
+                (Baru menilai {sudahDinilai} dari {nominee.length} nominee)
+              </p>
+            </div>
+          )}
+
+
+        </div>
       </form>
-
+      
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}

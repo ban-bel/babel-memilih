@@ -24,13 +24,23 @@ import FormKriteriaBuilder, { buatBarisKriteria } from './components/FormKriteri
 import FormPenunjukanJuri from './components/FormPenunjukanJuri';
 import FormVotingKategoriBuilder, { buatBarisKategoriVoting } from './components/FormVotingKategoriBuilder';
 
-const LANGKAH = [
-  { label: 'Info Periode', icon: FileText },
-  { label: 'Mode & Konten', icon: ListChecks },
-  { label: 'Review', icon: Award },
-];
-
 const STEP_ICONS = [FileText, ListChecks, Award];
+
+function getLangkah(mode) {
+  if (mode === MODE_PENILAIAN.MODE_2) {
+    return [
+      { label: 'Info Periode', icon: FileText },
+      { label: 'Komponen Kelengkapan', icon: ListChecks },
+      { label: 'Kategori & Bobot', icon: ListChecks },
+      { label: 'Review', icon: Award },
+    ];
+  }
+  return [
+    { label: 'Info Periode', icon: FileText },
+    { label: 'Mode & Konten', icon: ListChecks },
+    { label: 'Review', icon: Award },
+  ];
+}
 
 function nilaiAwalForm() {
   return {
@@ -50,12 +60,16 @@ function nilaiAwalForm() {
     is_voting_selesai: false,
     juri: [],
     is_video_profil: false,
+    is_video_profil_dinilai: false,
     is_nominee_can_vote: true,
     is_allow_abstain: false,
     is_tabel_kehadiran: false,
     is_portofolio_pengembangan: false,
+    is_portofolio_pengembangan_dinilai: false,
     is_portofolio_inovasi: false,
+    is_portofolio_inovasi_dinilai: false,
     is_portofolio_penghargaan: false,
+    is_portofolio_penghargaan_dinilai: false,
   };
 }
 
@@ -107,11 +121,16 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
         ? !form.isVotingKategoriEnabled || (form.votingKategori.length > 0 && form.votingKategori.every((k) => k.nama_kategori.trim()))
         : form.mode_penilaian === MODE_PENILAIAN.MODE_2A
           ? form.kriteria.length > 0 && form.kriteria.every((k) => k.nama_kriteria.trim())
-          : form.kategori.length > 0 &&
-            form.kategori.every((k) => k.nama_kategori.trim()) &&
-            totalBobotKategori === 100 &&
-            form.juri.length > 0 &&
-            form.juri.some((j) => j.is_ketua_juri);
+          : true; // Mode 2: Toggles are always valid. Pertanyaan might be empty, that's fine.
+
+  const langkah3Valid =
+    form.mode_penilaian === MODE_PENILAIAN.MODE_2
+      ? form.kategori.length > 0 &&
+        form.kategori.every((k) => k.nama_kategori.trim()) &&
+        Number(totalBobotKategori.toFixed(2)) === 100 &&
+        form.juri.length > 0 &&
+        form.juri.some((j) => j.is_ketua_juri)
+      : true;
 
   const mutasiBuatPeriode = useMutation({
     mutationFn: async () => {
@@ -176,12 +195,14 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
     );
   }
 
+  const currentLangkah = getLangkah(form.mode_penilaian);
+
   return (
     <div className="space-y-6">
       {/* Stepper */}
       <div className="flex items-center justify-center gap-3 sm:gap-4 w-full">
-        {LANGKAH.map((step, idx) => {
-          const StepIcon = STEP_ICONS[idx];
+        {currentLangkah.map((step, idx) => {
+          const StepIcon = step.icon;
           const isCompleted = idx < langkah;
           const isActive = idx === langkah;
           return (
@@ -200,7 +221,7 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                   {step.label}
                 </span>
               </div>
-              {idx < LANGKAH.length - 1 && (
+              {idx < currentLangkah.length - 1 && (
                 <div className={`h-1 rounded-full w-8 sm:w-20 mb-6 transition-colors duration-300 ${isCompleted ? 'bg-emerald-400' : 'bg-slate-200/60'}`} />
               )}
             </div>
@@ -214,8 +235,8 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-navy-400 via-emerald-400 to-navy-600 opacity-90" />
 
         <div className="bg-gradient-to-br from-navy-50/50 to-transparent border-b border-white/50 p-6 sm:px-8 sm:py-6">
-          <h3 className="font-display text-xl font-bold text-navy-900 tracking-tight">{LANGKAH[langkah].label}</h3>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Langkah {langkah + 1} dari {LANGKAH.length}</p>
+          <h3 className="font-display text-xl font-bold text-navy-900 tracking-tight">{currentLangkah[langkah].label}</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Langkah {langkah + 1} dari {currentLangkah.length}</p>
         </div>
 
         <div className="p-6 sm:p-8 space-y-6">
@@ -351,86 +372,161 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
               )}
 
               {(form.mode_penilaian === MODE_PENILAIAN.MODE_1A || form.mode_penilaian === MODE_PENILAIAN.MODE_2) && (
-                <div className="rounded-xl border border-navy-200 bg-navy-50/30 p-4 mb-4 space-y-4">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.is_video_profil}
-                      onChange={(e) => ubah('is_video_profil', e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-                    />
-                    <div>
-                      <span className="font-medium text-navy-900">Minta Link Video Profil (YouTube)</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Jika diaktifkan, nominee wajib menyertakan link video YouTube (misal: youtube.com atau youtu.be).
+                <div className="rounded-xl border border-navy-200 bg-navy-50/30 p-3 space-y-3">
+                  {/* Video Profil */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <span className="font-medium text-navy-900 text-sm">Minta Link Video Profil (YouTube)</span>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                        Jika digunakan, nominee wajib menyertakan link video YouTube.
                       </p>
                     </div>
-                  </label>
+                    <select 
+                      className="input input-sm w-44 text-xs bg-white shrink-0 cursor-pointer"
+                      value={!form.is_video_profil ? 'none' : (form.is_video_profil_dinilai ? 'score' : 'info')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'none') {
+                          ubah('is_video_profil', false);
+                          ubah('is_video_profil_dinilai', false);
+                        } else if (val === 'info') {
+                          ubah('is_video_profil', true);
+                          ubah('is_video_profil_dinilai', false);
+                        } else if (val === 'score') {
+                          ubah('is_video_profil', true);
+                          ubah('is_video_profil_dinilai', true);
+                        }
+                      }}
+                    >
+                      <option value="none">Tidak Digunakan</option>
+                      <option value="info">Hanya Kelengkapan</option>
+                      {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+                        <option value="score">Masuk Penilaian</option>
+                      )}
+                    </select>
+                  </div>
 
-                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
-                    <input
-                      type="checkbox"
-                      checked={form.is_tabel_kehadiran}
-                      onChange={(e) => ubah('is_tabel_kehadiran', e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-                    />
-                    <div>
-                      <span className="font-medium text-navy-900">Gunakan Tabel Kehadiran</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                  {/* Tabel Kehadiran */}
+                  <div className="flex items-center justify-between gap-4 border-t border-navy-200/50 pt-3">
+                    <div className="flex-1">
+                      <span className="font-medium text-navy-900 text-sm">Gunakan Tabel Kehadiran</span>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
                         Admin dapat mengisi rekapitulasi kehadiran nominee, dan data ini akan ditampilkan ke penilai/juri.
                       </p>
                     </div>
-                  </label>
+                    <select 
+                      className="input input-sm w-44 text-xs bg-white shrink-0 cursor-pointer"
+                      value={form.is_tabel_kehadiran ? 'info' : 'none'}
+                      onChange={(e) => ubah('is_tabel_kehadiran', e.target.value === 'info')}
+                    >
+                      <option value="none">Tidak Digunakan</option>
+                      <option value="info">Hanya Kelengkapan</option>
+                    </select>
+                  </div>
                   
-                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
-                    <input
-                      type="checkbox"
-                      checked={form.is_portofolio_pengembangan}
-                      onChange={(e) => ubah('is_portofolio_pengembangan', e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-                    />
-                    <div>
-                      <span className="font-medium text-navy-900">Form Portofolio: Pengembangan Diri</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                  {/* Portofolio Pengembangan */}
+                  <div className="flex items-center justify-between gap-4 border-t border-navy-200/50 pt-3">
+                    <div className="flex-1">
+                      <span className="font-medium text-navy-900 text-sm">Form Portofolio: Pengembangan Diri</span>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
                         Nominee dapat melengkapi rekam jejak pengembangan diri mereka di form pengisian nominee.
                       </p>
                     </div>
-                  </label>
+                    <select 
+                      className="input input-sm w-44 text-xs bg-white shrink-0 cursor-pointer"
+                      value={!form.is_portofolio_pengembangan ? 'none' : (form.is_portofolio_pengembangan_dinilai ? 'score' : 'info')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'none') {
+                          ubah('is_portofolio_pengembangan', false);
+                          ubah('is_portofolio_pengembangan_dinilai', false);
+                        } else if (val === 'info') {
+                          ubah('is_portofolio_pengembangan', true);
+                          ubah('is_portofolio_pengembangan_dinilai', false);
+                        } else if (val === 'score') {
+                          ubah('is_portofolio_pengembangan', true);
+                          ubah('is_portofolio_pengembangan_dinilai', true);
+                        }
+                      }}
+                    >
+                      <option value="none">Tidak Digunakan</option>
+                      <option value="info">Hanya Kelengkapan</option>
+                      {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+                        <option value="score">Masuk Penilaian</option>
+                      )}
+                    </select>
+                  </div>
 
-                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
-                    <input
-                      type="checkbox"
-                      checked={form.is_portofolio_inovasi}
-                      onChange={(e) => ubah('is_portofolio_inovasi', e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-                    />
-                    <div>
-                      <span className="font-medium text-navy-900">Form Portofolio: Inovasi</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                  {/* Portofolio Inovasi */}
+                  <div className="flex items-center justify-between gap-4 border-t border-navy-200/50 pt-3">
+                    <div className="flex-1">
+                      <span className="font-medium text-navy-900 text-sm">Form Portofolio: Inovasi</span>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
                         Nominee dapat mengisi daftar inovasi yang telah mereka kembangkan.
                       </p>
                     </div>
-                  </label>
+                    <select 
+                      className="input input-sm w-44 text-xs bg-white shrink-0 cursor-pointer"
+                      value={!form.is_portofolio_inovasi ? 'none' : (form.is_portofolio_inovasi_dinilai ? 'score' : 'info')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'none') {
+                          ubah('is_portofolio_inovasi', false);
+                          ubah('is_portofolio_inovasi_dinilai', false);
+                        } else if (val === 'info') {
+                          ubah('is_portofolio_inovasi', true);
+                          ubah('is_portofolio_inovasi_dinilai', false);
+                        } else if (val === 'score') {
+                          ubah('is_portofolio_inovasi', true);
+                          ubah('is_portofolio_inovasi_dinilai', true);
+                        }
+                      }}
+                    >
+                      <option value="none">Tidak Digunakan</option>
+                      <option value="info">Hanya Kelengkapan</option>
+                      {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+                        <option value="score">Masuk Penilaian</option>
+                      )}
+                    </select>
+                  </div>
 
-                  <label className="flex items-start gap-3 cursor-pointer border-t border-navy-200/50 pt-4">
-                    <input
-                      type="checkbox"
-                      checked={form.is_portofolio_penghargaan}
-                      onChange={(e) => ubah('is_portofolio_penghargaan', e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-500"
-                    />
-                    <div>
-                      <span className="font-medium text-navy-900">Form Portofolio: Penghargaan</span>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                  {/* Portofolio Penghargaan */}
+                  <div className="flex items-center justify-between gap-4 border-t border-navy-200/50 pt-3">
+                    <div className="flex-1">
+                      <span className="font-medium text-navy-900 text-sm">Form Portofolio: Penghargaan</span>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
                         Nominee dapat mengunggah daftar penghargaan atau apresiasi yang pernah diraih.
                       </p>
                     </div>
-                  </label>
+                    <select 
+                      className="input input-sm w-44 text-xs bg-white shrink-0 cursor-pointer"
+                      value={!form.is_portofolio_penghargaan ? 'none' : (form.is_portofolio_penghargaan_dinilai ? 'score' : 'info')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'none') {
+                          ubah('is_portofolio_penghargaan', false);
+                          ubah('is_portofolio_penghargaan_dinilai', false);
+                        } else if (val === 'info') {
+                          ubah('is_portofolio_penghargaan', true);
+                          ubah('is_portofolio_penghargaan_dinilai', false);
+                        } else if (val === 'score') {
+                          ubah('is_portofolio_penghargaan', true);
+                          ubah('is_portofolio_penghargaan_dinilai', true);
+                        }
+                      }}
+                    >
+                      <option value="none">Tidak Digunakan</option>
+                      <option value="info">Hanya Kelengkapan</option>
+                      {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+                        <option value="score">Masuk Penilaian</option>
+                      )}
+                    </select>
+                  </div>
                 </div>
               )}
 
               {(form.mode_penilaian === MODE_PENILAIAN.MODE_1A || form.mode_penilaian === MODE_PENILAIAN.MODE_2) && (
-                <div className="mt-4">
+                <div className="mt-4 border-t border-navy-200/50 pt-4">
                   {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
                     <div className="mb-2">
                       <h4 className="font-bold text-navy-900">Form Input Dokumen / Link Drive</h4>
@@ -446,7 +542,8 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                         item: 'Dokumen',
                         placeholder: 'Tulis nama dokumen (misal: Link Makalah)...',
                         addBtn: 'Tambah Dokumen',
-                        hideScores: true
+                        hideScores: true,
+                        showDinilaiToggle: true
                       }}
                     />
                   ) : (
@@ -455,19 +552,9 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                 </div>
               )}
 
-              {form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
-                <>
-                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700">
-                    <strong>Catatan:</strong> Tentukan kriteria penilaian dan bobot (persentase) yang akan digunakan juri untuk menilai kandidat.
-                  </div>
-                  <FormKategoriBuilder daftar={form.kategori} onChange={(d) => ubah('kategori', d)} />
-                  <FormPenunjukanJuri wilayahIds={form.wilayah_ids} daftar={form.juri} onChange={(d) => ubah('juri', d)} />
-                </>
-              )}
-
               {form.mode_penilaian === MODE_PENILAIAN.MODE_2A && (
                 <>
-                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700">
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700 mt-4">
                     <strong>MODE_2A:</strong> Penilai memilih 1 nominee favorit dan memberikan skor penilaian per kriteria.
                   </div>
                   <FormKriteriaBuilder daftar={form.kriteria} onChange={(d) => ubah('kriteria', d)} />
@@ -517,8 +604,27 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
             </div>
           )}
 
-          {/* Step 3: Review */}
-          {langkah === 2 && (
+          {/* Step 3: Kategori, Bobot & Juri (Khusus Mode 2) */}
+          {langkah === 2 && form.mode_penilaian === MODE_PENILAIAN.MODE_2 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-700">
+                <strong>Catatan:</strong> Tentukan kriteria penilaian dan bobot (persentase) yang akan digunakan juri untuk menilai kandidat.
+              </div>
+              
+              <FormKategoriBuilder 
+                daftar={form.kategori} 
+                onChange={(d) => ubah('kategori', d)} 
+                formState={form}
+              />
+              
+              <div className="border-t border-slate-200 pt-6 mt-6">
+                <FormPenunjukanJuri wilayahIds={form.wilayah_ids} daftar={form.juri} onChange={(d) => ubah('juri', d)} />
+              </div>
+            </div>
+          )}
+
+          {/* Step Review */}
+          {langkah === (currentLangkah.length - 1) && (
             <div className="space-y-4 animate-fade-in">
               <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-2">
                 <div className="flex justify-between py-2 border-b border-slate-200">
@@ -577,8 +683,8 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
             Kembali
           </button>
 
-          {langkah < LANGKAH.length - 1 ? (
-            <button type="button" onClick={() => setLangkah((s) => s + 1)} disabled={langkah === 0 ? !langkah1Valid : !langkah2Valid} className="btn-primary px-8 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          {langkah < currentLangkah.length - 1 ? (
+            <button type="button" onClick={() => setLangkah((s) => s + 1)} disabled={langkah === 0 ? !langkah1Valid : (langkah === 1 ? !langkah2Valid : !langkah3Valid)} className="btn-primary px-8 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
               Lanjut
               <ChevronRight className="h-4 w-4 ml-1" />
             </button>

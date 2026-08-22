@@ -12,7 +12,7 @@ import {
   fetchJumlahJuriPeriode,
   fetchKeputusanKakan,
   kuncikanPemenang,
-  fetchAllJawabanNominee,
+  fetchAllJawabanNominee, fetchPertanyaanMode1A,
 } from '../../services/votingService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN } from '../../utils/constants';
@@ -74,6 +74,12 @@ export default function JuriPage() {
   const { data: jawabanNominee = [], isLoading: loadingJawaban } = useQuery({
     queryKey: ['jawaban-semua-nominee', periodeId],
     queryFn: () => fetchAllJawabanNominee(periodeId),
+    enabled: aktif && Boolean(periodeId),
+  });
+
+  const { data: pertanyaan = [], isLoading: loadingPertanyaan } = useQuery({
+    queryKey: ['pertanyaan-periode', periodeId],
+    queryFn: () => fetchPertanyaanMode1A(periodeId),
     enabled: aktif && Boolean(periodeId),
   });
 
@@ -175,7 +181,7 @@ export default function JuriPage() {
                 <p className="font-semibold text-emerald-800">Penilaian terkirim!</p>
                 <p className="mt-1 text-sm text-emerald-600">Anda bisa memantau tab Rekapitulasi.</p>
               </div>
-            ) : loadingNominee || loadingKategori || loadingJawaban ? (
+            ) : loadingNominee || loadingKategori || loadingJawaban || loadingPertanyaan ? (
               <LoadingScreen label="Memuat..." />
             ) : (
               <FormMode2
@@ -183,6 +189,7 @@ export default function JuriPage() {
                 nominee={nominee}
                 kategori={kategori}
                 jawaban={jawabanNominee}
+                pertanyaan={pertanyaan}
                 onSubmit={(daftarPenilaian) => { 
                   setErrorSubmit(null); 
                   mutasiSubmit.mutate(daftarPenilaian, {

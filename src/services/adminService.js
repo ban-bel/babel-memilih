@@ -404,10 +404,14 @@ export async function fetchPeriodeList(wilayahId = null) {
       is_nominee_can_vote,
       is_allow_abstain,
       is_video_profil,
+      is_video_profil_dinilai,
       is_tabel_kehadiran,
       is_portofolio_pengembangan,
+      is_portofolio_pengembangan_dinilai,
       is_portofolio_inovasi,
+      is_portofolio_inovasi_dinilai,
       is_portofolio_penghargaan,
+      is_portofolio_penghargaan_dinilai,
       wilayah:wilayah_id ( nama_wilayah )
     `);
 
@@ -468,12 +472,16 @@ export async function buatPeriodePenilaian(periode) {
       status: 'DRAFT',
       created_by: periode.created_by,
       is_video_profil: periode.is_video_profil || false,
+      is_video_profil_dinilai: periode.is_video_profil_dinilai || false,
       is_nominee_can_vote: periode.is_nominee_can_vote ?? false,
       is_allow_abstain: periode.is_allow_abstain ?? false,
       is_tabel_kehadiran: periode.is_tabel_kehadiran ?? false,
       is_portofolio_pengembangan: periode.is_portofolio_pengembangan ?? false,
+      is_portofolio_pengembangan_dinilai: periode.is_portofolio_pengembangan_dinilai ?? false,
       is_portofolio_inovasi: periode.is_portofolio_inovasi ?? false,
+      is_portofolio_inovasi_dinilai: periode.is_portofolio_inovasi_dinilai ?? false,
       is_portofolio_penghargaan: periode.is_portofolio_penghargaan ?? false,
+      is_portofolio_penghargaan_dinilai: periode.is_portofolio_penghargaan_dinilai ?? false,
     })
     .select('id')
     .single();
@@ -661,6 +669,11 @@ export async function simpanPertanyaanMode1A(periodeId, daftarPertanyaan) {
  * ]);
  */
 export async function simpanKategoriMode2(periodeId, daftarKategori) {
+  // Hapus kategori lama terlebih dahulu
+  await supabase.from('kategori_penilaian').delete().eq('periode_id', periodeId);
+
+  if (!daftarKategori || daftarKategori.length === 0) return;
+
   const payload = daftarKategori.map((k) => ({
     periode_id: periodeId,
     nama_kategori: k.nama_kategori,
