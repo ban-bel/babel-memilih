@@ -413,11 +413,29 @@ export async function kirimNotifikasiBatch({
   const baseUrl = window.location.origin;
 
   // Ambil Template
-  const templateAktifList = await fetchTemplateWaAktif(kategori);
+  const templateAktifList = await fetchTemplateWaAktif();
   if (!templateAktifList || templateAktifList.length === 0) {
-    throw new Error(`Tidak ada template WA aktif untuk kategori ${kategori}`);
+    throw new Error(`Tidak ada template WA aktif`);
   }
-  const templateDipilih = templateAktifList[0];
+  
+  let eligibleTemplates = [];
+  const targetTag = `[${kategori.toUpperCase()}]`;
+  const specificTemplates = templateAktifList.filter(t => t.nama_tampilan.toUpperCase().startsWith(targetTag));
+  
+  if (specificTemplates.length > 0) {
+    eligibleTemplates = specificTemplates;
+  } else {
+    eligibleTemplates = templateAktifList.filter(t => {
+      const up = t.nama_tampilan.toUpperCase();
+      return !up.startsWith('[PENILAI]') && !up.startsWith('[NOMINEE]') && !up.startsWith('[JURI]');
+    });
+  }
+
+  if (eligibleTemplates.length === 0) {
+    throw new Error(`Tidak ada template WA yang relevan untuk kategori ${kategori}`);
+  }
+  
+  const templateDipilih = eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)];
 
   for (let i = 0; i < penerimaList.length; i++) {
     const p = penerimaList[i];

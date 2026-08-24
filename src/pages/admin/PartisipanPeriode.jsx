@@ -161,18 +161,16 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
   let eligibleTemplates = [];
   if (templates && templates.length > 0) {
     const targetTag = `[${activeTab.toUpperCase()}]`;
-    const specificTemplates = templates.filter((t) => t.nama_tampilan.startsWith(targetTag));
+    const specificTemplates = templates.filter((t) => t.nama_tampilan.toUpperCase().startsWith(targetTag));
     
     if (specificTemplates.length > 0) {
       eligibleTemplates = specificTemplates;
     } else {
       // Ambil yang umum (tidak ada tag khusus)
-      eligibleTemplates = templates.filter(
-        (t) =>
-          !t.nama_tampilan.startsWith('[PENILAI]') &&
-          !t.nama_tampilan.startsWith('[NOMINEE]') &&
-          !t.nama_tampilan.startsWith('[JURI]')
-      );
+      eligibleTemplates = templates.filter((t) => {
+        const up = t.nama_tampilan.toUpperCase();
+        return !up.startsWith('[PENILAI]') && !up.startsWith('[NOMINEE]') && !up.startsWith('[JURI]');
+      });
     }
   }
 
@@ -202,8 +200,8 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
         LINK: linkToken,
         NAMA_PERIODE: periode?.nama_periode || '',
         PERAN: PERAN_LABELS[kategoriLabel] || kategoriLabel,
-        TANGGAL_MULAI: formatTanggal(periode?.waktu_mulai),
-        TANGGAL_SELESAI: formatTanggal(periode?.waktu_selesai)
+        TANGGAL_MULAI: formatTanggal(periode?.tgl_mulai),
+        TANGGAL_SELESAI: formatTanggal(periode?.tgl_selesai)
       })
     : `Halo ${p.nama},\n\nBerikut link akses Anda:\n${linkToken}\n\nMohon tidak membagikan link ini.\nTerima kasih.`;
 
