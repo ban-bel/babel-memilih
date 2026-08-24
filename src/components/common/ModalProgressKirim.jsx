@@ -34,7 +34,7 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 export default function ModalProgressKirim({ isOpen, onClose, progress }) {
   if (!isOpen) return null;
 
-  const { sent = 0, failed = 0, total = 0, logs = [] } = progress;
+  const { sent = 0, failed = 0, total = 0, logs = [], statusText = '' } = progress;
   const remaining = total - sent - failed;
   const percentage = total > 0 ? Math.round(((sent + failed) / total) * 100) : 0;
   const isComplete = sent + failed >= total && total > 0;
@@ -103,6 +103,14 @@ export default function ModalProgressKirim({ isOpen, onClose, progress }) {
               <p className="text-xs text-slate-500">Sisa</p>
             </div>
           </div>
+
+          
+          {/* Live Status */}
+          {!isComplete && statusText && (
+            <div className="mt-4 rounded-lg bg-teal-50 p-3 border border-teal-100 flex items-center justify-center text-center">
+              <span className="text-sm font-medium text-teal-700">{statusText}</span>
+            </div>
+          )}
 
           {/* Log List */}
           <div className="mt-4 max-h-64 overflow-y-auto rounded-lg bg-slate-50 p-3">

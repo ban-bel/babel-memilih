@@ -6,7 +6,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import { fetchDaftarPegawaiAktif, fetchWilayahList, tambahPegawai, tambahPegawaiBulk, updatePegawai, hapusPegawai, cariUidByEmail } from '../../services/adminService';
-import { formatHP } from '../../services/fonnteService';
+import { formatHP } from '../../services/wabotLokalService';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
 

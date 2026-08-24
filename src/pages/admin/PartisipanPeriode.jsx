@@ -27,7 +27,8 @@ import {
   Zap,
   Download,
   FileText,
-  Mail
+  Mail,
+  Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -42,7 +43,7 @@ import {
 } from '../../services/adminService';
 import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim, insertLogEmail, insertLogWaMe } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
-import { formatHP, kirimPesanFonnte } from '../../services/fonnteService';
+import { formatHP } from '../../services/wabotLokalService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
 import Pagination from '../../components/common/Pagination';
 import { MODE_PENILAIAN } from '../../utils/constants';
@@ -136,8 +137,9 @@ function TabButton({ label, active, onClick, count, dotColor }) {
 /**
  * PartisipanRow - Baris tabel untuk satu partisipan
  */
-function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggleEmail, onKirimFonnte, periode, templates, localSentIds, localSentEmailIds }) {
+function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggleEmail, periode, templates, localSentIds, localSentEmailIds }) {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [sendingWaId, setSendingWaId] = useState(null);
   const p = item.nominee || item.pegawai;
   if (!p) return null;
 
@@ -206,6 +208,39 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
     : `Halo ${p.nama},\n\nBerikut link akses Anda:\n${linkToken}\n\nMohon tidak membagikan link ini.\nTerima kasih.`;
 
   const waHref = hp ? `https://wa.me/${hp}?text=${encodeURIComponent(waText)}` : '#';
+
+  
+  const handleSendWaApi = async () => {
+    if (!hp) {
+      toast.error('Nomor HP belum terdaftar.');
+      return;
+    }
+    setSendingWaId(p.id);
+    const toastId = toast.loading(`Mengirim WA ke ${p.nama}...`);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_WA_API_URL}/send`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': import.meta.env.VITE_WA_API_KEY
+        },
+        body: JSON.stringify({ nomor: hp, pesan: waText })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengirim WA via API');
+      toast.success(`WA sukses terkirim ke ${p.nama}!`, { id: toastId });
+      
+      // Update DB and local state
+      insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
+      if (!sudahNotif && onToggleWa) {
+        onToggleWa(item.id, true);
+      }
+    } catch (err) {
+      toast.error(err.message, { id: toastId });
+    } finally {
+      setSendingWaId(null);
+    }
+  };
 
   const handleEmail = async () => {
     if (!p.email) {
@@ -376,19 +411,34 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
           </button>
 
           {hp && (
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
-                !sudahNotif && onToggleWa(item.id, true);
-              }}
-              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
-              title="Kirim via WhatsApp Web (WA.Me)"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </a>
+            <div className="inline-flex gap-1">
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
+                  !sudahNotif && onToggleWa(item.id, true);
+                }}
+                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                title="Buka via WhatsApp Web (WA.Me)"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+              <button
+                type="button"
+                disabled={sendingWaId === p.id}
+                onClick={handleSendWaApi}
+                className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 hover:border-teal-300 transition-colors disabled:opacity-50"
+                title="Kirim Instan via WA Bot API"
+              >
+                {sendingWaId === p.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           )}
 
           <button
@@ -683,6 +733,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             ...prev,
             sent: progress.status === 'SUCCESS' ? prev.sent + 1 : prev.sent,
             failed: progress.status === 'FAILED' ? prev.failed + 1 : prev.failed,
+            statusText: progress.statusText,
             logs: [{ status: progress.status, nama: progress.nama, error: progress.error }, ...prev.logs.slice(0, 49)]
           }));
         },
@@ -916,6 +967,8 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             WA: {sudahTerKirim}/{total} | HP: {denganHP}
           </span>
 
+          
+          
           <button
             type="button"
             onClick={handleKirimBulkWA}
@@ -923,11 +976,8 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#128C7E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title={belumTerKirim === 0 ? 'Semua sudah terkirim' : `Kirim WA ke ${belumTerKirim} yang belum`}
           >
-            {sedangMengirim
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <Zap className="h-3.5 w-3.5" />
-            }
-            Kirim Bulk Fonnte
+            {sedangMengirim ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+            Kirim Bulk WA API
           </button>
           
           <button

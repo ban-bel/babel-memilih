@@ -54,5 +54,9 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    allowedHosts: [
+      'rlyansr.my.id',
+      'www.rlyansr.my.id'
+    ],
   },
 });

@@ -14,7 +14,7 @@
  */
 
 import { supabase } from '../config/supabaseClient';
-import { formatHP } from './fonnteService';
+import { formatHP } from './wabotLokalService';
 import { kirimPesanLocalBot } from './wabotLokalService';
 import { fetchTemplateWaAktif } from './templateWaService';
 
@@ -404,175 +404,73 @@ export async function kirimNotifikasiBatch({
     throw new Error('Daftar penerima kosong');
   }
 
-  // Reset state untuk sesi baru
-  resetHumanPatternState();
-
-  // Check jam kerja
-  const safeHour = isSafeHour();
-  const currentTime = getHumanReadableTime();
-
-  console.log('\n' + 'â•'.repeat(70));
-  console.log('ðŸ“± MULAI KIRIM NOTIFIKASI WA (Hybrid Batch Mode)');
-  console.log('â”€'.repeat(70));
-  console.log(`ðŸ‘¥ Total penerima: ${penerimaList.length}`);
-  console.log(`ðŸ·ï¸  Kategori: ${kategori}`);
-  console.log(`ðŸ• Waktu mulai: ${currentTime}`);
-  console.log(`â° Status jam: ${safeHour ? 'â±ï¸ Dalam jam kerja' : 'ðŸŒ™ Di luar jam kerja'}`);
-  console.log('â”€'.repeat(70));
-  console.log('ðŸ“Š Pattern Hybrid Batch:');
-  console.log('   â€¢ Batch size: 2-5 pesan per batch (acak)');
-  console.log('   â€¢ 70% â†’ pause 45-120 detik antar batch ("ngopi/nyamuk")');
-  console.log('   â€¢ 30% â†’ langsung lanjut tanpa pause panjang');
-  console.log('   â€¢ Weekend: batch pause 1.5x lebih lama');
-  console.log('   â€¢ 15% â†’ delay pendek (1-2 detik) - "buru-buru"');
-  console.log('   â€¢ 72% â†’ delay normal (3-8 detik) - typing normal');
-  console.log('   â€¢ 8% â†’ pause panjang (15-45 detik) - "terganggu"');
-  console.log('   â€¢ 3% â†’ pause sangat panjang (1-3 menit) - "sibuk"');
-  console.log('   â€¢ 10% â†’ variasi pesan untuk menghindari identical messages');
-  console.log('â•'.repeat(70) + '\n');
-
-  const results = {
-    berhasil: [],
-    gagal: []
-  };
-
+  console.log('\n' + '='.repeat(70));
+  console.log('🚀 MULAI KIRIM NOTIFIKASI WA (Safe Delay Mode 22s)');
+  console.log('='.repeat(70));
+  
+  const results = { berhasil: [], gagal: [] };
+  const DELAY_MS = 22000; // 22 detik
   const baseUrl = window.location.origin;
 
-  // Fetch templates
-  const templates = await fetchTemplateWaAktif();
-
-  if (templates.length === 0) {
-    throw new Error('Tidak ada template WA yang aktif.');
+  // Ambil Template
+  const templateAktifList = await fetchTemplateWaAktif(kategori);
+  if (!templateAktifList || templateAktifList.length === 0) {
+    throw new Error(`Tidak ada template WA aktif untuk kategori ${kategori}`);
   }
+  const templateDipilih = templateAktifList[0];
 
-  // Pilih template
-  const templateDipilih = pilihTemplateByKategori(templates, kategori);
+  for (let i = 0; i < penerimaList.length; i++) {
+    const p = penerimaList[i];
+    let retries = 0;
+    const MAX_RETRIES = 2;
+    let success = false;
 
-  if (!templateDipilih) {
-    throw new Error('Tidak ada template WA yang aktif');
-  }
+    let link = '';
+    if (kategori === 'PENILAI') {
+      link = `${baseUrl}/penilai/${p.token_akses}`;
+    } else if (kategori === 'JURI') {
+      link = `${baseUrl}/juri?token=${p.token_akses}`;
+    } else {
+      link = `${baseUrl}/nominee?token=${p.token_akses}`;
+    }
+    
+    const panggilan = hitungSapaan(p.nama, p.nip_baru);
+    const peran = PERAN_LABELS[kategori] || kategori;
+    const tugas = TUGAS_LABELS[kategori] || '';
 
-  console.log(`ðŸ“‹ Template: "${templateDipilih.nama_tampilan}"`);
-  console.log(`ðŸ“‹ Template ID: ${templateDipilih.id}`);
-  console.log('');
+    let pesan = generatePesan(templateDipilih.isi_pesan, {
+      NAMA: p.nama,
+      PANGGILAN: panggilan,
+      LINK: link,
+      PERAN: peran,
+      TUGAS: tugas,
+      NAMA_PERIODE: periodeData?.nama_periode || '',
+      TANGGAL_MULAI: formatTanggal(periodeData?.tgl_mulai),
+      TANGGAL_SELESAI: formatTanggal(periodeData?.tgl_selesai),
+    });
 
-  // ========================================
-  // HYBRID BATCH MODE - Kirim per batch 2-5 pesan
-  // ========================================
-  let i = 0;
-  let batchNumber = 0;
-  let batchStats = { batches: 0, avgBatchSize: 0 };
+    pesan = addMessageVariation(pesan, p.nama);
+    const noHpFormat = formatHP(p.no_hp);
 
-  while (i < penerimaList.length) {
-    batchNumber++;
-    const batchSize = getRandomBatchSize();
-    const remaining = penerimaList.length - i;
-    const actualBatchSize = Math.min(batchSize, remaining);
-
-    batchStats.batches++;
-    batchStats.avgBatchSize = (batchStats.avgBatchSize * (batchStats.batches - 1) + actualBatchSize) / batchStats.batches;
-
-    console.log(`\n${'â”€'.repeat(70)}`);
-    console.log(`ðŸ“¦ BATCH #${batchNumber} - ${actualBatchSize} pesan${actualBatchSize < batchSize ? ' (sisa ' + remaining + ')' : ''}`);
-    console.log(`â”€`.repeat(70));
-
-    // Proses pesan dalam batch ini
-    for (let j = 0; j < actualBatchSize; j++) {
-      const p = penerimaList[i];
-      messageCount++;
-
-      let link = '';
-      if (kategori === 'PENILAI') {
-        link = `${baseUrl}/penilai/${p.token_akses}`;
-      } else if (kategori === 'JURI') {
-        link = `${baseUrl}/juri?token=${p.token_akses}`;
-      } else {
-        // NOMINEE
-        link = `${baseUrl}/nominee?token=${p.token_akses}`;
-      }
-      const panggilan = hitungSapaan(p.nama, p.nip_baru);
-      const peran = PERAN_LABELS[kategori] || kategori;
-      const tugas = TUGAS_LABELS[kategori] || '';
-
-      let pesan = generatePesan(templateDipilih.isi_pesan, {
-        NAMA: p.nama,
-        PANGGILAN: panggilan,
-        LINK: link,
-        PERAN: peran,
-        TUGAS: tugas,
-        NAMA_PERIODE: periodeData?.nama_periode || '',
-        TANGGAL_MULAI: formatTanggal(periodeData?.tgl_mulai),
-        TANGGAL_SELESAI: formatTanggal(periodeData?.tgl_selesai),
-      });
-
-      // Tambah variasi pesan (10% chance)
-      pesan = addMessageVariation(pesan, p.nama);
-
-      // Format HP
-      const noHpFormat = formatHP(p.no_hp);
-
-      // Log ke database (pending)
-      try {
-        await supabase
-          .from('log_notifikasi_wa')
-          .insert({
-            periode_id: periodeId,
-            kategori: kategori,
-            pegawai_id: p.id,
-            token_id: p.token_id,
-            template_id: templateDipilih.id,
-            nomor_hp: noHpFormat,
-            isi_pesan: pesan,
-            status: 'PENDING'
-          });
-      } catch (err) {
-        console.error('âš ï¸ Gagal insert log:', err);
-      }
-
-      // Progress: queued
+    while (!success && retries <= MAX_RETRIES) {
       onProgress?.({
         index: i,
         total: penerimaList.length,
         status: 'SENDING',
         nama: p.nama,
         noHp: noHpFormat,
-        batch: batchNumber,
-        batchProgress: `${j + 1}/${actualBatchSize}`
+        statusText: retries > 0 ? `Mengirim... (Percobaan ${retries + 1})` : `Mengirim ke ${p.nama}...`
       });
 
-      // Get delay dengan context waktu
-      const delayPattern = getRandomDelay();
-      const contextualDelay = Math.round(getContextualDelay(delayPattern.delay));
-
-      // Display human-readable delay info
-      const timeIcon = delayPattern.type === 'SHORT' ? 'âš¡' :
-                       delayPattern.type === 'LONG' ? 'â¸ï¸' :
-                       delayPattern.type === 'VERY_LONG' ? 'â˜•' : 'â±ï¸';
-
-      const reasonText = delayPattern.type === 'SHORT' ? 'keburu' :
-                         delayPattern.type === 'LONG' ? 'terganggu' :
-                         delayPattern.type === 'VERY_LONG' ? 'istirahat' : 'normal';
-
-      if (delayPattern.type !== 'NORMAL' || contextualDelay > 5) {
-        console.log(`  [${i + 1}/${penerimaList.length}] ${timeIcon} ${contextualDelay}d (${reasonText}) â†’ "${p.nama}"`);
-      }
-
-      // Tunda sebelum kirim
-      await new Promise(resolve => setTimeout(resolve, contextualDelay * 1000));
-
-      // Update last send time
-      lastSendTime = Date.now();
-
-      // Kirim via Local Bot API single message
+      console.log(`[${i + 1}/${penerimaList.length}] Mengirim ke "${p.nama}" -> ${noHpFormat}`);
       const response = await kirimPesanLocalBot(noHpFormat, pesan);
 
       if (response.status) {
-        const sentTime = getHumanReadableTime();
-        console.log(`  [${i + 1}/${penerimaList.length}] âœ… "${p.nama}" â†’ ${noHpFormat}`);
-
+        console.log(`[${i + 1}/${penerimaList.length}] ✅ Sukses!`);
         results.berhasil.push(p);
         await updateLogStatus(periodeId, p.id, 'SENT');
         await updateStatusTerkirim(kategori, p.token_id);
+        success = true;
 
         onProgress?.({
           index: i,
@@ -580,85 +478,56 @@ export async function kirimNotifikasiBatch({
           status: 'SUCCESS',
           nama: p.nama,
           noHp: noHpFormat,
-          batch: batchNumber,
-          batchProgress: `${j + 1}/${actualBatchSize}`
+          statusText: 'Berhasil!'
         });
       } else {
-        console.log(`  [${i + 1}/${penerimaList.length}] âŒ "${p.nama}" â†’ ${noHpFormat} (${response.reason})`);
-
-        results.gagal.push({ ...p, error: response.reason });
-        await updateLogStatus(periodeId, p.id, 'FAILED', response.reason);
-
-        onProgress?.({
-          index: i,
-          total: penerimaList.length,
-          status: 'FAILED',
-          nama: p.nama,
-          noHp: noHpFormat,
-          error: response.reason,
-          batch: batchNumber,
-          batchProgress: `${j + 1}/${actualBatchSize}`
-        });
+        if (response.isRateLimit && retries < MAX_RETRIES) {
+          retries++;
+          console.warn(`[${i + 1}/${penerimaList.length}] ⚠️ Rate Limit! Menunggu 65s...`);
+          onProgress?.({
+            index: i,
+            total: penerimaList.length,
+            status: 'SENDING',
+            nama: p.nama,
+            statusText: `Batas limit! Menunggu 65 detik sebelum coba lagi...`
+          });
+          await new Promise(resolve => setTimeout(resolve, 65000));
+        } else {
+          console.error(`[${i + 1}/${penerimaList.length}] ❌ Gagal: ${response.reason}`);
+          results.gagal.push({ ...p, error: response.reason });
+          await updateLogStatus(periodeId, p.id, 'FAILED', response.reason);
+          success = true; // Break loop
+          
+          onProgress?.({
+            index: i,
+            total: penerimaList.length,
+            status: 'FAILED',
+            nama: p.nama,
+            error: response.reason,
+            statusText: `Gagal: ${response.reason}`
+          });
+        }
       }
-
-      i++;
     }
 
-    // ========================================
-    // BATCH PAUSE - Jeda antar batch
-    // ========================================
-    const remainingAfterBatch = penerimaList.length - i;
-    if (remainingAfterBatch > 0) {
-      // 70% chance untuk batch pause
-      if (Math.random() < BATCH_PAUSE_CHANCE) {
-        const { pause, reason } = getBatchPause();
-        console.log(`\nâ˜• Batch #${batchNumber} selesai. ${reason} (~${pause}d)...`);
-        console.log(`   ðŸ“Š Progress: ${i}/${penerimaList.length} | Sisa: ${remainingAfterBatch} pesan`);
-
-        onProgress?.({
-          index: i - 1,
-          total: penerimaList.length,
-          status: 'BATCH_PAUSE',
-          batchNumber,
-          batchSize: actualBatchSize,
-          pauseDuration: pause,
-          reason,
-          remaining: remainingAfterBatch
-        });
-
-        await new Promise(resolve => setTimeout(resolve, pause * 1000));
-      } else {
-        // 30% chance langsung lanjut tanpa pause panjang
-        const shortPause = Math.floor(Math.random() * 5) + 3;
-        console.log(`\nâ­ï¸ Langsung lanjut ke batch berikutnya (pause ${shortPause}d)...`);
-        await new Promise(resolve => setTimeout(resolve, shortPause * 1000));
-      }
+    // Jeda aman 22 detik hanya jika bukan orang terakhir
+    if (i < penerimaList.length - 1) {
+      console.log(`⏳ Menunggu jeda aman 22 detik...`);
+      onProgress?.({
+        index: i,
+        total: penerimaList.length,
+        status: 'PAUSE',
+        nama: p.nama,
+        statusText: `Menunggu jeda aman (22 detik)...`
+      });
+      await new Promise(resolve => setTimeout(resolve, DELAY_MS));
     }
   }
 
-  // Summary dengan statistik human-like
-  const endTime = new Date();
-  const duration = Math.round((endTime - sessionStartTime) / 1000);
-  const avgDelay = Math.round(duration / Math.max(penerimaList.length, 1));
-
-  console.log('\n' + 'â•'.repeat(70));
-  console.log('ðŸ“Š RINGKASAN PENGIRIMAN (Hybrid Batch Mode)');
-  console.log('â”€'.repeat(70));
-  console.log(`   âœ… Berhasil: ${results.berhasil.length}`);
-  console.log(`   âŒ Gagal: ${results.gagal.length}`);
-  console.log(`   ðŸ“¦ Total: ${penerimaList.length} pesan`);
-  console.log(`   ðŸ“¦ Total batch: ${batchStats.batches}`);
-  console.log(`   ðŸ“ˆ Rata-rata batch size: ${batchStats.avgBatchSize.toFixed(1)} pesan/batch`);
-  console.log(`   â±ï¸  Durasi total: ${Math.floor(duration / 60)}m ${duration % 60}d`);
-  console.log(`   ðŸ“ˆ Rata-rata delay: ${avgDelay} detik/pesan`);
-  console.log(`   ðŸ• Waktu selesai: ${getHumanReadableTime()}`);
-  console.log('â”€'.repeat(70));
-  console.log('ðŸ’¡ Tips Anti-Ban:');
-  console.log('   â€¢ Pattern batch (2-5 pesan) + pause (45-120 detik)');
-  console.log('   â€¢ Simulasi manusia: ngopi, nyamuk, scroll WA');
-  console.log('   â€¢ Weekend: batch pause lebih lama');
-  console.log('   â€¢ Jangan kirim di jam yang sama setiap hari');
-  console.log('â•'.repeat(70) + '\n');
+  console.log('='.repeat(70));
+  console.log('✅ PENGIRIMAN SELESAI');
+  console.log(`Sukses: ${results.berhasil.length}, Gagal: ${results.gagal.length}`);
+  console.log('='.repeat(70) + '\n');
 
   onComplete?.(results);
   return results;

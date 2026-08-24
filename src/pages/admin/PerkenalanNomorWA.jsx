@@ -27,8 +27,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { supabase } from '../../config/supabaseClient';
-import { formatHP } from '../../services/fonnteService';
-import { kirimPesanBulkFonnte } from '../../services/fonnteService';
+import { formatHP } from '../../services/wabotLokalService';
 import { insertLogWaMe } from '../../services/kirimWaService';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';

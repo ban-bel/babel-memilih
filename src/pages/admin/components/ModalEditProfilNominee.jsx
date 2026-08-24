@@ -33,7 +33,7 @@ export default function ModalEditProfilNominee({
     enabled: Boolean(periodeId),
   });
 
-  const { data: jawabanList = [] } = useQuery({
+  const { data: jawabanList } = useQuery({
     queryKey: ['jawaban-nominee', periodeId, nominee?.pegawai_id],
     queryFn: () => fetchJawabanNominee(periodeId, nominee?.pegawai_id),
     enabled: Boolean(periodeId) && Boolean(nominee?.pegawai_id),

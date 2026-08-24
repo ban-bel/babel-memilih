@@ -7,7 +7,7 @@
  */
 
 // Gunakan environment variable jika ada, default ke localhost:3000
-const BOT_URL = import.meta.env.VITE_BOT_URL || 'http://localhost:3000';
+const BOT_URL = import.meta.env.VITE_WA_API_URL;
 
 /**
  * Kirim pesan tunggal via Wabot Lokal.
@@ -19,10 +19,11 @@ const BOT_URL = import.meta.env.VITE_BOT_URL || 'http://localhost:3000';
  */
 export async function kirimPesanLocalBot(nomorHP, pesan) {
   try {
-    const response = await fetch(`${BOT_URL}/api/kirim`, {
+    const response = await fetch(`${BOT_URL}/send`, {
       method: 'POST',
-      headers: {
+            headers: {
         'Content-Type': 'application/json',
+        'X-API-Key': import.meta.env.VITE_WA_API_KEY
       },
       body: JSON.stringify({
         nomor: nomorHP,
@@ -30,17 +31,24 @@ export async function kirimPesanLocalBot(nomorHP, pesan) {
       }),
     });
 
-    const data = await response.json();
+            const data = await response.json();
 
-    if (data.success) {
+    if (data.success || response.ok) {
       return {
         status: true,
         message: 'Pesan berhasil dikirim via bot lokal',
       };
     } else {
+      let isRateLimitError = response.status === 429;
+      const errorMsg = data.error || data.message || 'Gagal mengirim pesan';
+      if (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('rate limit')) {
+          isRateLimitError = true;
+      }
+      
       return {
         status: false,
-        reason: data.error || 'Gagal mengirim pesan',
+        reason: errorMsg,
+        isRateLimit: isRateLimitError
       };
     }
   } catch (error) {
@@ -50,4 +58,12 @@ export async function kirimPesanLocalBot(nomorHP, pesan) {
       reason: error.message || 'Koneksi ke bot lokal gagal',
     };
   }
+}
+
+export function formatHP(noHP) {
+  if (!noHP) return null;
+  const clean = String(noHP).replace(/\D/g, '');
+  if (clean.startsWith('0')) return '62' + clean.slice(1);
+  if (clean.startsWith('62')) return clean;
+  return '62' + clean;
 }
