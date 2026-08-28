@@ -1,10 +1,5 @@
 import { supabase } from '../../config/supabaseClient';
-import { pastikanTokenValid, tandaiTokenTerpakai, UUID_REGEX, getAdminSupabase } from './shared';
-import {
-  STORAGE_BUCKET_BUKTI,
-  MAX_FILE_SIZE_BYTES,
-  ALLOWED_FILE_TYPES
-} from '../../utils/constants';
+import { fetchTokenPenilai } from './authService';
 
 export async function fetchKriteriaMode2A(periodeId) {
   const { data, error } = await supabase
@@ -109,7 +104,7 @@ export async function submitPenilaianMode2A(token, penilaiId, daftarPenilaian) {
  * @returns {Promise<Object[]>} Array rekap per nominee
  */
 
-export async function submitPenilaianMode1A(token, periodeId, penilaiId, daftarSkor, daftarNominee) {
+export async function submitPenilaianMode1A(token, _periodeId, penilaiId, daftarSkor, daftarNominee) {
   if (!Array.isArray(daftarSkor) || daftarSkor.length === 0) {
     throw new Error('Tidak ada skor yang dikirim.');
   }
@@ -196,7 +191,7 @@ export async function submitPenilaianMode1A(token, periodeId, penilaiId, daftarS
  * await submitQuickVoteMode1B(token, 1, penilaiId, 5);
  */
 
-export async function submitQuickVoteMode1B(token, periodeId, penilaiId, nomineePilihanId) {
+export async function submitQuickVoteMode1B(token, _periodeId, penilaiId, nomineePilihanId) {
   if (nomineePilihanId === undefined) {
     throw new Error('Silakan pilih satu nominee atau abstain terlebih dahulu.');
   }
@@ -237,7 +232,7 @@ export async function submitQuickVoteMode1B(token, periodeId, penilaiId, nominee
  * ]);
  */
 
-export async function submitPenilaianMode2(token, periodeId, juriId, daftarPenilaian) {
+export async function submitPenilaianMode2(token, _periodeId, juriId, daftarPenilaian) {
   if (!Array.isArray(daftarPenilaian) || daftarPenilaian.length === 0) {
     throw new Error('Tidak ada penilaian yang dikirim.');
   }
