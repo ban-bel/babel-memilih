@@ -28,7 +28,8 @@ import {
 import toast from 'react-hot-toast';
 
 import { fetchPeriodeList, fetchDaftarPegawaiAktif } from '../../services/adminService';
-import { resetAksesPenilaiUniversal, fetchSemuaTokenPeriode, blockPenilai } from '../../services/votingService';
+import { resetAksesPenilaiUniversal, blockPenilai } from '../../services/voting/adminActionService';
+import { fetchSemuaTokenPeriode } from '../../services/voting/authService';
 
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';

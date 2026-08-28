@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2, Loader2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { submitAllVotesMode1C } from '../../../services/votingService';
+import { submitAllVotesMode1C } from '../../../services/voting/penilaianService';
 
 /**
  * Komponen FormMode1C.

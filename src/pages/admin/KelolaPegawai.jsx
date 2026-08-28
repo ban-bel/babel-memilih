@@ -146,7 +146,7 @@ function KelolaPegawaiContent({ adminProfile }) {
   const mutasiImportBulk = useMutation({
     mutationFn: (rows) => tambahPegawaiBulk(rows),
     onSuccess: (res) => {
-      alert(`Berhasil mengimpor ${res.length} pegawai!`);
+      toast.success(`Berhasil mengimpor ${res.length} pegawai!`);
       tutupImportModal();
       queryClient.invalidateQueries({ queryKey: ['pegawai-list'] });
     },
@@ -712,7 +712,7 @@ function KelolaPegawaiContent({ adminProfile }) {
                       placeholder="Paste UID dari menu Supabase Authentication"
                       className="input bg-white flex-1" 
                     />
-                    <button 
+                    <button
                       type="button"
                       disabled={isSearchingUid || !formData.email}
                       onClick={async () => {
@@ -722,7 +722,7 @@ function KelolaPegawaiContent({ adminProfile }) {
                         if (uid) {
                           setFormData(prev => ({ ...prev, user_id: uid }));
                         } else {
-                          alert(`Akun login untuk email ${formData.email} tidak ditemukan di database Supabase.`);
+                          toast.error(`Akun login untuk email ${formData.email} tidak ditemukan di database Supabase.`);
                         }
                         setIsSearchingUid(false);
                       }}

@@ -4,17 +4,13 @@ import { useState } from 'react';
 import { ClipboardList, Trophy, AlertCircle, CheckCircle2, CheckCircle } from 'lucide-react';
 import Modal from '../../components/common/Modal';
 
-import {
-  fetchTokenJuri,
-  fetchDaftarNominee,
-  fetchKategoriPenilaian,
-  submitPenilaianMode2,
-  fetchRekapMode2,
-  fetchJumlahJuriPeriode,
-  fetchKeputusanKakan,
-  kuncikanPemenang,
-  fetchAllJawabanNominee, fetchPertanyaanMode1A,
-} from '../../services/votingService';
+import { fetchTokenJuri } from '../../services/voting/authService';
+import { fetchDaftarNominee, fetchPertanyaanMode1A } from '../../services/voting/nomineeService';
+import { fetchKategoriPenilaian } from '../../services/voting/kategoriService';
+import { submitPenilaianMode2 } from '../../services/voting/penilaianService';
+import { fetchRekapMode2, fetchJumlahJuriPeriode } from '../../services/voting/rekapService';
+import { fetchKeputusanKakan, kuncikanPemenang } from '../../services/voting/kakanService';
+import { fetchAllJawabanNominee } from '../../services/voting/jawabanService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN } from '../../utils/constants';
 
@@ -63,9 +59,18 @@ export default function JuriPage() {
     enabled: aktif && Boolean(periodeId),
   });
 
-  const nominee = rawNominee.filter(n => 
-    akses?.is_can_vote_own_region === false ? n.wilayah_id !== akses?.juri?.wilayah_id : true
-  );
+  const nominee = rawNominee.map(n => {
+    let isBlocked = false;
+    // 1. Cek Custom Blacklist dari Admin
+    if (akses?.blocked_nominee_ids?.includes(n.id)) {
+      isBlocked = true;
+    }
+    // 2. Cek Aturan Daerah Asal
+    if (akses?.is_can_vote_own_region === false && n.wilayah_id === akses?.juri?.wilayah_id) {
+      isBlocked = true;
+    }
+    return { ...n, isBlocked };
+  });
 
   const { data: kategori = [], isLoading: loadingKategori } = useQuery({
     queryKey: ['kategori-mode2', periodeId],

@@ -28,7 +28,7 @@ function PlaceholderPage({ judul, keterangan }) {
   );
 }
 
-import { ShieldCheck, UserCheck, ArrowRight, Fingerprint, Database, Award } from 'lucide-react';
+import { ArrowRight, Fingerprint, Database, Award } from 'lucide-react';
 import { getDailyAvatarUrl } from './utils/constants';
 
 function PortalLandingPage() {

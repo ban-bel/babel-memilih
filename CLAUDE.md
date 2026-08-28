@@ -175,7 +175,30 @@ Configure  Evaluate    Lock Winner
 
 ```
 web-git/                   # Frontend React (Vercel deploys this)
-+-- src/                   # React application
++-- src/
+|   +-- components/
+|   |   +-- common/
+|   |   |   +-- Avatar.jsx        # Shared avatar component (with fallback)
+|   |   |   +-- ConfirmModal.jsx  # Confirmation dialog
+|   |   |   +-- Modal.jsx         # Generic modal
+|   |   |   +-- Pagination.jsx     # Pagination control
+|   |   |   +-- LoadingScreen.jsx # Loading spinner
+|   |   |   +-- Podium.jsx        # Winner podium display
+|   |   |   +-- PortofolioViewer.jsx # File viewer
+|   |   |   +-- ProfilNomineeModal.jsx # Nominee profile modal
+|   |   |   +-- FormKunciPemenang.jsx # Winner lock form
+|   |   +-- admin/
+|   |   |   +-- AdminLayout.jsx   # Admin page wrapper
+|   |   |   +-- AdminLoginGate.jsx # Auth guard
+|   +-- pages/
+|   |   +-- admin/               # Protected admin pages
+|   |   +-- link-unik/          # Public token-based pages
+|   +-- services/               # API layer
+|   |   +-- adminService.js     # Admin CRUD operations
+|   |   +-- voting/             # Voting services (split)
+|   |   +-- kirimWaService.js   # WhatsApp notifications
+|   +-- utils/
+|   |   +-- constants.js        # App constants & helpers
 +-- supabase/             # Database scripts
 +-- dist/                  # Production build
 +-- CLAUDE.md              # This file
@@ -376,8 +399,26 @@ export default function KelolaPeriode() {
 
 ### Avatar Fallback Chain
 
+**Component:** `src/components/common/Avatar.jsx`
+
+```jsx
+// Shared Avatar component with automatic fallback
+import Avatar from '../../components/common/Avatar';
+
+// Basic usage
+<Avatar pegawai={data.pegawai} size="lg" />
+
+// With shield badge (verifikasi)
+<Avatar pegawai={profil} size="md" showShield />
+
+// Avatar Group for multiple people
+<AvatarGroup pegawaiList={timList} max={4} />
+```
+
+**Priority:** foto_url > GitHub by NIP (lama) > ui-avatars.com
+
+Helper function in `constants.js`:
 ```javascript
-// Priority: foto_url > GitHub by NIP (lama) > ui-avatars.com
 export function getPegawaiAvatarUrl(pegawai) {
   if (pegawai?.foto_url) return pegawai.foto_url;
   const nip = pegawai?.nip;
@@ -385,6 +426,8 @@ export function getPegawaiAvatarUrl(pegawai) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(nama)}&background=0F172A&color=fff`;
 }
 ```
+
+Available presets: `xs`, `sm`, `md`, `lg`, `xl`, `2xl`
 
 ### Sapaan Logic (from NIP)
 

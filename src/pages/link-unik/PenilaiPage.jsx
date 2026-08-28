@@ -3,20 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Send, CheckCircle } from 'lucide-react';
 
-import {
-  fetchTokenPenilai,
-  fetchDaftarNominee,
-  fetchPertanyaanMode1A,
-  submitPenilaianMode1A,
-  submitQuickVoteMode1B,
-  submitAllVotesMode1C,
-  fetchAllJawabanNominee,
-  fetchVotingKategori,
-  fetchVotesByVoterToken,
-  fetchKriteriaMode2A,
-  fetchPenilaianMode2A,
-  submitPenilaianMode2A,
-} from '../../services/votingService';
+import { fetchTokenPenilai } from '../../services/voting/authService';
+import { fetchDaftarNominee, fetchPertanyaanMode1A } from '../../services/voting/nomineeService';
+import { submitPenilaianMode1A, submitQuickVoteMode1B, submitAllVotesMode1C, fetchVotesByVoterToken, fetchKriteriaMode2A, fetchPenilaianMode2A, submitPenilaianMode2A } from '../../services/voting/penilaianService';
+import { fetchAllJawabanNominee } from '../../services/voting/jawabanService';
+import { fetchVotingKategori } from '../../services/voting/kategoriService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN, MODE_PENILAIAN, getDailyAvatarUrl } from '../../utils/constants';
 

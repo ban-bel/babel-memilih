@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, X, CheckCircle2, Clock, Loader2, UserCheck, Plus, Users, CheckSquare, Square, UserPlus, Edit3 } from 'lucide-react';
 
 import { fetchPeriodeList, fetchUnitKerjaPeriode, fetchDaftarPegawaiAktifMultiUnit, fetchWilayahList } from '../../services/adminService';
-import { fetchNomineeByPeriode, tambahNominee, hapusNominee } from '../../services/votingService';
+import { fetchNomineeByPeriode, tambahNominee, hapusNominee } from '../../services/voting/nomineeService';
 import { filterByKlasifikasiJabatan, isUpperRank, MODE_PENILAIAN } from '../../utils/constants';
 import toast from 'react-hot-toast';
 

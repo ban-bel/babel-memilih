@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Users, FileText, Settings, RefreshCw, BarChart2, Loader2, MapPin, UserCheck, Edit2, Trash2, X, Plus, Calendar, Award } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
 import Modal from '../../components/common/Modal';
@@ -60,7 +61,7 @@ function DashboardContent({ adminProfile }) {
   const mutasiStatus = useMutation({
     mutationFn: ({ id, status }) => updateStatusPeriode(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['daftar-periode'] }),
-    onError: (err) => alert(`Gagal mengubah status: ${err.message}`),
+    onError: (err) => toast.error(`Gagal mengubah status: ${err.message}`),
   });
 
   const mutasiEdit = useMutation({
@@ -69,13 +70,13 @@ function DashboardContent({ adminProfile }) {
       setShowEditModal(false);
       queryClient.invalidateQueries({ queryKey: ['daftar-periode'] });
     },
-    onError: (err) => alert(`Gagal mengedit periode: ${err.message}`),
+    onError: (err) => toast.error(`Gagal mengedit periode: ${err.message}`),
   });
 
   const mutasiHapus = useMutation({
     mutationFn: (id) => hapusPeriodePenilaian(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['daftar-periode'] }),
-    onError: (err) => alert(`Gagal menghapus periode: ${err.message}`),
+    onError: (err) => toast.error(`Gagal menghapus periode: ${err.message}`),
   });
 
   const toLocalDatetimeString = (isoString) => {

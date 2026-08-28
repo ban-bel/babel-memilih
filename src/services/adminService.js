@@ -1100,8 +1100,7 @@ export async function fetchDaftarPenilaiLengkap(periodeId) {
       is_digunakan,
       submitted_at,
       notifikasi_wa_sent_at,
-      notifikasi_email_sent_at,
-      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      notifikasi_email_sent_at, is_can_vote_own_region, blocked_nominee_ids, pegawai ( id, wilayah_id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `)
     .eq('periode_id', periodeId);
 
@@ -1146,8 +1145,7 @@ export async function fetchDaftarJuriLengkap(periodeId) {
       is_ketua_juri,
       submitted_at,
       notifikasi_wa_sent_at,
-      notifikasi_email_sent_at,
-      pegawai ( id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
+      notifikasi_email_sent_at, is_can_vote_own_region, blocked_nominee_ids, pegawai ( id, wilayah_id, nama, nip, nip_baru, foto_url, no_hp, email, wilayah:wilayah_id(nama_wilayah, nama_unit_kerja) )
     `)
     .eq('periode_id', periodeId);
 
@@ -1163,3 +1161,24 @@ export async function fetchDaftarJuriLengkap(periodeId) {
   });
 }
  
+
+/**
+ * Toggle custom blacklist untuk juri dan nominee tertentu.
+ */
+export async function toggleBlockJuriNominee(juriPeriodeId, nomineeId, currentBlockedIds) {
+  const current = Array.isArray(currentBlockedIds) ? currentBlockedIds : [];
+  let newBlockedIds = [...current];
+  if (newBlockedIds.includes(nomineeId)) {
+    newBlockedIds = newBlockedIds.filter(id => id !== nomineeId);
+  } else {
+    newBlockedIds.push(nomineeId);
+  }
+  const { data, error } = await supabase
+    .from('juri_periode')
+    .update({ blocked_nominee_ids: newBlockedIds })
+    .eq('id', juriPeriodeId)
+    .select()
+    .single();
+  if (error) throw new Error('Gagal update custom blacklist: ' + error.message);
+  return data;
+}

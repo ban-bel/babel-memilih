@@ -16,23 +16,9 @@ import { toast } from 'react-hot-toast';
 import { Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, Crown } from 'lucide-react';
 
 import { fetchPeriodeList, fetchWilayahList } from '../../services/adminService';
-import {
-  fetchRekapMode1A,
-  fetchRekapMode1B,
-  fetchRekapMode1C,
-  fetchRekapMode2,
-  fetchRekapMode2A,
-  fetchVotingKategori,
-  fetchCatatanKualitatifJuri,
-  fetchDetailPenilaianJuri,
-  fetchKeputusanKakan,
-  kuncikanPemenang,
-  fetchPemenangPerKategori,
-  setPemenangPerKategori,
-  autoLockPemenangPerKategori,
-  resetPemenangPerKategori,
-  fetchKelengkapanPenilai,
-} from '../../services/votingService';
+import { fetchRekapMode1A, fetchRekapMode1B, fetchRekapMode1C, fetchRekapMode2, fetchRekapMode2A, fetchCatatanKualitatifJuri, fetchDetailPenilaianJuri, fetchKelengkapanPenilai } from '../../services/voting/rekapService';
+import { fetchVotingKategori, fetchPemenangPerKategori, setPemenangPerKategori, autoLockPemenangPerKategori, resetPemenangPerKategori } from '../../services/voting/kategoriService';
+import { fetchKeputusanKakan, kuncikanPemenang } from '../../services/voting/kakanService';
 import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../utils/constants';
 
 import AdminLoginGate from './components/AdminLoginGate';

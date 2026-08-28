@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, X, Link as LinkIcon, Save, Table, Trash2, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/common/Modal';
-import { updateProfilTambahanNominee, fetchPertanyaanMode1A, fetchJawabanNominee, adminUpdateDaftarJawaban } from '../../../services/votingService';
+import { updateProfilTambahanNominee, fetchPertanyaanMode1A } from '../../../services/voting/nomineeService';
+import { fetchJawabanNominee, adminUpdateDaftarJawaban } from '../../../services/voting/jawabanService';
 import { useQuery } from '@tanstack/react-query';
 import FormPortofolioNominee from '../../link-unik/components/FormPortofolioNominee';
 

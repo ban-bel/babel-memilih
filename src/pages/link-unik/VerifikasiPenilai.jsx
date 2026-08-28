@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { ShieldCheck, ArrowRight, AlertCircle, CheckCircle2, Loader2, ClipboardList, Clock, CheckCircle, Fingerprint, Smartphone } from 'lucide-react';
 import Modal from '../../components/common/Modal';
-import { verifikasiIdentitasPenilai } from '../../services/votingService';
+import { verifikasiIdentitasPenilai } from '../../services/voting/authService';
 import { getDailyAvatarUrl } from '../../utils/constants';
 
 /**

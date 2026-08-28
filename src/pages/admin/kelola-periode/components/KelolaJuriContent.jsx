@@ -4,6 +4,7 @@ import { supabase } from '../../../../config/supabaseClient';
 import { fetchDaftarJuriLengkap } from '../../../../services/adminService';
 import { Loader2, Plus, Trash2, Shield, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import MatriksJuriNominee from './MatriksJuriNominee';
 
 export default function KelolaJuriContent({ periodeId }) {
   const queryClient = useQueryClient();
@@ -235,6 +236,7 @@ export default function KelolaJuriContent({ periodeId }) {
           </div>
         </div>
       )}
+      <MatriksJuriNominee periodeId={periodeId} />
     </div>
   );
 }

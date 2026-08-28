@@ -23,20 +23,11 @@ import { useState } from 'react';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 import ConfirmModal from '../../components/common/ConfirmModal';
-import {
-  fetchTokenNominee,
-  fetchPertanyaanPeriode,
-  fetchJawabanNominee,
-  submitJawabanNominee,
-  submitBuktiNomineeMode2,
-  fetchBuktiNomineeMode2,
-  getSignedUrlBuktiMode2,
-  selesaikanPengisianNominee,
-  fetchVideoProfilNominee,
-  submitVideoProfilNominee,
-  fetchPortofolioNominee,
-  submitPortofolioNominee,
-} from '../../services/votingService';
+import { fetchTokenNominee } from '../../services/voting/authService';
+import { fetchPertanyaanPeriode, fetchVideoProfilNominee, submitVideoProfilNominee, fetchPortofolioNominee, submitPortofolioNominee } from '../../services/voting/nomineeService';
+import { fetchJawabanNominee, submitJawabanNominee } from '../../services/voting/jawabanService';
+import { submitBuktiNomineeMode2, fetchBuktiNomineeMode2, getSignedUrlBuktiMode2 } from '../../services/voting/uploadService';
+import { selesaikanPengisianNominee } from '../../services/voting/draftService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN, MODE_PENILAIAN } from '../../utils/constants';
 

@@ -4,7 +4,7 @@ import Modal from '../../../components/common/Modal';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import PortofolioViewer from '../../../components/common/PortofolioViewer';
-import { getSignedUrlBuktiPDF } from '../../../services/votingService';
+import { getSignedUrlBuktiPDF } from '../../../services/voting/uploadService';
 
 function kunciSkor(nomineeId, kategoriId) {
   return `${nomineeId}:${kategoriId}`;
@@ -112,7 +112,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
     async function syncCloudDraft() {
       if (!token) return;
       try {
-        const { getDraftFromServer } = await import('../../../services/votingService');
+        const { getDraftFromServer } = await import('../../../services/voting/draftService');
         const cloudDraft = await getDraftFromServer(token, '2');
         if (cloudDraft && Object.keys(cloudDraft).length > 0) {
           const cloudSentuhCount = cloudDraft.tersentuh ? cloudDraft.tersentuh.length : 0;
@@ -231,7 +231,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
           onClick={async () => {
             const loadingToast = toast.loading('Menyimpan draft ke server...');
             try {
-              const { saveDraftToServer } = await import('../../../services/votingService');
+              const { saveDraftToServer } = await import('../../../services/voting/draftService');
               await saveDraftToServer(token, '2', { skor, catatan, tersentuh: Array.from(tersentuh) });
               toast.success('Draft berhasil disimpan ke server!', { id: loadingToast });
             } catch (e) {
@@ -255,9 +255,12 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
               <button
                 type="button"
                 key={n.id}
+                disabled={n.isBlocked}
                 onClick={() => setOpenedNominee(n)}
                 className={`group relative flex flex-row items-center gap-4 p-4 rounded-2xl bg-white border-2 transition-all duration-300 w-full text-left overflow-hidden ${
-                  sudahTerisi 
+                  n.isBlocked
+                    ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed grayscale'
+                    : sudahTerisi 
                     ? 'border-emerald-400 bg-gradient-to-br from-emerald-50/50 to-white shadow-soft hover:shadow-md hover:-translate-y-0.5' 
                     : 'border-slate-100 shadow-soft hover:border-navy-400 hover:shadow-card-hover hover:-translate-y-0.5'
                 }`}
@@ -302,11 +305,13 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
   
                 {/* Action Button */}
                 <div className={`relative z-10 shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 shadow-sm ${
-                  sudahTerisi 
+                  n.isBlocked
+                    ? 'bg-slate-200 text-slate-500 border border-slate-300'
+                    : sudahTerisi 
                     ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200' 
                     : 'bg-gradient-to-r from-navy-800 to-navy-700 text-white hover:from-navy-700 hover:to-navy-600 hover:shadow-md'
                 }`}>
-                  {sudahTerisi ? 'Ubah' : 'Nilai'}
+                  {n.isBlocked ? 'Terkunci' : sudahTerisi ? 'Ubah' : 'Nilai'}
                 </div>
               </button>
             );
