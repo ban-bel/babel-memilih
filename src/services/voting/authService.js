@@ -57,11 +57,36 @@ export async function fetchTokenJuri(token) {
 
   // Tambahkan is_can_vote_own_region, wilayah_id, dan kolom periode yang hilang
   if (data.periode?.id && data.juri?.id) {
-    const [jpRes, pgRes, pRes] = await Promise.all([
-      supabase.from('juri_periode').select('is_can_vote_own_region, blocked_nominee_ids').eq('periode_id', data.periode.id).eq('pegawai_id', data.juri.id).single(),
-      supabase.from('pegawai').select('wilayah_id').eq('id', data.juri.id).single(),
-      supabase.from('periode_penilaian').select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan').eq('id', data.periode.id).single()
-    ]);
+    
+    // Fix: Gunakan token_akses untuk query ke juri_periode agar akurat mendapatkan pegawai_id
+    const { data: jpData } = await supabase
+      .from('juri_periode')
+      .select('pegawai_id, is_can_vote_own_region, blocked_nominee_ids')
+      .eq('token_akses', token)
+      .single();
+
+    let jpRes = { data: null };
+    let pgRes = { data: null };
+
+    if (jpData) {
+      jpRes.data = jpData;
+      // Gunakan pegawai_id yang valid dari juri_periode
+      data.juri.id = jpData.pegawai_id;
+      
+      const { data: pgData } = await supabase
+        .from('pegawai')
+        .select('wilayah_id')
+        .eq('id', jpData.pegawai_id)
+        .single();
+      pgRes.data = pgData;
+    }
+
+    const pRes = await supabase
+      .from('periode_penilaian')
+      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+      .eq('id', data.periode.id)
+      .single();
+
       
     let isCanVoteOwnRegion = null;
     let blockedNomineeIds = [];
