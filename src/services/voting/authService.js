@@ -55,48 +55,24 @@ export async function fetchTokenJuri(token) {
     throw new Error('Token juri tidak ditemukan atau tidak valid.');
   }
 
-  // Tambahkan is_can_vote_own_region, wilayah_id, dan kolom periode yang hilang
-  if (data.periode?.id && data.juri?.id) {
-    
-    
-    // Fix: Karena RLS memblokir query anonim ke juri_periode, gunakan serverless function (API)
-    try {
-      const apiRes = await fetch(`/api/juri-info?token=${token}`);
-      if (apiRes.ok) {
-        const apiData = await apiRes.json();
-        data.juri.id = apiData.pegawai_id;
-        
-        let isCanVoteOwnRegion = apiData.is_can_vote_own_region;
-        let blockedNomineeIds = apiData.blocked_nominee_ids || [];
-        let juriWilayahId = apiData.wilayah_id;
-
-        const pRes = await supabase
-          .from('periode_penilaian')
-          .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
-          .eq('id', data.periode.id)
-          .single();
-
-        return {
-          ...data,
-          is_can_vote_own_region: isCanVoteOwnRegion,
-          blocked_nominee_ids: blockedNomineeIds,
-          juri: {
-            ...data.juri,
-            wilayah_id: juriWilayahId
-          },
-          periode: {
-            ...data.periode,
-            ...(pRes.data || {})
-          }
-        };
-      }
-    } catch (e) {
-      console.error('Error memanggil juri-info API:', e);
-    }
-
-
+    // SUPPLEMENTARY FETCH FOR MISSING PERIODE COLUMNS
+  if (data?.periode?.id) {
+    const { data: periodeInfo } = await supabase
+      .from('periode_penilaian')
+      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+      .eq('id', data.periode.id)
+      .single();
       
+    if (periodeInfo) {
+      return {
+        ...data,
+        periode: {
+          ...data.periode,
+          ...periodeInfo
+        }
+      };
     }
+  }
 
   return data;
 }

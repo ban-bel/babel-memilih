@@ -49,34 +49,7 @@ export default defineConfig({
           }
         });
 
-        server.middlewares.use('/api/juri-info', (req, res) => {
-          if (req.method === 'GET') {
-            const url = new URL(req.url, `http://${req.headers.host}`);
-            req.query = Object.fromEntries(url.searchParams);
-            
-            // Mock Vercel response helpers
-            res.status = (code) => { res.statusCode = code; return res; };
-            res.json = (data) => {
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(data));
-            };
-
-            (async () => {
-              try {
-                const absolutePath = path.resolve(process.cwd(), './api/juri-info.js');
-                const moduleUrl = pathToFileURL(absolutePath).href;
-                const handler = await import(moduleUrl);
-                await handler.default(req, res);
-              } catch (err) {
-                console.error('API Error:', err);
-                res.status(500).json({ message: 'Local API Error', error: err.message });
-              }
-            })();
-          } else {
-            res.statusCode = 405;
-            res.end('Method Not Allowed');
-          }
-        });
+        
       }
     }
   ],
