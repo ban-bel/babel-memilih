@@ -24,7 +24,7 @@ import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { fetchTokenNominee } from '../../services/voting/authService';
-import { fetchPertanyaanPeriode, fetchVideoProfilNominee, submitVideoProfilNominee, fetchPortofolioNominee, submitPortofolioNominee } from '../../services/voting/nomineeService';
+import { fetchPertanyaanPeriode, fetchVideoProfilNominee, submitVideoProfilNominee, fetchPortofolioNominee, submitPortofolioNominee, submitDokumenLinkNominee } from '../../services/voting/nomineeService';
 import { fetchJawabanNominee, submitJawabanNominee } from '../../services/voting/jawabanService';
 import { submitBuktiNomineeMode2, fetchBuktiNomineeMode2, getSignedUrlBuktiMode2 } from '../../services/voting/uploadService';
 import { selesaikanPengisianNominee } from '../../services/voting/draftService';
@@ -37,6 +37,7 @@ import HeaderProfilAkses from '../../components/common/HeaderProfilAkses';
 import SuccessScreen from '../../components/common/SuccessScreen';
 import FormNarasiNominee from './components/FormNarasiNominee';
 import FormBuktiTunggalNominee from './components/FormBuktiTunggalNominee';
+import FormDokumenLinkNominee from './components/FormDokumenLinkNominee';
 import FormVideoProfilNominee from './components/FormVideoProfilNominee';
 import FormPortofolioNominee from './components/FormPortofolioNominee';
 
@@ -301,7 +302,7 @@ export default function NomineePage() {
               <LoadingScreen label="Memuat..." />
             ) : (
               <>
-                {/* Form Video Profil (jika diwajibkan) */}
+                {/* 1. Form Video Profil (jika diwajibkan) */}
                 {akses.periode.is_video_profil && (
                   <div className="mb-4">
                     <FormVideoProfilNominee
@@ -313,8 +314,41 @@ export default function NomineePage() {
                     />
                   </div>
                 )}
+                
+                {/* 2. Form Dokumen Utama (Google Drive / Upload Fisik) */}
+                {pertanyaan.length === 0 ? (
+                  <div className="space-y-4 mb-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+                      <FormBuktiTunggalNominee
+                        fileUrlTersimpan={fileUrlTersimpan}
+                        onUpload={async (file) => {
+                          await submitBuktiNomineeMode2(token, file);
+                          await muatUlangBukti();
+                        }}
+                        getSignedUrl={getSignedUrlBuktiMode2}
+                      />
+                    </div>
+                    <FormDokumenLinkNominee
+                      linkTersimpan={akses.nominee.dokumen_link}
+                      onSimpan={async (link) => {
+                        await submitDokumenLinkNominee(token, link);
+                        queryClient.invalidateQueries({ queryKey: ['akses-nominee', token] });
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <FormDokumenLinkNominee
+                      linkTersimpan={akses.nominee.dokumen_link}
+                      onSimpan={async (link) => {
+                        await submitDokumenLinkNominee(token, link);
+                        queryClient.invalidateQueries({ queryKey: ['akses-nominee', token] });
+                      }}
+                    />
+                  </div>
+                )}
 
-                {/* Daftar Link Drive / Pertanyaan Tambahan Mode 2 */}
+                {/* 3. Daftar Pertanyaan Tambahan / Narasi Mode 2 */}
                 {pertanyaan.length > 0 && (
                   <div className="space-y-4 mb-4">
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3">
@@ -340,20 +374,7 @@ export default function NomineePage() {
                   </div>
                 )}
 
-                {/* Form Upload Bukti Fisik Tunggal (Hanya muncul jika admin TIDAK membuat field/pertanyaan custom) */}
-                {pertanyaan.length === 0 && (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-                    <FormBuktiTunggalNominee
-                      fileUrlTersimpan={fileUrlTersimpan}
-                      onUpload={async (file) => {
-                        await submitBuktiNomineeMode2(token, file);
-                        await muatUlangBukti();
-                      }}
-                      getSignedUrl={getSignedUrlBuktiMode2}
-                    />
-                  </div>
-                )}
-
+                {/* 4. Portofolio */}
                 <div className="space-y-4 mb-4">
                   {akses.periode.is_portofolio_pengembangan && (
                     <FormPortofolioNominee

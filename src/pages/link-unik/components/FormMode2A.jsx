@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 import { useState, useEffect } from 'react';
 import { Send, Loader2, Trophy, Target, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -249,7 +250,9 @@ export default function FormMode2A({
                       <div className="flex-1">
                         <p className="font-semibold text-slate-800">{k.nama_kriteria}</p>
                         {k.deskripsi && (
-                          <p className="text-xs text-slate-500">{k.deskripsi}</p>
+                          <div className="text-xs text-slate-500 prose prose-sm prose-slate max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                            <ReactMarkdown>{k.deskripsi}</ReactMarkdown>
+                          </div>
                         )}
                       </div>
                       <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-bold text-gold-700">

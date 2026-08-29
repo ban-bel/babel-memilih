@@ -43,7 +43,7 @@ import {
 } from '../../services/adminService';
 import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim, insertLogEmail, insertLogWaMe } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
-import { formatHP } from '../../services/wabotLokalService';
+import { formatHP, kirimEmailLocalBot } from '../../services/wabotLokalService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
 import Pagination from '../../components/common/Pagination';
 import { MODE_PENILAIAN } from '../../utils/constants';
@@ -117,15 +117,15 @@ function TabButton({ label, active, onClick, count, dotColor }) {
       type="button"
       onClick={onClick}
       className={
-        'relative px-4 py-2 text-sm font-semibold transition-all ' +
-        (active ? 'text-navy-900 border-b-2 border-navy-700' : 'text-slate-400 hover:text-slate-600')
+        'relative pb-3 pt-2 px-1 text-sm font-semibold transition-all whitespace-nowrap ' +
+        (active ? 'text-navy-700 border-b-2 border-navy-700' : 'text-slate-500 hover:text-slate-800 hover:border-slate-300 border-b-2 border-transparent')
       }
     >
       <div className="flex items-center gap-2">
         <span className={`h-2 w-2 rounded-full ${dotColor}`} />
         {label}
         {count !== undefined && (
-          <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+          <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-500'}`}>
             {count}
           </span>
         )}
@@ -248,19 +248,14 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
     setIsSendingEmail(true);
     const toastId = toast.loading(`Mengirim email ke ${p.nama}...`);
     try {
-      const res = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: p.email,
-          nama_penerima: p.nama,
-          link_penilaian: linkToken,
-          sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
-          nama_periode: periode?.nama_periode || 'Babel Memilih'
-        })
+      const res = await kirimEmailLocalBot({
+        email: p.email,
+        nama_penerima: p.nama,
+        sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
+        link_penilaian: linkToken,
+        nama_periode: periode?.nama_periode || 'Babel Memilih'
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Gagal mengirim email');
+      if (!res.status) throw new Error(res.reason || 'Gagal mengirim email via API');
       toast.success(`Email berhasil dikirim ke ${p.nama}`, { id: toastId });
       await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'SENT');
       
@@ -393,7 +388,7 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
 
       {/* Aksi */}
       <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-nowrap items-center justify-end gap-1.5">
           <button
             type="button"
             onClick={() => onCopy(item.token_akses, item.id)}
@@ -539,6 +534,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   const [tab, setTab] = useState('nominee');
   const [terpilih, setTerpilih] = useState(null);
   const [isProgressOpen, setIsProgressOpen] = useState(false);
+  const [kirimProgressTitle, setKirimProgressTitle] = useState("Mengirim Notifikasi WA...");
   const [kirimProgress, setKirimProgress] = useState({ sent: 0, failed: 0, total: 0, logs: [] });
   const [sedangMengirim, setSedangMengirim] = useState(false);
   const [localSentIds, setLocalSentIds] = useState(new Set());
@@ -664,7 +660,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
     ...(periode?.mode_penilaian === MODE_PENILAIAN.MODE_2
       ? [{ key: 'juri', data: daftarJuri, label: 'Juri', dotColor: 'bg-amber-500', kategori: 'JURI', rolePath: 'juri' }]
       : []),
-  ].filter(t => t.data.length > 0);
+  ];
 
   // Auto-select tab
   useEffect(() => {
@@ -701,6 +697,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
     setKirimProgress({ sent: 0, failed: 0, total: denganHP.length, logs: [] });
     setIsProgressOpen(true);
+    setKirimProgressTitle("Mengirim Notifikasi WA...");
     setSedangMengirim(true);
 
     const penerimaList = denganHP.map(item => {
@@ -774,6 +771,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
 
     setKirimProgress({ sent: 0, failed: 0, total: denganEmail.length, logs: [] });
     setIsProgressOpen(true);
+    setKirimProgressTitle("Mengirim Notifikasi Email...");
     setSedangMengirim(true);
 
     let sentCount = 0;
@@ -789,20 +787,15 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
       const namaPeriode = periode?.nama_periode || 'Babel Memilih';
 
       try {
-        const res = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: p.email,
-            nama_penerima: p.nama,
-            link_penilaian: linkToken,
-            sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
-            nama_periode: namaPeriode
-          })
+        const res = await kirimEmailLocalBot({
+          email: p.email,
+          nama_penerima: p.nama,
+          sapaan: sapaan ? sapaan.trim() : 'Bapak/Ibu',
+          link_penilaian: linkToken,
+          nama_periode: namaPeriode
         });
-        const data = await res.json();
         
-        if (!res.ok) throw new Error(data.message || 'Gagal mengirim email');
+        if (!res.status) throw new Error(res.reason || 'Gagal mengirim email');
         
         await insertLogEmail(periode.id, p.id, kategoriLabel, p.email, 'SENT');
         await toggleStatusEmailTerkirim(kategoriLabel, item.id, true);
@@ -944,10 +937,10 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
   const totalSubmitted = daftar.filter(item => item.is_digunakan).length;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      {/* Navigation Tabs */}
+      <div className="border-b border-slate-200">
+        <nav className="-mb-px flex space-x-6 overflow-x-auto">
           {availableTabs.map(t => (
             <TabButton
               key={t.key}
@@ -958,33 +951,74 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
               count={t.data.length}
             />
           ))}
+        </nav>
+      </div>
+
+      {/* Controls & Filters */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        {/* Search & Status Filter */}
+        <div className="flex flex-col sm:flex-row gap-3 flex-1">
+          <div className="relative sm:max-w-xs w-full">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={cari}
+              onChange={(e) => { setCari(e.target.value); setCurrentPage(1); }}
+              placeholder="Cari nama, NIP, HP..."
+              className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-800 focus:border-navy-500 focus:outline-none focus:ring-1 focus:ring-navy-500 transition-colors shadow-sm"
+            />
+          </div>
+          <select
+            value={filterSubmit}
+            onChange={(e) => { setFilterSubmit(e.target.value); setCurrentPage(1); }}
+            className="w-full sm:w-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 cursor-pointer focus:border-navy-500 focus:outline-none focus:ring-1 focus:ring-navy-500 transition-colors shadow-sm"
+          >
+            <option value="ALL">Semua Status Submit</option>
+            <option value="SUDAH">Sudah Submit</option>
+            <option value="BELUM">Belum Submit</option>
+          </select>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">
-            WA: {sudahTerKirim}/{total} | HP: {denganHP}
-          </span>
+        {/* Exports */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors shadow-sm"
+          >
+            <Download className="h-4 w-4" /> CSV
+          </button>
+          <button
+            onClick={handleExportPdf}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors shadow-sm"
+          >
+            <FileText className="h-4 w-4" /> PDF
+          </button>
+        </div>
+      </div>
 
-          
-          
+      {/* Bulk Actions Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="hidden sm:inline-block text-xs font-bold text-slate-500 uppercase tracking-wider">Aksi Massal:</span>
           <button
             type="button"
             onClick={handleKirimBulkWA}
             disabled={sedangMengirim || belumTerKirim === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#128C7E] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title={belumTerKirim === 0 ? 'Semua sudah terkirim' : `Kirim WA ke ${belumTerKirim} yang belum`}
           >
-            {sedangMengirim ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-            Kirim Bulk WA API
+            {sedangMengirim ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            Kirim Bulk WA
           </button>
           
           <button
-            className="btn btn-warning flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onClick={handleKirimBulkEmail}
             disabled={sedangMengirim || daftar.filter(item => !item.notifikasi_email_sent_at && (item.nominee?.email || item.pegawai?.email)).length === 0}
             title="Kirim Semua Email (Otomatis seleksi yang belum terkirim)"
           >
-            <Mail className="h-3.5 w-3.5" />
+            <Mail className="h-4 w-4" />
             Kirim Bulk Email
           </button>
 
@@ -993,58 +1027,19 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
               type="button"
               onClick={() => generateMut.mutate()}
               disabled={generateMut.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-navy-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-600 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-navy-700 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-navy-800 disabled:opacity-50 transition-colors ml-auto sm:ml-0"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${generateMut.isPending ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${generateMut.isPending ? 'animate-spin' : ''}`} />
               Generate Token
             </button>
           )}
         </div>
-      </div>
 
-      {/* Info Box */}
-      {sedangMengirim && (
-        <div className="rounded-xl border border-[#25D366]/30 bg-[#25D366]/10 p-4">
-          <p className="flex items-center gap-2 text-sm text-[#128C7E]">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Sedang mengirim notifikasi WA...
-          </p>
+        <div className="flex items-center gap-3 text-xs font-medium text-slate-600 bg-white px-3 py-1.5 rounded-md border border-slate-200">
+          <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-slate-400" /> {sudahTerKirim}/{total}</div>
+          <div className="w-px h-3 bg-slate-300"></div>
+          <div className="flex items-center gap-1.5 text-slate-500">Total HP: {denganHP}</div>
         </div>
-      )}
-
-      {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-          <input
-            type="text"
-            value={cari}
-            onChange={(e) => { setCari(e.target.value); setCurrentPage(1); }}
-            placeholder="Cari nama, NIP, atau nomor HP..."
-            className="input pl-10"
-          />
-        </div>
-        <select
-          value={filterSubmit}
-          onChange={(e) => { setFilterSubmit(e.target.value); setCurrentPage(1); }}
-          className="input sm:w-48 bg-white cursor-pointer border-slate-200"
-        >
-          <option value="ALL">Semua Status</option>
-          <option value="SUDAH">Sudah Submit</option>
-          <option value="BELUM">Belum Submit</option>
-        </select>
-        <button
-          onClick={handleExportCsv}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition"
-        >
-          <Download className="h-4 w-4" /> Export CSV
-        </button>
-        <button
-          onClick={handleExportPdf}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 transition"
-        >
-          <FileText className="h-4 w-4" /> Export PDF
-        </button>
       </div>
 
       {/* Table */}
@@ -1085,6 +1080,7 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
         isOpen={isProgressOpen}
         onClose={() => !sedangMengirim && setIsProgressOpen(false)}
         progress={kirimProgress}
+        title={kirimProgressTitle}
       />
     </div>
   );

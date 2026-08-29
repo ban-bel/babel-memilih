@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, Users, FileSignature, Gavel, Edit2, Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import ModalTambahWilayahSusulan from './components/ModalTambahWilayahSusulan';
+
 import Modal from '../../../components/common/Modal';
 
 import AdminLoginGate from '../components/AdminLoginGate';
@@ -92,6 +94,8 @@ function ManajemenPeriodeContent({ adminProfile }) {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showTambahWilayahModal, setShowTambahWilayahModal] = useState(false);
+  const [tambahWilayahTarget, setTambahWilayahTarget] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [editForm, setEditForm] = useState({
@@ -663,6 +667,14 @@ function ManajemenPeriodeContent({ adminProfile }) {
         title="Hapus Periode"
         message={`Apakah Anda yakin ingin menghapus periode "${deleteTarget?.nama_periode}"? Semua token, partisipan, dan data penilaian di dalamnya akan hilang permanen.`}
       />
+    
+      <ModalTambahWilayahSusulan
+        isOpen={showTambahWilayahModal}
+        onClose={() => setShowTambahWilayahModal(false)}
+        periode={tambahWilayahTarget}
+        adminProfile={adminProfile}
+      />
+
     </main>
   );
 }

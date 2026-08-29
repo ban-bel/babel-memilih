@@ -439,3 +439,22 @@ export async function submitVideoProfilNominee(token, videoLink) {
  * @param {string} mode - "1A", "1C", "2", "2A"
  * @param {Object} data - Objek JSON draft
  */
+export async function submitDokumenLinkNominee(token, dokumenLink) {
+  const { data: akses, error: errAkses } = await supabase.rpc('get_akses_nominee_by_token', {
+    p_token: token,
+  });
+
+  if (errAkses || !akses) {
+    throw new Error('Token tidak valid atau sudah kadaluarsa.');
+  }
+
+  const { error } = await supabase
+    .from('nominee_periode')
+    .update({ dokumen_link: dokumenLink })
+    .eq('periode_id', akses.periode.id)
+    .eq('pegawai_id', akses.nominee.id);
+
+  if (error) {
+    throw new Error(`Gagal menyimpan link dokumen: ${error.message}`);
+  }
+}

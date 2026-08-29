@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 /**
  * @fileoverview Form voting untuk MODE_1B (Hybrid) - Voting Per Kategori.
  *
@@ -193,9 +194,9 @@ export default function FormMode1C({
               </h3>
             </div>
             {kategoriSaatIni.deskripsi && (
-              <p className="text-sm text-slate-500 ml-8">
-                {kategoriSaatIni.deskripsi}
-              </p>
+              <div className="text-sm text-slate-500 ml-8 prose prose-sm prose-slate max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                <ReactMarkdown>{kategoriSaatIni.deskripsi}</ReactMarkdown>
+              </div>
             )}
           </div>
 

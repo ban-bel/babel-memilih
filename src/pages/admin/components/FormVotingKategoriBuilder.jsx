@@ -106,12 +106,12 @@ export default function FormVotingKategoriBuilder({ daftar, onChange }) {
                   <label className="block text-xs font-medium text-slate-600 mb-1">
                     Deskripsi (opsional)
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={kategori.deskripsi}
                     onChange={(e) => handleUbah(index, 'deskripsi', e.target.value)}
-                    placeholder="mis. Paling menghibur dan humoris"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-100"
+                    placeholder="mis. Paling menghibur dan humoris (mendukung Markdown)"
+                    className="w-full min-h-[60px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-100 resize-y"
+                    rows={2}
                   />
                 </div>
               </div>

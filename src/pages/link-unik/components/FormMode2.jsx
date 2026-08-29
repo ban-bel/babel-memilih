@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save, CloudDownload, Check, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import Modal from '../../../components/common/Modal';
 import { toast } from 'react-hot-toast';
@@ -45,6 +46,8 @@ function getPreviewUrl(url) {
  * @param {boolean} isSubmitting
  */
 export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaban, onSubmit, isSubmitting }) {
+  const isFirstRender = useRef(true);
+
   const [downloadingUrl, setDownloadingUrl] = useState(null);
   
   const loadDraft = () => {
@@ -105,6 +108,36 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
         tersentuh: Array.from(tersentuh)
       }));
     }
+  }, [skor, catatan, tersentuh, hasDraft, token]);
+
+
+  // Auto-save Cloud Draft setelah 7 detik tanpa aktivitas (Debounced)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
+    if (!token) return;
+    if (!hasDraft && tersentuh.size === 0 && Object.keys(catatan).length === 0) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const { saveDraftToServer } = await import('../../../services/voting/draftService');
+        await saveDraftToServer(token, '2', { skor, catatan, tersentuh: Array.from(tersentuh) });
+        
+        toast.success('Auto-save: tersimpan ke cloud', {
+          id: 'autosave-cloud',
+          position: 'bottom-right',
+          duration: 2000,
+          style: { fontSize: '12px', padding: '8px' }
+        });
+      } catch (e) {
+        console.warn('Auto-save gagal:', e);
+      }
+    }, 7000);
+
+    return () => clearTimeout(timer);
   }, [skor, catatan, tersentuh, hasDraft, token]);
 
   // Sinkronisasi Cloud Draft saat pertama kali dimuat
@@ -502,7 +535,9 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                           </div>
                           
                           {k.deskripsi && !k.deskripsi.toLowerCase().includes('otomatis ditambahkan dari form kelengkapan') && (
-                            <p className="text-xs text-slate-500 leading-snug mt-2">{k.deskripsi}</p>
+                            <div className="text-xs text-slate-500 leading-snug mt-2 prose prose-sm prose-slate max-w-none prose-p:leading-snug prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                              <ReactMarkdown>{k.deskripsi}</ReactMarkdown>
+                            </div>
                           )}
                         </div>
 

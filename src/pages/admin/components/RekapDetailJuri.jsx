@@ -20,7 +20,8 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
           nama_juri: row.juri?.nama || 'Juri Tidak Dikenal',
           kategori: [],
           totalSkor: 0,
-          catatan: []
+          catatan: [],
+          _catatanSet: new Set()
         };
         nomMap.countJuri += 1;
       }
@@ -38,10 +39,19 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
       juriMap.totalSkor += weightedScore;
       
       if (row.catatan_juri) {
-        juriMap.catatan.push({
-          kategori: row.kategori?.nama_kategori,
-          catatan: row.catatan_juri
-        });
+        const cleanCatatan = row.catatan_juri.trim();
+        if (!juriMap._catatanSet.has(cleanCatatan)) {
+          juriMap.catatan.push({
+            kategori: row.kategori?.nama_kategori,
+            catatan: cleanCatatan
+          });
+          juriMap._catatanSet.add(cleanCatatan);
+        } else {
+          const existing = juriMap.catatan.find(c => c.catatan === cleanCatatan);
+          if (existing) {
+            existing.kategori = null; // Menjadi komentar umum karena berlaku untuk banyak/semua kategori
+          }
+        }
       }
     });
     
@@ -119,34 +129,34 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {listJuri.map((juri, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-4 font-medium text-slate-900 align-top min-w-[150px]">
+                          <td className="px-3 py-3 font-medium text-slate-900 align-top min-w-[150px]">
                             {juri.nama_juri}
                           </td>
-                          <td className="px-4 py-4 align-top min-w-[300px]">
-                            <div className="flex flex-wrap gap-1.5">
+                          <td className="px-3 py-3 align-top min-w-[300px]">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 text-xs">
                               {juri.kategori.map((k, kIdx) => (
-                                <div key={kIdx} className="inline-flex items-center gap-1.5 rounded border border-slate-200/70 bg-slate-50 px-2 py-1 text-[11px]">
-                                  <span className="text-slate-600 truncate max-w-[140px]" title={`${k.nama_kategori} (${k.bobot}%)`}>
+                                <div key={kIdx} className="flex justify-between items-center border-b border-slate-100/70 pb-1">
+                                  <span className="text-slate-500 truncate pr-2" title={`${k.nama_kategori} (${k.bobot}%)`}>
                                     {k.nama_kategori}
                                   </span>
-                                  <span className="font-bold text-navy-800 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100">
+                                  <span className="font-bold text-navy-800">
                                     {k.skor}
                                   </span>
                                 </div>
                               ))}
                             </div>
                           </td>
-                          <td className="px-4 py-4 align-top text-center">
-                            <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-navy-50 text-navy-700 font-bold text-base shadow-sm">
+                          <td className="px-3 py-3 align-top text-center">
+                            <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-navy-50 text-navy-700 font-bold text-sm shadow-sm border border-navy-100/50">
                               {juri.totalSkor.toFixed(2)}
                             </span>
                           </td>
-                          <td className="px-4 py-4 align-top min-w-[200px]">
+                          <td className="px-3 py-3 align-top min-w-[200px]">
                             {juri.catatan.length > 0 ? (
                               <ul className="space-y-2">
                                 {juri.catatan.map((c, cIdx) => (
                                   <li key={cIdx} className="text-xs bg-amber-50/50 p-2 rounded-lg border border-amber-100/50">
-                                    {c.kategori && <span className="font-bold text-amber-800 block mb-0.5">{c.kategori}</span>}
+                                    <span className="font-bold text-amber-800 block mb-0.5">{c.kategori || 'Catatan Umum'}</span>
                                     <span className="text-amber-900 italic">"{c.catatan}"</span>
                                   </li>
                                 ))}

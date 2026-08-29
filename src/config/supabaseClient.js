@@ -39,6 +39,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Re-export createClient for use in other modules
+export { createClient };
+
 // =============================================================================
 // KONFIGURASI
 // =============================================================================

@@ -139,12 +139,12 @@ export default function FormKategoriBuilder({ daftar, onChange, formState }) {
                   className={`input text-sm ${k.is_system ? 'bg-slate-50 opacity-90' : ''}`}
                   readOnly={k.is_system}
                 />
-                <input
-                  type="text"
+                <textarea
                   value={k.deskripsi}
                   onChange={(e) => ubah(k.key, 'deskripsi', e.target.value)}
-                  placeholder="Deskripsi (opsional)"
-                  className="input text-sm"
+                  placeholder="Deskripsi (opsional, mendukung Markdown)"
+                  className="input text-sm min-h-[60px] py-2 resize-y"
+                  rows={2}
                 />
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <label className="flex items-center gap-2 text-slate-600">

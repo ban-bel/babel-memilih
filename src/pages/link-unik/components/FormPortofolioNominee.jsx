@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, CheckCircle2, Loader2, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Loader2, Link as LinkIcon, AlertCircle, FileUp, Download } from 'lucide-react';
 
 const CONFIG = {
   portofolio_pengembangan: {
@@ -44,6 +44,76 @@ export default function FormPortofolioNominee({ type, dataTersimpan, onSimpan })
   const [error, setError] = useState(null);
   
   const timeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  
+  const downloadTemplate = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      
+      // Buat header dari label kolom
+      const headers = config.columns.map(col => col.label);
+      
+      // Bikin dummy row sebagai contoh
+      const exampleRow = config.columns.map(col => {
+        if (col.type === 'number') return '2023';
+        if (col.type === 'url') return 'https://drive.google.com/file/d/...';
+        if (col.type === 'textarea') return 'Deskripsi contoh yang lebih panjang...';
+        return 'Contoh ' + col.label;
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+      
+      XLSX.writeFile(workbook, `Template_${config.title.replace(/\s+/g, '_')}.xlsx`);
+    } catch (err) {
+      console.error('Gagal mengunduh template', err);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setStatus('saving');
+      setError(null);
+      
+      const data = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(data);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (!jsonData || jsonData.length === 0) {
+        throw new Error('File kosong atau format tidak sesuai.');
+      }
+
+      const newRows = jsonData.map((row, idx) => {
+        const mappedRow = { id: Date.now().toString() + idx };
+        config.columns.forEach(col => {
+          const matchingKey = Object.keys(row).find(key => 
+            key.toLowerCase().trim() === col.label.toLowerCase().trim() ||
+            key.toLowerCase().trim() === col.key.toLowerCase().trim()
+          );
+          let val = matchingKey ? row[matchingKey] : '';
+          if (val === undefined || val === null) val = '';
+          mappedRow[col.key] = val.toString();
+        });
+        return mappedRow;
+      });
+
+      setRows(prev => [...prev, ...newRows]);
+      setStatus('idle');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      setError('Gagal mengimpor file: ' + err.message);
+      setStatus('error');
+    }
+  };
+
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -116,8 +186,25 @@ export default function FormPortofolioNominee({ type, dataTersimpan, onSimpan })
         <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
           <span>{config.icon}</span> {config.title}
         </h3>
-        {status === 'saving' && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
-        {status === 'saved' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+        <div className="flex items-center gap-3">
+          {status === 'saving' && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+          {status === 'saved' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+          
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            ref={fileInputRef}
+            onChange={handleImport}
+            className="hidden"
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()} 
+            className="btn-secondary text-xs py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none shadow-none flex items-center gap-1.5"
+            title="Import dari file Excel atau CSV"
+          >
+            <FileUp className="h-3.5 w-3.5" /> Import Excel/CSV
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -130,9 +217,17 @@ export default function FormPortofolioNominee({ type, dataTersimpan, onSimpan })
       {rows.length === 0 ? (
         <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
           <p className="text-sm text-slate-500 mb-3">Belum ada entri {config.title.toLowerCase()}.</p>
-          <button onClick={addRow} className="btn-secondary text-sm py-1.5 px-3 rounded-lg">
-            <Plus className="h-4 w-4" /> Tambah Baris
-          </button>
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={addRow} className="btn-secondary text-sm py-1.5 px-3 rounded-lg">
+              <Plus className="h-4 w-4" /> Tambah Baris
+            </button>
+            <button onClick={() => fileInputRef.current?.click()} className="btn-secondary text-sm py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none shadow-none flex items-center gap-2">
+              <FileUp className="h-4 w-4" /> Import Excel
+            </button>
+            <button onClick={downloadTemplate} className="btn-secondary text-sm py-1.5 px-3 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border-none shadow-none flex items-center gap-2">
+              <Download className="h-4 w-4" /> Unduh Template
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">

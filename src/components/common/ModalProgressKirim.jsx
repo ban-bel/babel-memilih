@@ -31,7 +31,7 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
  *   progress={{ sent: 5, failed: 1, total: 10, logs: [...] }}
  * />
  */
-export default function ModalProgressKirim({ isOpen, onClose, progress }) {
+export default function ModalProgressKirim({ isOpen, onClose, progress, title = "{title}" }) {
   if (!isOpen) return null;
 
   const { sent = 0, failed = 0, total = 0, logs = [], statusText = '' } = progress;
@@ -53,7 +53,7 @@ export default function ModalProgressKirim({ isOpen, onClose, progress }) {
             ) : (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-navy-600" />
-                Mengirim Notifikasi WA...
+                {title}
               </>
             )}
           </h2>
