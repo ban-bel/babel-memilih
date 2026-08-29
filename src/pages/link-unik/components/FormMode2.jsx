@@ -171,11 +171,16 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
 
+  
+  const unblockedNominees = nominee.filter(n => !n.isBlocked);
+  const targetDinilai = unblockedNominees.length;
+
   const sudahDinilai = nominee.filter(
-    (n) => tersentuh.has(n.id) && kategori.every((k) => skor[kunciSkor(n.id, k.id)] != null)
+    (n) => !n.isBlocked && tersentuh.has(n.id) && kategori.every((k) => skor[kunciSkor(n.id, k.id)] != null)
   ).length;
 
-  const progressPercent = (sudahDinilai / nominee.length) * 100;
+  const progressPercent = targetDinilai === 0 ? 100 : (sudahDinilai / targetDinilai) * 100;
+
 
   function handleBukaNominee(id) {
     const buka = nomineeTerbuka === id ? null : id;
@@ -240,7 +245,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
             <div className="flex flex-wrap items-center gap-2">
               <Gavel className="h-5 w-5 text-navy-700" />
               <span className="text-sm font-medium text-slate-700">Progress Penilaian Juri</span>
-              {hasDraft && sudahDinilai < nominee.length && (
+              {hasDraft && sudahDinilai < targetDinilai && (
                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 flex items-center gap-1">
                   <Save className="h-3 w-3" />
                   DRAF TERSIMPAN
@@ -248,7 +253,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
               )}
             </div>
             <span className="text-sm font-bold text-navy-800 ml-2">
-              {sudahDinilai} / {nominee.length}
+              {sudahDinilai} / {targetDinilai}
             </span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -617,7 +622,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
         </Modal>
 
         <div className="flex flex-col gap-3">
-          {sudahDinilai === nominee.length ? (
+          {sudahDinilai === targetDinilai && targetDinilai > 0 ? (
             <button
               type="submit"
               disabled={isSubmitting}
@@ -631,7 +636,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
               ) : (
                 <>
                   <Gavel className="h-5 w-5" />
-                  Kirim Penilaian Juri ({sudahDinilai}/{nominee.length} nominee)
+                  Kirim Penilaian Juri ({sudahDinilai}/{targetDinilai} nominee)
                 </>
               )}
             </button>
@@ -641,7 +646,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                 Tombol kirim akan muncul setelah Anda menyelesaikan penilaian untuk semua nominee.
               </p>
               <p className="mt-2 text-sm text-slate-400">
-                (Baru menilai {sudahDinilai} dari {nominee.length} nominee)
+                (Baru menilai {sudahDinilai} dari {targetDinilai} nominee)
               </p>
             </div>
           )}
