@@ -63,7 +63,7 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-800">{item.nama || '-'}</div>
                       <div className="text-xs text-slate-500">{item.bentuk}</div>
-                      {item.deskripsi && <div className="text-xs text-slate-400 mt-1 line-clamp-2">{item.deskripsi}</div>}
+                      {item.deskripsi && <div className="text-xs text-slate-400 mt-1 whitespace-pre-wrap">{item.deskripsi}</div>}
                     </td>
                     <td className="px-4 py-3">{item.cakupan || '-'}</td>
                     <td className="px-4 py-3 text-center">{item.tahun || '-'}</td>
@@ -82,7 +82,7 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
                   <>
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-800">{item.nama || '-'}</div>
-                      {item.deskripsi && <div className="text-xs text-slate-400 mt-1 line-clamp-2">{item.deskripsi}</div>}
+                      {item.deskripsi && <div className="text-xs text-slate-400 mt-1 whitespace-pre-wrap">{item.deskripsi}</div>}
                     </td>
                     <td className="px-4 py-3">{item.pemberi || '-'}</td>
                     <td className="px-4 py-3 text-center">{item.tahun || '-'}</td>

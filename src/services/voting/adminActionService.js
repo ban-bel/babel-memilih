@@ -172,3 +172,33 @@ export async function blockPenilai(periodeId, pegawaiId, tokenTipe) {
  * @param {number} periodeId - ID periode
  * @returns {Promise<Object[]>} Array semua token dengan tipe
  */
+
+/**
+ * Mereset seluruh isian (jawaban, skor, token) pada suatu periode secara total.
+ * Membutuhkan verifikasi password admin (login ulang).
+ */
+export async function resetPeriodeKeseluruhan(periodeId, email, password) {
+  // Pastikan kita punya email. Jika undefined (karena cache React Query lama), ambil langsung dari session!
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Sesi admin tidak ditemukan. Silakan login ulang.');
+  const userEmail = session.user.email;
+
+  // 1. Verifikasi Password dengan mencoba login ulang (Supabase Auth)
+  const { error: authErr } = await supabase.auth.signInWithPassword({
+    email: userEmail,
+    password
+  });
+
+  if (authErr) {
+    throw new Error('Verifikasi gagal: Password salah!');
+  }
+
+  // 2. Eksekusi RPC Pembersih
+  const { error } = await supabase.rpc('reset_seluruh_data_periode', {
+    p_periode_id: parseInt(periodeId, 10)
+  });
+
+  if (error) {
+    throw new Error(`Gagal mereset data periode: ${error.message}`);
+  }
+}

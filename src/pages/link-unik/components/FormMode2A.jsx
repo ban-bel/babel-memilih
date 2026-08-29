@@ -100,7 +100,8 @@ export default function FormMode2A({
     onSubmit(payload);
   };
 
-  if (nominee.length === 0) {
+  const unblockedNominees = nominee.filter(n => !n.isBlocked);
+  if (unblockedNominees.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
@@ -161,7 +162,7 @@ export default function FormMode2A({
           </h3>
 
           <div className="grid gap-3">
-            {nominee.map((n) => {
+            {unblockedNominees.map((n) => {
               const isSelected = selectedNominee === n.id;
 
               return (

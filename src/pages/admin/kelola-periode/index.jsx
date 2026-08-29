@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, Users, FileSignature, Gavel, Edit2, Trash2, X, Loader2 } from 'lucide-react';
+import { FilePlus2, ListFilter, Calendar, Activity, ChevronRight, UserCheck, Users, FileSignature, Gavel, Edit2, Trash2, X, Loader2, RotateCcw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import ModalTambahWilayahSusulan from './components/ModalTambahWilayahSusulan';
@@ -97,6 +97,9 @@ function ManajemenPeriodeContent({ adminProfile }) {
   const [showTambahWilayahModal, setShowTambahWilayahModal] = useState(false);
   const [tambahWilayahTarget, setTambahWilayahTarget] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [periodeToReset, setPeriodeToReset] = useState(null);
+  const [adminPassword, setAdminPassword] = useState('');
 
   const [editForm, setEditForm] = useState({
     id: null,
@@ -131,6 +134,23 @@ function ManajemenPeriodeContent({ adminProfile }) {
       toast.error(`Gagal menghapus periode: ${err.message}`);
       setDeleteTarget(null);
     },
+  });
+
+  const mutasiResetPeriode = useMutation({
+    mutationFn: async ({ periodeId, email, password }) => {
+      const { resetPeriodeKeseluruhan } = await import('../../../services/voting/adminActionService');
+      await resetPeriodeKeseluruhan(periodeId, email, password);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['periode-list'] });
+      toast.success('Seluruh data periode berhasil direset!');
+      setShowResetModal(false);
+      setAdminPassword('');
+      setPeriodeToReset(null);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    }
   });
 
   function handleDeleteClick(p) {
@@ -302,6 +322,18 @@ function ManajemenPeriodeContent({ adminProfile }) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setPeriodeToReset(p);
+                            setShowResetModal(true);
+                          }}
+                          className={`p-2 rounded-xl transition-all ${isActive ? 'bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
+                          title="Reset Data Periode"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             bukaModalEdit(p);
                           }}
                           className={`p-2 rounded-xl transition-all ${isActive ? 'bg-navy-50 text-navy-600 hover:bg-navy-600 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-navy-600 hover:border-navy-300'}`}
@@ -368,6 +400,18 @@ function ManajemenPeriodeContent({ adminProfile }) {
                       </div>
                       {/* Action buttons */}
                       <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPeriodeToReset(p);
+                            setShowResetModal(true);
+                          }}
+                          className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-white shadow-sm text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
+                          title="Reset"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -674,6 +718,62 @@ function ManajemenPeriodeContent({ adminProfile }) {
         periode={tambahWilayahTarget}
         adminProfile={adminProfile}
       />
+
+
+      {/* Reset Data Modal */}
+      <Modal isOpen={showResetModal} onClose={() => { setShowResetModal(false); setAdminPassword(''); }} title="Reset Seluruh Data Periode">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          mutasiResetPeriode.mutate({
+            periodeId: periodeToReset?.id,
+            email: adminProfile?.email,
+            password: adminPassword
+          });
+        }}>
+          <div className="p-6">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <RotateCcw className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-center text-slate-800 mb-2">Peringatan Kritis!</h3>
+            <p className="text-sm text-center text-slate-500 mb-6">
+              Anda akan menghapus <span className="font-bold text-red-600">SELURUH SKOR, JAWABAN, dan STATUS TOKEN</span> untuk periode 
+              <br/><span className="font-bold text-slate-700">"{periodeToReset?.nama_periode}"</span>.
+              <br/>Tindakan ini tidak dapat dibatalkan!
+            </p>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">Masukkan Password Admin Anda</label>
+              <input
+                type="password"
+                required
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Ketik password untuk konfirmasi..."
+                className="input-field w-full"
+              />
+              <p className="text-xs text-slate-400">Verifikasi diperlukan karena ini adalah tindakan destruktif.</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+            <button
+              type="button"
+              onClick={() => { setShowResetModal(false); setAdminPassword(''); }}
+              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={mutasiResetPeriode.isPending || !adminPassword}
+              className="px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50 flex items-center"
+            >
+              {mutasiResetPeriode.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+              Eksekusi Reset Total
+            </button>
+          </div>
+        </form>
+      </Modal>
 
     </main>
   );

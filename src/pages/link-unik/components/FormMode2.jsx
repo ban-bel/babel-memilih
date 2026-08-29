@@ -212,6 +212,8 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
   function handleLanjutkanKirim() {
     const daftarPenilaian = [];
     nominee.forEach((n) => {
+      if (n.isBlocked) return; // Jangan kirim nilai default untuk kandidat yang diblokir regionnya
+
       const catatanNominee = catatan[n.id]?.trim() || null;
       kategori.forEach((k) => {
         daftarPenilaian.push({

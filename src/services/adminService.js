@@ -47,7 +47,7 @@ export async function fetchSesiAdmin() {
 
   const { data, error } = await supabase
     .from('pegawai')
-    .select('id, nama, nip, foto_url, role_admin, wilayah_id, is_kakan')
+    .select('id, nama, nip, email, foto_url, role_admin, wilayah_id, is_kakan')
     .eq('user_id', session.user.id)
     .single();
 
