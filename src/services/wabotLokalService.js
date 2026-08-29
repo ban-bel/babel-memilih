@@ -7,7 +7,6 @@
  */
 
 // Gunakan environment variable jika ada, default ke localhost:3000
-const BOT_URL = import.meta.env.VITE_WA_API_URL;
 
 /**
  * Kirim pesan tunggal via Wabot Lokal.
@@ -19,15 +18,17 @@ const BOT_URL = import.meta.env.VITE_WA_API_URL;
  */
 export async function kirimPesanLocalBot(nomorHP, pesan) {
   try {
-    const response = await fetch(`${BOT_URL}/send`, {
+    const response = await fetch('/api/universal-bot', {
       method: 'POST',
-            headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': import.meta.env.VITE_WA_API_KEY
+      headers: {
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        nomor: nomorHP,
-        pesan: pesan,
+        endpoint: '/send',
+        payload: {
+          nomor: nomorHP,
+          pesan: pesan,
+        }
       }),
     });
 
@@ -128,17 +129,19 @@ export async function kirimEmailLocalBot({ email, nama_penerima, sapaan, link_pe
 
     const textBody = `Yth. ${finalSapaan} ${nama_penerima || 'Partisipan'}, 👋\n\n${pembuka}\n\nNot to rush you or anything, tapi ${finalPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.\n\nLess typing, more action. Langsung aja akses tautan berikut untuk masuk ke sistem:\n${link_penilaian}\n\nReminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${finalSapaan}. Jangan di-share ya! 🤫\n\n${penutup}\n\nYours in Friendship and Chaos,\nTim Diseminasi Statistik\nBPS Provinsi Kepulauan Bangka Belitung`;
 
-    const response = await fetch(`${BOT_URL}/email`, {
+    const response = await fetch('/api/universal-bot', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': import.meta.env.VITE_WA_API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        to: email,
-        subject: subject,
-        text: textBody,
-        html: htmlBody
+        endpoint: '/email',
+        payload: {
+          to: email,
+          subject: subject,
+          text: textBody,
+          html: htmlBody
+        }
       }),
     });
 
