@@ -539,15 +539,8 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                             </div>
                           </div>
                           
-                          {k.deskripsi && !k.deskripsi.toLowerCase().includes('otomatis ditambahkan dari form kelengkapan') && (
-                            <div className="text-xs text-slate-500 leading-snug mt-2 prose prose-sm prose-slate max-w-none prose-p:leading-snug prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
-                              <ReactMarkdown>{k.deskripsi}</ReactMarkdown>
-                            </div>
-                          )}
-                        </div>
-
                         {/* Custom Slider */}
-                        <div className={`relative pt-1 transition-opacity duration-200 ${isConfirmOpen ? 'opacity-0' : 'opacity-100'}`}>
+                        <div className={`relative pt-3 pb-5 mb-2 border-b border-slate-100 transition-opacity duration-200 ${isConfirmOpen ? 'opacity-0' : 'opacity-100'}`}>
                           <div className="mb-2 flex justify-between text-xs text-slate-400">
                             <span>{k.skor_min}</span>
                             <span>{k.skor_max}</span>
@@ -566,7 +559,7 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                               max={k.skor_max}
                               value={nilai}
                               onChange={(e) => ubahSkor(n.id, k.id, Number(e.target.value))}
-                              className="absolute inset-0 w-full cursor-pointer opacity-0"
+                              className="absolute -inset-y-3 inset-x-0 h-8 w-full cursor-pointer opacity-0 z-10"
                             />
                             <div
                               className="pointer-events-none absolute top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-gold-600 shadow-lg transition-all duration-100"
@@ -576,6 +569,13 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                             </div>
                           </div>
                         </div>
+                          {k.deskripsi && !k.deskripsi.toLowerCase().includes('otomatis ditambahkan dari form kelengkapan') && (
+                            <div className="text-xs text-slate-500 leading-snug mt-2 prose prose-sm prose-slate max-w-none prose-p:leading-snug prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                              <ReactMarkdown>{k.deskripsi}</ReactMarkdown>
+                            </div>
+                          )}
+                        </div>
+
                       </div>
                     );
                   })}
