@@ -163,8 +163,8 @@ function DashboardContent({ adminProfile }) {
               {/* Card Header */}
               <div className="relative border-b border-slate-100/50 p-5 bg-gradient-to-br from-navy-50/30 to-transparent">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-lg font-bold text-navy-900 truncate">
+                  <div className="min-w-0 flex-1 pr-8">
+                    <h3 className="font-display text-lg font-bold text-navy-900 line-clamp-2 leading-tight" title={periode.nama_periode}>
                       {periode.nama_periode}
                     </h3>
                     <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -197,24 +197,20 @@ function DashboardContent({ adminProfile }) {
               </div>
 
               {/* Card Body */}
-              <div className="p-5 space-y-4 relative z-10">
-                <div className="flex items-center gap-3 text-sm text-slate-600 font-medium bg-slate-50/50 p-2 rounded-xl border border-slate-100">
-                  <div className="p-1.5 rounded-lg bg-white shadow-sm">
-                    <MapPin className="h-4 w-4 text-emerald-600" />
+              <div className="p-5 relative z-10">
+                <div className="space-y-3.5">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4.5 w-4.5 text-slate-400 mt-0.5 shrink-0" />
+                    <span className="text-sm text-slate-600 font-medium leading-snug">{periode.wilayah?.nama_wilayah || 'Semua Wilayah'}</span>
                   </div>
-                  <span className="truncate">{periode.wilayah?.nama_wilayah || 'Semua Wilayah'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 font-medium bg-slate-50/50 p-2 rounded-xl border border-slate-100">
-                  <div className="p-1.5 rounded-lg bg-white shadow-sm">
-                    <BarChart2 className="h-4 w-4 text-blue-600" />
+                  <div className="flex items-center gap-3">
+                    <BarChart2 className="h-4.5 w-4.5 text-slate-400 shrink-0" />
+                    <span className="text-sm text-slate-600 font-medium">{periode.mode_penilaian === 'MODE_1B' ? 'Mode 1B (Manual)' : periode.mode_penilaian === 'MODE_2' ? 'Mode 2 (Evaluator)' : periode.mode_penilaian}</span>
                   </div>
-                  <span>{periode.mode_penilaian}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600 font-medium bg-slate-50/50 p-2 rounded-xl border border-slate-100">
-                  <div className="p-1.5 rounded-lg bg-white shadow-sm">
-                    <Calendar className="h-4 w-4 text-amber-600" />
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4.5 w-4.5 text-slate-400 shrink-0" />
+                    <span className="text-sm text-slate-600 font-medium">{formatTgl(periode.tgl_mulai)} - {formatTgl(periode.tgl_selesai)}</span>
                   </div>
-                  <span>{formatTgl(periode.tgl_mulai)} - {formatTgl(periode.tgl_selesai)}</span>
                 </div>
               </div>
 

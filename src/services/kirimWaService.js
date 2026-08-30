@@ -346,13 +346,13 @@ export function pilihTemplateByKategori(templates, kategori) {
   );
 
   if (templateSpesifik) {
-    console.log(`ðŸ“‹ Template untuk ${kategori}: "${templateSpesifik.nama_tampilan}"`);
+
     return templateSpesifik;
   }
 
   // Fallback: random
   const index = Math.floor(Math.random() * templates.length);
-  console.log(`ðŸ“‹ Template random untuk ${kategori}: "${templates[index].nama_tampilan}"`);
+
   return templates[index];
 }
 
@@ -404,9 +404,9 @@ export async function kirimNotifikasiBatch({
     throw new Error('Daftar penerima kosong');
   }
 
-  console.log('\n' + '='.repeat(70));
-  console.log('🚀 MULAI KIRIM NOTIFIKASI WA (Safe Delay Mode 22s)');
-  console.log('='.repeat(70));
+
+
+
   
   const results = { berhasil: [], gagal: [] };
   const DELAY_MS = 22000; // 22 detik
@@ -480,11 +480,11 @@ export async function kirimNotifikasiBatch({
         statusText: retries > 0 ? `Mengirim... (Percobaan ${retries + 1})` : `Mengirim ke ${p.nama}...`
       });
 
-      console.log(`[${i + 1}/${penerimaList.length}] Mengirim ke "${p.nama}" -> ${noHpFormat}`);
+
       const response = await kirimPesanLocalBot(noHpFormat, pesan);
 
       if (response.status) {
-        console.log(`[${i + 1}/${penerimaList.length}] ✅ Sukses!`);
+
         results.berhasil.push(p);
         await updateLogStatus(periodeId, p.id, 'SENT');
         await updateStatusTerkirim(kategori, p.token_id);
@@ -530,7 +530,7 @@ export async function kirimNotifikasiBatch({
 
     // Jeda aman 22 detik hanya jika bukan orang terakhir
     if (i < penerimaList.length - 1) {
-      console.log(`⏳ Menunggu jeda aman 22 detik...`);
+
       onProgress?.({
         index: i,
         total: penerimaList.length,
@@ -542,10 +542,10 @@ export async function kirimNotifikasiBatch({
     }
   }
 
-  console.log('='.repeat(70));
-  console.log('✅ PENGIRIMAN SELESAI');
-  console.log(`Sukses: ${results.berhasil.length}, Gagal: ${results.gagal.length}`);
-  console.log('='.repeat(70) + '\n');
+
+
+
+
 
   onComplete?.(results);
   return results;

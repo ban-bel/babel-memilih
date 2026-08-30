@@ -476,46 +476,48 @@ function ManajemenPeriodeContent({ adminProfile }) {
                 </div>
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-2 border-b border-slate-200">
-                <button
-                  onClick={() => setActiveTab('info')}
-                  className={`tab ${activeTab === 'info' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
-                >
-                  <Activity className="h-4 w-4" /> Info & Pengaturan
-                </button>
-                <button
-                  onClick={() => setActiveTab('nominee')}
-                  className={`tab ${activeTab === 'nominee' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
-                >
-                  <Users className="h-4 w-4" /> Kelola Nominee
-                </button>
-                {/* Tab Khusus Mode 2 */}
-                {activePeriode.mode_penilaian === 'MODE_2' && (
-                  <>
+                {/* Tabs */}
+                <div className="flex w-full overflow-x-auto hide-scrollbar pb-2 mb-2">
+                  <div className="flex p-1.5 bg-slate-100/80 rounded-2xl gap-1 w-max border border-slate-200/50">
                     <button
-                      onClick={() => setActiveTab('kategori')}
-                      className={`tab ${activeTab === 'kategori' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
+                      onClick={() => setActiveTab('info')}
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'info' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
                     >
-                      <ListFilter className="h-4 w-4" /> Kategori & Bobot
+                      <Activity className="h-4.5 w-4.5" /> Info & Pengaturan
                     </button>
                     <button
-                      onClick={() => setActiveTab('juri')}
-                      className={`tab ${activeTab === 'juri' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
+                      onClick={() => setActiveTab('nominee')}
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'nominee' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
                     >
-                      <Gavel className="h-4 w-4" /> Kelola Juri
+                      <Users className="h-4.5 w-4.5" /> Kelola Nominee
                     </button>
-                  </>
-                )}
+                    {/* Tab Khusus Mode 2 */}
+                    {activePeriode.mode_penilaian === 'MODE_2' && (
+                      <>
+                        <button
+                          onClick={() => setActiveTab('kategori')}
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'kategori' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                        >
+                          <ListFilter className="h-4.5 w-4.5" /> Kategori & Bobot
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('juri')}
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'juri' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                        >
+                          <Gavel className="h-4.5 w-4.5" /> Kelola Juri
+                        </button>
+                      </>
+                    )}
 
-                <button
-                  onClick={() => setActiveTab('partisipan')}
-                  className={`tab ${activeTab === 'partisipan' ? 'tab-active' : 'text-slate-500 hover:bg-slate-100'}`}
-                >
-                  {activePeriode.mode_penilaian === 'MODE_2' ? <Gavel className="h-4 w-4" /> : <FileSignature className="h-4 w-4" />} 
-                  Partisipan & Token
-                </button>
-              </div>
+                    <button
+                      onClick={() => setActiveTab('partisipan')}
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'partisipan' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                    >
+                      {activePeriode.mode_penilaian === 'MODE_2' ? <Gavel className="h-4.5 w-4.5" /> : <FileSignature className="h-4.5 w-4.5" />} 
+                      Partisipan & Token
+                    </button>
+                  </div>
+                </div>
 
               {/* Tab Content */}
               <div className="mt-4">

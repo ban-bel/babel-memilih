@@ -20,22 +20,3 @@ export async function tandaiTokenTerpakai(rpcName, token) {
   }
 }
 
-/**
- * Get Supabase client dengan Service Role Key untuk operasi admin.
- * Digunakan untuk operasi yang memerlukan bypass RLS.
- *
- * CATATAN KEAMANAN: Service Role Key memberikan akses FULL ke database.
- * Hanya gunakan untuk operasi admin yang memang memerlukan elevated privileges.
- */
-export function getAdminSupabase() {
-  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-  if (serviceKey) {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    return createClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-  }
-  // Fallback: gunakan client biasa jika service key tidak tersedia
-  console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY tidak tersedia - menggunakan client biasa');
-  return supabase;
-}

@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseClient';
-import { pastikanTokenValid, tandaiTokenTerpakai, UUID_REGEX, getAdminSupabase } from './shared';
+import { pastikanTokenValid, tandaiTokenTerpakai, UUID_REGEX } from './shared';
 import {
   STORAGE_BUCKET_BUKTI,
   MAX_FILE_SIZE_BYTES,
@@ -81,9 +81,8 @@ export async function fetchAllJawabanNominee(periodeId) {
  */
 
 export async function adminUpdateDaftarJawaban(periodeId, nomineeId, daftarJawaban) {
-  const adminDb = getAdminSupabase();
   for (const item of daftarJawaban) {
-    const { data: existing, error: errExisting } = await adminDb
+    const { data: existing, error: errExisting } = await supabase
       .from('jawaban_nominee')
       .select('id')
       .eq('periode_id', periodeId)
@@ -95,14 +94,14 @@ export async function adminUpdateDaftarJawaban(periodeId, nomineeId, daftarJawab
     
     if (existing) {
       if (item.teks_jawaban) {
-        const { error } = await adminDb.from('jawaban_nominee').update({ teks_jawaban: item.teks_jawaban }).eq('id', existing.id);
+        const { error } = await supabase.from('jawaban_nominee').update({ teks_jawaban: item.teks_jawaban }).eq('id', existing.id);
         if (error) throw new Error("Gagal update: " + error.message);
       } else {
-        const { error } = await adminDb.from('jawaban_nominee').delete().eq('id', existing.id);
+        const { error } = await supabase.from('jawaban_nominee').delete().eq('id', existing.id);
         if (error) throw new Error("Gagal delete: " + error.message);
       }
     } else if (item.teks_jawaban) {
-      const { error } = await adminDb.from('jawaban_nominee').insert({
+      const { error } = await supabase.from('jawaban_nominee').insert({
         periode_id: periodeId,
         nominee_id: nomineeId,
         pertanyaan_id: item.pertanyaan_id,

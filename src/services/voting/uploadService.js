@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseClient';
-import { pastikanTokenValid, tandaiTokenTerpakai, UUID_REGEX, getAdminSupabase } from './shared';
+import { pastikanTokenValid, tandaiTokenTerpakai, UUID_REGEX } from './shared';
 import {
   STORAGE_BUCKET_BUKTI,
   MAX_FILE_SIZE_BYTES,
