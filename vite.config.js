@@ -49,6 +49,39 @@ export default defineConfig({
           }
         });
 
+        server.middlewares.use('/api/universal-bot', (req, res) => {
+          if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk.toString() });
+            req.on('end', async () => {
+              try {
+                req.body = JSON.parse(body || '{}');
+              } catch (e) {
+                req.body = {};
+              }
+              
+              res.status = (code) => { res.statusCode = code; return res; };
+              res.json = (data) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(data));
+              };
+
+              try {
+                const absolutePath = path.resolve(process.cwd(), './api/universal-bot.js');
+                const moduleUrl = pathToFileURL(absolutePath).href;
+                // Add timestamp to invalidate module cache in dev mode
+                const handler = await import(`${moduleUrl}?update=${Date.now()}`);
+                await handler.default(req, res);
+              } catch (err) {
+                console.error('API Error:', err);
+                res.status(500).json({ message: 'Local API Error', error: err.message });
+              }
+            });
+          } else {
+            res.statusCode = 405;
+            res.end('Method Not Allowed');
+          }
+        });
         
       }
     }

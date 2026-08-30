@@ -43,7 +43,7 @@ import {
 } from '../../services/adminService';
 import { kirimNotifikasiBatch, filterBelumTerkirim, generatePesan, pilihTemplateByKategori, PERAN_LABELS, toggleStatusTerkirim, toggleStatusEmailTerkirim, insertLogEmail, insertLogWaMe } from '../../services/kirimWaService';
 import { fetchTemplateWaAktif } from '../../services/templateWaService';
-import { formatHP, kirimEmailLocalBot } from '../../services/wabotLokalService';
+import { formatHP, kirimEmailLocalBot, kirimPesanLocalBot } from '../../services/wabotLokalService';
 import ModalProgressKirim from '../../components/common/ModalProgressKirim';
 import Pagination from '../../components/common/Pagination';
 import { MODE_PENILAIAN } from '../../utils/constants';
@@ -220,16 +220,8 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
     setSendingWaId(p.id);
     const toastId = toast.loading(`Mengirim WA ke ${p.nama}...`);
     try {
-      const res = await fetch(`${import.meta.env.VITE_WA_API_URL}/send`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Key': import.meta.env.VITE_WA_API_KEY
-        },
-        body: JSON.stringify({ nomor: hp, pesan: waText })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengirim WA via API');
+      const res = await kirimPesanLocalBot(hp, waText);
+      if (!res.status) throw new Error(res.reason || 'Gagal mengirim WA via API');
       toast.success(`WA sukses terkirim ke ${p.nama}!`, { id: toastId });
       
       // Update DB and local state
@@ -254,16 +246,8 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
     setSendingWaIntroId(p.id);
     const toastId = toast.loading(`Mengirim perkenalan ke ${p.nama}...`);
     try {
-      const res = await fetch(`${import.meta.env.VITE_WA_API_URL}/send`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-API-Key': import.meta.env.VITE_WA_API_KEY
-        },
-        body: JSON.stringify({ nomor: hp, pesan: waIntroText })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengirim WA via API');
+      const res = await kirimPesanLocalBot(hp, waIntroText);
+      if (!res.status) throw new Error(res.reason || 'Gagal mengirim WA via API');
       toast.success(`Perkenalan sukses terkirim ke ${p.nama}!`, { id: toastId });
       
     } catch (err) {
