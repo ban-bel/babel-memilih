@@ -102,21 +102,31 @@ export async function fetchTokenNominee(token) {
 
   // SUPPLEMENTARY FETCH FOR MISSING COLUMNS
   if (data?.periode?.id) {
-    const { data: periodeInfo } = await supabase
-      .from('periode_penilaian')
-      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
-      .eq('id', data.periode.id)
-      .single();
+    const [{ data: periodeInfo }, { data: nomineeInfo }] = await Promise.all([
+      supabase
+        .from('periode_penilaian')
+        .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+        .eq('id', data.periode.id)
+        .single(),
+      supabase
+        .from('nominee_periode')
+        .select('dokumen_link')
+        .eq('periode_id', data.periode.id)
+        .eq('pegawai_id', data.nominee.id)
+        .single()
+    ]);
       
-    if (periodeInfo) {
-      return {
-        ...data,
-        periode: {
-          ...data.periode,
-          ...periodeInfo
-        }
-      };
-    }
+    return {
+      ...data,
+      periode: {
+        ...data.periode,
+        ...(periodeInfo || {})
+      },
+      nominee: {
+        ...data.nominee,
+        ...(nomineeInfo || {})
+      }
+    };
   }
 
   return data;

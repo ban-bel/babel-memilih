@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link as LinkIcon, CheckCircle2, Loader2, Clock, AlertCircle } from 'lucide-react';
+import GoogleDriveViewer from '../../../components/common/GoogleDriveViewer';
 
 export default function FormDokumenLinkNominee({ linkTersimpan, onSimpan }) {
   const [teks, setTeks] = useState(linkTersimpan ?? '');
@@ -101,6 +102,10 @@ export default function FormDokumenLinkNominee({ linkTersimpan, onSimpan }) {
           )}
         </div>
       </div>
+
+      {isValid && teks && (
+        <GoogleDriveViewer url={teks} title="Pratinjau Dokumen" className="mt-4" />
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex gap-2">

@@ -1,11 +1,14 @@
-import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, X } from 'lucide-react';
+import GoogleDriveViewer from './GoogleDriveViewer';
 
 export default function PortofolioViewer({ portofolio, type, title, icon }) {
+  const [activeLink, setActiveLink] = useState(null);
   if (!portofolio || !Array.isArray(portofolio) || portofolio.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-xl border border-blue-200 bg-white overflow-hidden">
+    <>
+      <div className="mt-4 rounded-xl border border-blue-200 bg-white overflow-hidden">
       <div className="bg-blue-50 px-4 py-3 border-b border-blue-100">
         <h4 className="flex items-center gap-2 text-sm font-bold text-blue-900">
           <span>{icon}</span> {title}
@@ -49,9 +52,9 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
                     <td className="px-4 py-3">{item.penyelenggara || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       {item.link ? (
-                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200">
+                        <button onClick={() => setActiveLink(item.link)} className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200 transition-colors">
                           <ExternalLink className="h-3 w-3" /> Buka
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
@@ -69,9 +72,9 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
                     <td className="px-4 py-3 text-center">{item.tahun || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       {item.link ? (
-                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200">
+                        <button onClick={() => setActiveLink(item.link)} className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200 transition-colors">
                           <ExternalLink className="h-3 w-3" /> Buka
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
@@ -88,9 +91,9 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
                     <td className="px-4 py-3 text-center">{item.tahun || '-'}</td>
                     <td className="px-4 py-3 text-center">
                       {item.link ? (
-                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200">
+                        <button onClick={() => setActiveLink(item.link)} className="inline-flex items-center gap-1 rounded bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-200 transition-colors">
                           <ExternalLink className="h-3 w-3" /> Buka
-                        </a>
+                        </button>
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
@@ -103,5 +106,22 @@ export default function PortofolioViewer({ portofolio, type, title, icon }) {
         </table>
       </div>
     </div>
+
+      {activeLink && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-800">Pratinjau Dokumen</h3>
+              <button onClick={() => setActiveLink(null)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 bg-slate-50">
+              <GoogleDriveViewer url={activeLink} className="h-full min-h-[70vh] flex flex-col" />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

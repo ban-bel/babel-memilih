@@ -112,55 +112,54 @@ export default function KelolaJuriContent({ periodeId }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <table className="w-full text-left text-sm text-slate-600">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Nama Juri</th>
-              <th className="px-4 py-3">NIP</th>
-              <th className="px-4 py-3">Peran</th>
-              <th className="px-4 py-3 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {daftarJuri.length === 0 ? (
-              <tr><td colSpan={4} className="p-8 text-center text-slate-400">Belum ada juri.</td></tr>
-            ) : (
-              daftarJuri.map((j) => (
-                <tr key={j.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800">{j.pegawai?.nama || '-'}</td>
-                  <td className="px-4 py-3">{j.pegawai?.nip || j.pegawai?.nip_baru || '-'}</td>
-                  <td className="px-4 py-3">
-                    {j.is_ketua_juri ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                        <Shield className="h-3 w-3" />
-                        Ketua Juri
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                        Anggota
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => {
-                        if (window.confirm('Yakin ingin menghapus juri ini? Jika juri sudah melakukan penilaian, aksi ini akan dibatalkan otomatis oleh sistem.')) {
-                          hapusJuri.mutate(j.id);
-                        }
-                      }}
-                      disabled={hapusJuri.isPending}
-                      className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors disabled:opacity-50"
-                      title="Hapus Juri"
-                    >
-                      {hapusJuri.isPending && hapusJuri.variables === j.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {daftarJuri.length === 0 ? (
+          <div className="col-span-full rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-400">
+            Belum ada juri.
+          </div>
+        ) : (
+          daftarJuri.map((j) => (
+            <div key={j.id} className="relative flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-soft group">
+              <img
+                src={j.pegawai?.foto_url || (j.pegawai?.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${j.pegawai.nip}.jpg` : null)}
+                alt={j.pegawai?.nama}
+                className="h-12 w-12 rounded-full object-cover border border-slate-200 shrink-0 bg-slate-100"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(j.pegawai?.nama || 'J')}&background=16324a&color=fff&size=64`;
+                }}
+              />
+              <div className="flex-1 min-w-0 pr-6">
+                <p className="font-semibold text-slate-900 truncate" title={j.pegawai?.nama}>{j.pegawai?.nama || '-'}</p>
+                <p className="text-xs text-slate-500 mb-2 truncate" title={j.pegawai?.nip || j.pegawai?.nip_baru}>{j.pegawai?.nip || j.pegawai?.nip_baru || '-'}</p>
+                <div>
+                  {j.is_ketua_juri ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
+                      <Shield className="h-3 w-3" />
+                      Ketua Juri
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200">
+                      Anggota
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (window.confirm('Yakin ingin menghapus juri ini? Jika juri sudah melakukan penilaian, aksi ini akan dibatalkan otomatis oleh sistem.')) {
+                    hapusJuri.mutate(j.id);
+                  }
+                }}
+                disabled={hapusJuri.isPending}
+                className="absolute top-2 right-2 text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                title="Hapus Juri"
+              >
+                {hapusJuri.isPending && hapusJuri.variables === j.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       {/* MODAL TAMBAH JURI */}

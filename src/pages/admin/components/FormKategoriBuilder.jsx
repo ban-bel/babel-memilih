@@ -1,5 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Plus, Trash2, AlertTriangle, CheckCircle2, Calculator } from 'lucide-react';
+
+function AutoResizeTextarea({ value, onChange, placeholder, className }) {
+  const ref = useRef(null);
+  
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = ref.current.scrollHeight + 'px';
+    }
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={`${className} resize-none overflow-y-auto`}
+      style={{ minHeight: '60px', maxHeight: '160px' }}
+      rows={2}
+    />
+  );
+}
 
 let idBaru = 0;
 function buatBaris(opsi = {}) {
@@ -139,12 +162,11 @@ export default function FormKategoriBuilder({ daftar, onChange, formState }) {
                   className={`input text-sm ${k.is_system ? 'bg-slate-50 opacity-90' : ''}`}
                   readOnly={k.is_system}
                 />
-                <textarea
+                <AutoResizeTextarea
                   value={k.deskripsi}
                   onChange={(e) => ubah(k.key, 'deskripsi', e.target.value)}
                   placeholder="Deskripsi (opsional, mendukung Markdown)"
-                  className="input text-sm min-h-[60px] py-2 resize-y"
-                  rows={2}
+                  className="input text-sm py-2"
                 />
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <label className="flex items-center gap-2 text-slate-600">

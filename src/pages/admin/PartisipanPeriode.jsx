@@ -137,9 +137,10 @@ function TabButton({ label, active, onClick, count, dotColor }) {
 /**
  * PartisipanRow - Baris tabel untuk satu partisipan
  */
-function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggleEmail, periode, templates, localSentIds, localSentEmailIds }) {
+function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggleEmail, periode, templates, localSentIds, localSentEmailIds, isLast }) {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [sendingWaId, setSendingWaId] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const p = item.nominee || item.pegawai;
   if (!p) return null;
 
@@ -206,7 +207,10 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
     : `Halo ${p.nama},\n\nBerikut link akses Anda:\n${linkToken}\n\nMohon tidak membagikan link ini.\nTerima kasih.`;
 
   const waHref = hp ? `https://wa.me/${hp}?text=${encodeURIComponent(waText)}` : '#';
-
+  
+  const homepageLink = window.location.origin;
+  const waIntroText = `Halo ${sapaan ? sapaan.trim() + ' ' : ''}${p.nama},\n\nPerkenalkan, saya adalah Sistem Penilaian Pegawai BPS Provinsi Kepulauan Bangka Belitung.\n\nAnda dapat mengakses beranda utama kami untuk melihat informasi sistem melalui link berikut:\n${homepageLink}\n\nTerima kasih!`;
+  const waIntroHref = hp ? `https://wa.me/${hp}?text=${encodeURIComponent(waIntroText)}` : '#';
   
   const handleSendWaApi = async () => {
     if (!hp) {
@@ -237,6 +241,35 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
       toast.error(err.message, { id: toastId });
     } finally {
       setSendingWaId(null);
+    }
+  };
+
+  const [sendingWaIntroId, setSendingWaIntroId] = useState(null);
+
+  const handleSendWaApiIntro = async () => {
+    if (!hp) {
+      toast.error('Nomor HP belum terdaftar.');
+      return;
+    }
+    setSendingWaIntroId(p.id);
+    const toastId = toast.loading(`Mengirim perkenalan ke ${p.nama}...`);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_WA_API_URL}/send`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': import.meta.env.VITE_WA_API_KEY
+        },
+        body: JSON.stringify({ nomor: hp, pesan: waIntroText })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Gagal mengirim WA via API');
+      toast.success(`Perkenalan sukses terkirim ke ${p.nama}!`, { id: toastId });
+      
+    } catch (err) {
+      toast.error(err.message, { id: toastId });
+    } finally {
+      setSendingWaIntroId(null);
     }
   };
 
@@ -293,21 +326,52 @@ function PartisipanRow({ item, activeTab, copiedId, onCopy, onToggleWa, onToggle
       </td>
 
       {/* HP */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 relative">
         {hp ? (
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              insertLogWaMe(periode.id, p.id, hp, kategoriLabel);
-              !sudahNotif && onToggleWa(item.id, true);
-            }}
-            className="inline-flex items-center gap-1 font-mono text-xs text-slate-600 hover:text-emerald-600 hover:underline"
-            title="Chat via WhatsApp dengan Template"
-          >
-            {p.no_hp}
-          </a>
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="inline-flex items-center gap-1 font-mono text-xs text-slate-600 hover:text-emerald-600 hover:underline"
+              title="Kirim pesan perkenalan"
+            >
+              {p.no_hp}
+            </button>
+
+            {/* Dropdown Menu */}
+            {showDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowDropdown(false)} 
+                  title="Tutup menu"
+                ></div>
+                <div 
+                  className={`absolute left-0 z-20 w-32 rounded-lg bg-white shadow-lg border border-slate-200 overflow-hidden animate-fade-in ${isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'}`}
+                >
+                  <a
+                    href={waIntroHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowDropdown(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 text-emerald-500" /> wa.me
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      handleSendWaApiIntro();
+                    }}
+                    disabled={sendingWaIntroId === p.id}
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors w-full text-left disabled:opacity-50 border-t border-slate-100"
+                  >
+                    {sendingWaIntroId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-500" /> : <Send className="h-3.5 w-3.5 text-teal-500" />} API
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <span className="text-xs text-red-400">Belum ada HP</span>
         )}
@@ -497,7 +561,7 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, onToggleEm
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {daftar.map((item) => (
+          {daftar.map((item, index) => (
             <PartisipanRow
               key={item.id}
               item={item}
@@ -510,6 +574,7 @@ function TabelPartisipan({ daftar, tab, copiedId, onCopy, onToggleWa, onToggleEm
               templates={templates}
               localSentIds={localSentIds}
               localSentEmailIds={localSentEmailIds}
+              isLast={index >= daftar.length - 2}
             />
           ))}
         </tbody>
