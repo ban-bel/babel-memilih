@@ -158,7 +158,7 @@ export async function fetchTokenNominee(token) {
  * // }
  */
 
-export async function verifikasiIdentitasPenilai(nip5digit, hp5digit) {
+export async function verifikasiIdentitasUniversal(nip5digit, hp5digit) {
   // Validasi input
   if (!nip5digit || !nip5digit.match(/^\d{5}$/)) {
     throw new Error('5 digit NIP harus diisi dengan angka (contoh: 00001)');
@@ -168,7 +168,7 @@ export async function verifikasiIdentitasPenilai(nip5digit, hp5digit) {
     throw new Error('5 digit HP harus diisi dengan angka (contoh: 81234)');
   }
 
-  const { data, error } = await supabase.rpc('verifikasi_identitas_penilai', {
+  const { data, error } = await supabase.rpc('verifikasi_identitas_universal', {
     p_nip: nip5digit.trim(),
     p_hp: hp5digit.trim()
   });

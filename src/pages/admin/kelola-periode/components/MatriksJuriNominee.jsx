@@ -19,7 +19,7 @@ export default function MatriksJuriNominee({ periodeId }) {
 
   // Fetch Nominee
   const { data: daftarNominee = [], isLoading: loadingNominee } = useQuery({
-    queryKey: ['nominee-periode', periodeId],
+    queryKey: ['daftar-nominee', 'matriks', periodeId],
     queryFn: () => fetchDaftarNominee(periodeId, -1), // -1 dummy exclude
     enabled: Boolean(periodeId),
   });

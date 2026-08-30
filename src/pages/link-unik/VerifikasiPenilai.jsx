@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { ShieldCheck, ArrowRight, AlertCircle, CheckCircle2, Loader2, ClipboardList, Clock, CheckCircle, Fingerprint, Smartphone } from 'lucide-react';
 import Modal from '../../components/common/Modal';
-import { verifikasiIdentitasPenilai } from '../../services/voting/authService';
+import { verifikasiIdentitasUniversal } from '../../services/voting/authService';
 import { getDailyAvatarUrl } from '../../utils/constants';
 
 /**
@@ -39,7 +39,7 @@ export default function VerifikasiPenilai() {
 
   // Mutation untuk verifikasi
   const mutasiVerifikasi = useMutation({
-    mutationFn: () => verifikasiIdentitasPenilai(nip5digit, hp5digit),
+    mutationFn: () => verifikasiIdentitasUniversal(nip5digit, hp5digit),
     onSuccess: (data) => {
       setSuccess(data);
       setError(null);
@@ -70,9 +70,15 @@ export default function VerifikasiPenilai() {
   };
 
   // Handle redirect button - masuk ke periode tertentu
-  const handleMasukPeriode = (token) => {
+  const handleMasukPeriode = (token, peran) => {
     if (token) {
-      navigate(`/penilai/${token}`);
+      if (peran === 'NOMINEE' || peran === 'KANDIDAT / NOMINEE') {
+        navigate(`/nominee?token=${token}`);
+      } else if (peran === 'JURI') {
+        navigate(`/juri?token=${token}`);
+      } else {
+        navigate(`/penilai/${token}`);
+      }
     }
   };
 
@@ -340,7 +346,7 @@ export default function VerifikasiPenilai() {
                               : 'border-emerald-100 bg-emerald-50/30 hover:border-emerald-400 hover:bg-emerald-50/80 hover:shadow-soft-lg cursor-pointer'
                             }
                           `}
-                          onClick={() => !sudahDigunakan && handleMasukPeriode(periode.token)}
+                          onClick={() => !sudahDigunakan && handleMasukPeriode(periode.token, periode.peran)}
                         >
                           {/* Status Label (If Done) */}
                           {sudahDigunakan && (
@@ -358,6 +364,11 @@ export default function VerifikasiPenilai() {
 
                               {/* Info Badges */}
                               <div className="flex flex-wrap items-center gap-2 mt-2">
+                                {periode.peran && (
+                                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold bg-navy-100 text-navy-800 ${sudahDigunakan ? 'opacity-60' : ''}`}>
+                                    👤 Sebagai {periode.peran}
+                                  </span>
+                                )}
                                 <span className={`
                                   px-2.5 py-1 rounded-lg text-xs font-bold
                                   ${periode.mode_penilaian === 'MODE_1A' ? 'bg-blue-100 text-blue-700' :
