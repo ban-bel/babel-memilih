@@ -207,6 +207,12 @@ function DashboardKakanContent({ adminProfile }) {
     enabled: Boolean(periodeId) && mode === MODE_PENILAIAN.MODE_2,
   });
 
+  const { data: daftarJuri = [] } = useQuery({
+    queryKey: ['daftar-juri', periodeId],
+    queryFn: () => fetchDaftarJuriLengkap(Number(periodeId)),
+    enabled: Boolean(periodeId) && mode === MODE_PENILAIAN.MODE_2,
+  });
+
   // Fetch keputusan
   const { data: keputusanSaatIni } = useQuery({
     queryKey: ['keputusan-kakan', periodeId],
