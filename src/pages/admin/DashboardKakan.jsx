@@ -13,9 +13,9 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import { Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, Crown } from 'lucide-react';
+import { Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, Crown, Info } from 'lucide-react';
 
-import { fetchPeriodeList, fetchWilayahList } from '../../services/adminService';
+import { fetchPeriodeList, fetchWilayahList, fetchDaftarJuriLengkap } from '../../services/adminService';
 import { fetchRekapMode1A, fetchRekapMode1B, fetchRekapMode1C, fetchRekapMode2, fetchRekapMode2A, fetchCatatanKualitatifJuri, fetchDetailPenilaianJuri, fetchKelengkapanPenilai } from '../../services/voting/rekapService';
 import { fetchVotingKategori, fetchPemenangPerKategori, setPemenangPerKategori, autoLockPemenangPerKategori, resetPemenangPerKategori } from '../../services/voting/kategoriService';
 import { fetchKeputusanKakan, kuncikanPemenang } from '../../services/voting/kakanService';
@@ -26,6 +26,9 @@ import AdminLayout from './components/AdminLayout';
 import RekapDetailJuri from './components/RekapDetailJuri';
 import FormKunciPemenang from '../../components/common/FormKunciPemenang';
 import Podium from '../../components/common/Podium';
+import Modal from '../../components/common/Modal';
+import MatrixJuriJuara from './components/MatrixJuriJuara';
+import MultiMethodAnalysis from './components/MultiMethodAnalysis';
 
 /** Mapping mode ke fungsi fetch. */
 const FETCH_REKAP = {
@@ -96,7 +99,7 @@ function SelectDropdown({ value, onChange, options, placeholder }) {
               >
                 <span className="font-medium text-slate-800">{opt.label}</span>
                 <span className="text-xs text-slate-500">
-                  {opt.mode} · {opt.status}
+                  {opt.mode} Â· {opt.status}
                 </span>
               </button>
             ))
@@ -113,6 +116,7 @@ function SelectDropdown({ value, onChange, options, placeholder }) {
 function DashboardKakanContent({ adminProfile }) {
   const [periodeId, setPeriodeId] = useState('');
   const [error, setError] = useState(null);
+  const [showGlossary, setShowGlossary] = useState(false);
   const [selectedKategoriTab, setSelectedKategoriTab] = useState(null); // null = overview, number = kategori id
   const queryClient = useQueryClient();
 
@@ -628,7 +632,26 @@ function DashboardKakanContent({ adminProfile }) {
               />
             )}
 
-            <table className="w-full text-left text-sm">
+            {mode !== MODE_PENILAIAN.MODE_2 && (
+            
+            {/* Multi-Method Analysis & Matrix (Mode 2 Only) */}
+            {!loadingRekap && mode === MODE_PENILAIAN.MODE_2 && rekapTopN.length > 0 && detailJuri.length > 0 && (
+              <>
+                <MultiMethodAnalysis 
+                  detailJuri={detailJuri}
+                  nominees={rekapTopN}
+                />
+                <MatrixJuriJuara 
+                  detailJuri={detailJuri} 
+                  loading={loadingDetailJuri} 
+                  nominees={rekapTopN} 
+                  daftarJuri={daftarJuri}
+                />
+              </>
+            )}
+
+            {mode !== MODE_PENILAIAN.MODE_2 && (
+<table className="w-full text-left text-sm">
               <tbody className="divide-y divide-slate-100">
                 {loadingRekap ? (
                   <tr>
@@ -731,6 +754,9 @@ function DashboardKakanContent({ adminProfile }) {
                 )}
               </tbody>
             </table>
+            )}
+
+            )}
           </div>
 
           {/* Rincian Detail Juri & Catatan (Mode 2) */}
@@ -890,3 +916,4 @@ export default function DashboardKakan() {
     </AdminLoginGate>
   );
 }
+
