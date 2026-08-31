@@ -100,7 +100,7 @@ function SelectDropdown({ value, onChange, options, placeholder }) {
               >
                 <span className="font-medium text-slate-800">{opt.label}</span>
                 <span className="text-xs text-slate-500">
-                  {opt.mode} Â· {opt.status}
+                  {opt.mode} · {opt.status}
                 </span>
               </button>
             ))

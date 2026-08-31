@@ -200,6 +200,7 @@ export default function MultiMethodAnalysis({ detailJuri, nominees }) {
             <span className="text-xs text-slate-600 truncate mr-2 flex-1">{d.juri_nama}</span>
             <div className="flex items-center gap-2 flex-shrink-0 text-xs">
               <span className="text-slate-400">Raw: {d.raw.toFixed(1)}</span>
+              <span className="text-[10px] text-slate-400 border-l border-r border-slate-200 px-2 mx-1">Mean: {d.mean.toFixed(1)} (Std: {d.stddev.toFixed(1)})</span>
               <span className={"font-bold " + (d.z>=0?"text-blue-600":"text-rose-500")}>Z: {d.z>0?"+":""}{d.z.toFixed(2)}</span>
             </div>
           </div>
