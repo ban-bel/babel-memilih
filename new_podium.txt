@@ -1,0 +1,25 @@
+            {/* Podium Visualization (Hidden for Mode 2) */}
+            {!loadingRekap && mode !== MODE_PENILAIAN.MODE_2 && rekapTopN.length > 0 && (
+              <Podium 
+                top3={rekapTopN.slice(0, 3)} 
+                mode={mode} 
+                isMode1BKategori={isMode1BKategori} 
+                selectedKategori={selectedKategori} 
+              />
+            )}
+
+            {/* Multi-Method Analysis & Matrix (Mode 2 Only) */}
+            {!loadingRekap && mode === MODE_PENILAIAN.MODE_2 && rekapTopN.length > 0 && detailJuri.length > 0 && (
+              <>
+                <MultiMethodAnalysis 
+                  detailJuri={detailJuri}
+                  nominees={rekapTopN}
+                />
+                <MatrixJuriJuara 
+                  detailJuri={detailJuri} 
+                  loading={loadingDetailJuri} 
+                  nominees={rekapTopN} 
+                  daftarJuri={daftarJuri}
+                />
+              </>
+            )}

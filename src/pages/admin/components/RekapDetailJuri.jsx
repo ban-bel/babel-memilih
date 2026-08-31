@@ -82,6 +82,11 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
           
           if (listJuri.length === 0) return null; // Sembunyikan jika belum ada nilai
 
+          const scores = listJuri.map(j => j.totalSkor);
+          const minScore = Math.min(...scores);
+          const maxScore = Math.max(...scores);
+          const meanScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
           return (
             <div key={n.nominee_id} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <button
@@ -107,9 +112,21 @@ export default function RekapDetailJuri({ detailJuri, loading, nominees }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-xs text-slate-500">Nilai Akhir Rata-rata</p>
-                    <p className="font-bold text-lg text-emerald-600">{Number(n.skor_akhir_juri || 0).toFixed(2)}</p>
+                  <div className="hidden md:flex items-center gap-4 mr-4 text-right">
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Min</p>
+                      <p className="font-medium text-sm text-rose-600">{minScore.toFixed(2)}</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Max</p>
+                      <p className="font-medium text-sm text-emerald-600">{maxScore.toFixed(2)}</p>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Mean</p>
+                      <p className="font-bold text-base text-navy-600">{meanScore.toFixed(2)}</p>
+                    </div>
                   </div>
                   <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
