@@ -226,7 +226,7 @@ export default function MultiMethodAnalysis({ detailJuri, nominees }) {
                 <span className="text-slate-700 font-medium truncate flex-1">{d.juri_nama}</span>
                 <div className="flex justify-between sm:justify-end gap-4 sm:gap-6 text-xs w-full sm:w-auto">
                   <span className="text-slate-500 w-24">Raw: {d.raw.toFixed(1)}</span>
-                  <span className="text-slate-500 w-24">Î¼: {d.mean.toFixed(1)} (Ïƒ: {d.stddev.toFixed(1)})</span>
+                  <span className="text-slate-500 w-24">Rata-rata: {d.mean.toFixed(1)} (Std: {d.stddev.toFixed(1)})</span>
                   <span className="font-bold text-navy-800 w-16 text-right">Z: {d.z > 0 ? '+'+d.z.toFixed(2) : d.z.toFixed(2)}</span>
                 </div>
               </div>
