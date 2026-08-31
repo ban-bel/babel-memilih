@@ -629,7 +629,7 @@ function DashboardKakanContent({ adminProfile }) {
             </div>
 
             {/* Podium Visualization */}
-            {!loadingRekap && rekapTopN.length > 0 && (
+            {!loadingRekap && rekapTopN.length > 0 && mode !== MODE_PENILAIAN.MODE_2 && (
               <Podium 
                 top3={rekapTopN.slice(0, 3)} 
                 mode={mode} 
