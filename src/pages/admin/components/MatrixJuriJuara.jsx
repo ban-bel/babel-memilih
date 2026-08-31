@@ -1,167 +1,161 @@
-import React, { useMemo } from 'react';
-import { Ban, UserX, Clock } from 'lucide-react';
+﻿import React, { useMemo } from "react";
+import { LayoutGrid, Users } from "lucide-react";
 
 export default function MatrixJuriJuara({ detailJuri, nominees, loading, daftarJuri = [] }) {
   const data = useMemo(() => {
     if (!detailJuri || !nominees) return null;
 
-    // 1. Kumpulkan semua skor per Juri -> per Nominee
-    // juriMap[juri_id] = { juri_id, nama_juri, scores: { [nominee_id]: totalSkor } }
     const juriMap = {};
-
     detailJuri.forEach((row) => {
       if (!juriMap[row.juri_id]) {
         juriMap[row.juri_id] = {
           id: row.juri_id,
-          nama: row.juri?.nama || 'Juri',
+          nama: row.juri?.nama || "Juri",
           scores: {},
-          catatanList: []
         };
       }
       const juri = juriMap[row.juri_id];
-      if (!juri.scores[row.nominee_id]) {
-        juri.scores[row.nominee_id] = 0;
-      }
-      
-      const weightedScore = row.skor * ((row.kategori?.bobot_persen || 0) / 100);
-      juri.scores[row.nominee_id] += weightedScore;
+      if (!juri.scores[row.nominee_id]) juri.scores[row.nominee_id] = 0;
+      juri.scores[row.nominee_id] += row.skor * ((row.kategori?.bobot_persen || 0) / 100);
     });
 
     const listJuri = Object.values(juriMap);
 
-    // 2. Hitung ranking per juri
-    listJuri.forEach(juri => {
-      const arr = Object.entries(juri.scores).map(([nominee_id, total_skor]) => {
-        const nom = nominees.find(n => String(n.nominee_id) === String(nominee_id));
-        return {
-          nominee_id,
-          nama: nom ? (nom.nama_nominee || nom.nama) : '?',
-          foto: nom ? nom.foto_url : null,
-          nip: nom ? nom.nip : null,
-          total_skor
-        };
-      });
-      // sort desc
-      arr.sort((a, b) => b.total_skor - a.total_skor);
-      
-      // Hitung rank unik (Dense Ranking 1223)
+    listJuri.forEach((juri) => {
+      const arr = Object.entries(juri.scores)
+        .map(([nominee_id, total_skor]) => {
+          const nom = nominees.find((n) => String(n.nominee_id) === String(nominee_id));
+          return {
+            nominee_id,
+            nama: nom ? nom.nama_nominee || nom.nama : "?",
+            foto: nom?.foto_url,
+            nip: nom?.nip,
+            unit_kerja: nom?.unit_kerja,
+            total_skor,
+          };
+        })
+        .sort((a, b) => b.total_skor - a.total_skor);
+
       let currentRank = 1;
       for (let i = 0; i < arr.length; i++) {
-        if (i > 0 && arr[i].total_skor < arr[i-1].total_skor) {
-          currentRank++;
-        }
+        if (i > 0 && arr[i].total_skor < arr[i - 1].total_skor) currentRank++;
         arr[i].rank = currentRank;
       }
-      
       juri.ranking = arr;
     });
 
-    return {
-      listJuri,
-      nominees
-    };
+    return { listJuri, nominees };
   }, [detailJuri, nominees]);
 
-  if (loading) return null;
-  if (!data || data.listJuri.length === 0) return null;
+  if (loading || !data || data.listJuri.length === 0) return null;
+
+  const getBlockStatus = (juri, nom) => {
+    if (juri.scores[nom.nominee_id] !== undefined) return null;
+    const jRule = daftarJuri.find((dj) => String(dj.pegawai?.id) === String(juri.id));
+    if (!jRule) return "belum";
+    if ((jRule.blocked_nominee_ids || []).includes(nom.nominee_id)) return "manual";
+    if (
+      jRule.is_can_vote_own_region === false &&
+      (jRule.pegawai?.unit_kerja === nom.unit_kerja ||
+        jRule.pegawai?.wilayah?.nama_wilayah === nom.unit_kerja)
+    ) return "wilayah";
+    return "belum";
+  };
+
+  const MEDAL_BADGE = {
+    1: "bg-amber-100 text-amber-700 border-amber-200",
+    2: "bg-slate-100 text-slate-600 border-slate-200",
+    3: "bg-orange-50 text-orange-700 border-orange-200",
+  };
+  const MEDAL_LABEL = { 1: "1ST", 2: "2ND", 3: "3RD" };
 
   return (
-    <div className="mt-8 space-y-8 animate-fade-in-up">
-      {/* 1. Matriks Kandidat vs Juri */}
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h3 className="text-xl font-bold text-navy-900">Matriks Kandidat vs Juri</h3>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-slate-50 text-slate-300 border-slate-100">-</span>
-              <span>Belum Dinilai</span>
+    <div className="space-y-8 mb-8 print:hidden">
+      {/* === 1. Matriks === */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-navy-50 rounded-xl">
+              <LayoutGrid className="w-5 h-5 text-navy-600" />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-slate-100 text-slate-400 border-slate-200 opacity-60">🚫</span>
-              <span>Blokir (Wilayah)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-rose-50 text-rose-600 border-rose-200 shadow-inner-soft">❌</span>
-              <span>Blokir (Manual)</span>
+            <div>
+              <h3 className="text-base font-bold text-navy-900">Matriks Kandidat vs Juri</h3>
+              <p className="text-xs text-slate-500">Skor tertimbang masing-masing juri terhadap setiap kandidat</p>
             </div>
           </div>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-slate-50 text-slate-300 border-slate-100">-</span>
+              Belum Dinilai
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-slate-100 text-slate-400 border-slate-200 opacity-60">&#x1F6AB;</span>
+              Blokir Wilayah
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded border flex items-center justify-center text-[10px] bg-rose-50 text-rose-400 border-rose-200">&#x274C;</span>
+              Blokir Manual
+            </span>
+          </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden overflow-x-auto shadow-sm">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-100 text-xs uppercase text-slate-700">
-              <tr>
-                <th className="px-4 py-3 sticky left-0 bg-slate-100 border-r border-slate-200 z-10 w-64 min-w-[200px]">
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-slate-700 border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-4 py-3 text-left sticky left-0 bg-slate-50 border-r border-slate-200 z-20 w-52 min-w-[200px] font-semibold text-slate-600 text-xs uppercase tracking-wider">
                   Juri \ Kandidat
                 </th>
-                {data.nominees.map(nom => (
-                  <th key={nom.nominee_id} className="px-4 py-3 text-center border-b border-slate-200 min-w-[120px]">
-                    <span className="font-bold text-navy-700 whitespace-nowrap">
-                      {nom.nama_nominee || nom.nama || '-'}
-                    </span>
+                {data.nominees.map((nom) => (
+                  <th key={nom.nominee_id} className="px-3 py-3 text-center min-w-[110px] font-semibold text-navy-700 text-xs">
+                    {nom.nama_nominee || nom.nama || "-"}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {data.listJuri.map((juri, idx) => (
-                <tr key={juri.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                  <td className="px-4 py-3 sticky left-0 bg-inherit border-r border-slate-100 z-10 font-medium text-slate-800">
+                <tr key={juri.id} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"}>
+                  <td className="px-4 py-3 sticky left-0 bg-inherit border-r border-slate-100 z-10 font-medium text-slate-800 text-sm whitespace-nowrap">
                     {juri.nama}
                   </td>
-                  {data.nominees.map(nom => {
+                  {data.nominees.map((nom) => {
                     const score = juri.scores[nom.nominee_id];
-                    
-                    let isBlocked = false;
-                    let blockReason = 'Belum Dinilai';
-                    const jRule = daftarJuri.find(dj => String(dj.pegawai?.id) === String(juri.id));
-                    
-                    if (jRule && score === undefined) {
-                      if ((jRule.blocked_nominee_ids || []).includes(nom.nominee_id)) {
-                        isBlocked = true;
-                        blockReason = 'Blokir (Manual)';
-                      } else if (jRule.is_can_vote_own_region === false && (jRule.pegawai?.unit_kerja === nom.unit_kerja || jRule.pegawai?.wilayah?.nama_wilayah === nom.unit_kerja || jRule.pegawai?.wilayah?.nama_unit_kerja === nom.unit_kerja)) {
-                        isBlocked = true;
-                        blockReason = 'Blokir (Konflik Wilayah)';
-                      }
-                    }
+                    const blockStatus = getBlockStatus(juri, nom);
 
-                    let statusIcon = '-';
-                    let statusClass = 'bg-slate-50 text-slate-300 border-slate-100';
-                    
-                    if (isBlocked) {
-                      if (blockReason === 'Blokir (Manual)') {
-                        statusIcon = '❌';
-                        statusClass = 'bg-rose-50 text-rose-600 border-rose-200 shadow-inner-soft';
-                      } else {
-                        statusIcon = '🚫';
-                        statusClass = 'bg-slate-100 text-slate-400 border-slate-200 opacity-60';
-                      }
+                    if (score !== undefined) {
+                      return (
+                        <td key={nom.nominee_id} className="px-3 py-3 text-center">
+                          <span className="font-bold text-navy-800">{score.toFixed(2)}</span>
+                        </td>
+                      );
                     }
-
+                    if (blockStatus === "manual") return (
+                      <td key={nom.nominee_id} className="px-3 py-3 text-center">
+                        <div title="Blokir Manual" className="w-8 h-8 rounded-lg border border-rose-200 bg-rose-50 text-rose-400 flex items-center justify-center text-sm mx-auto">&#x274C;</div>
+                      </td>
+                    );
+                    if (blockStatus === "wilayah") return (
+                      <td key={nom.nominee_id} className="px-3 py-3 text-center">
+                        <div title="Blokir Wilayah" className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-100 text-slate-400 opacity-60 flex items-center justify-center text-sm mx-auto">&#x1F6AB;</div>
+                      </td>
+                    );
                     return (
-                      <td key={nom.nominee_id} className="px-4 py-3 text-center align-middle">
-                        {score !== undefined ? (
-                          <span className="font-bold text-navy-800 text-sm">
-                            {score.toFixed(2)}
-                          </span>
-                        ) : (
-                          <div title={blockReason} className={`w-8 h-8 rounded-lg border flex items-center justify-center text-sm mx-auto ${statusClass}`}>
-                            {statusIcon}
-                          </div>
-                        )}
+                      <td key={nom.nominee_id} className="px-3 py-3 text-center">
+                        <div title="Belum Dinilai" className="w-8 h-8 rounded-lg border border-slate-100 bg-slate-50 text-slate-300 flex items-center justify-center text-sm mx-auto">-</div>
                       </td>
                     );
                   })}
                 </tr>
               ))}
-              {/* Baris Nilai Akhir Rata-rata */}
-              <tr className="bg-navy-50/50 border-t-2 border-navy-100">
-                <td className="px-4 py-3 sticky left-0 bg-navy-50/50 border-r border-slate-200 z-10 font-bold text-navy-900">
-                  RATA-RATA AKHIR
+              {/* Footer rata-rata */}
+              <tr className="bg-emerald-50/60 border-t-2 border-emerald-100 font-bold">
+                <td className="px-4 py-3 sticky left-0 bg-emerald-50/60 border-r border-emerald-100 z-10 text-emerald-800 text-sm">
+                  Rata-Rata Akhir
                 </td>
-                {data.nominees.map(nom => (
-                  <td key={`avg-${nom.nominee_id}`} className="px-4 py-3 text-center border-b border-slate-200">
-                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-sm shadow-sm border border-emerald-200">
+                {data.nominees.map((nom) => (
+                  <td key={"avg-" + nom.nominee_id} className="px-3 py-3 text-center">
+                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-sm border border-emerald-200">
                       {Number(nom.skor_akhir_juri || 0).toFixed(2)}
                     </span>
                   </td>
@@ -172,49 +166,46 @@ export default function MatrixJuriJuara({ detailJuri, nominees, loading, daftarJ
         </div>
       </div>
 
-      {/* 2. Preferensi Juara 1, 2, 3 masing-masing juri */}
-      <div>
-        <h3 className="mb-4 text-xl font-bold text-navy-900">Preferensi Juara Tiap Juri</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {data.listJuri.map(juri => (
-            <div key={juri.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <h4 className="font-bold text-navy-800 border-b border-slate-100 pb-2 mb-3 truncate" title={juri.nama}>
-                {juri.nama}
-              </h4>
-              <div className="space-y-3">
-                {juri.ranking.filter(r => r.rank <= 3).map((rank) => {
-                  let badge = null;
-                  if (rank.rank === 1) badge = <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] uppercase tracking-wider font-bold w-12 text-center border border-amber-200">1ST</span>;
-                  else if (rank.rank === 2) badge = <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase tracking-wider font-bold w-12 text-center border border-slate-200">2ND</span>;
-                  else if (rank.rank === 3) badge = <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded text-[10px] uppercase tracking-wider font-bold w-12 text-center border border-orange-200">3RD</span>;
-                  else badge = <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[10px] uppercase tracking-wider font-bold w-12 text-center border border-slate-200">{rank.rank}TH</span>;
-
-                  return (
-                    <div key={rank.nominee_id} className="flex items-center gap-3">
-                      {badge}
-                      <div className="flex-1 flex items-center gap-2 truncate">
-                        <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 border border-slate-200">
-                          <img 
-                            src={rank.foto || (rank.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${rank.nip}.jpg` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rank.nama)}`)} 
-                            alt={rank.nama} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(rank.nama)}&background=16324a&color=fff`;
-                            }}
-                          />
-                        </div>
-                        <p className="font-medium text-sm text-slate-800 truncate" title={rank.nama}>{rank.nama}</p>
+      {/* === 2. Preferensi Juara Tiap Juri === */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center gap-3">
+          <div className="p-2 bg-amber-50 rounded-xl">
+            <Users className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-navy-900">Preferensi Juara Tiap Juri</h3>
+            <p className="text-xs text-slate-500">Peringkat kandidat menurut perspektif masing-masing juri</p>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {data.listJuri.map((juri) => (
+              <div key={juri.id} className="rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden">
+                <div className="px-4 py-3 bg-white border-b border-slate-100">
+                  <p className="font-bold text-navy-800 text-sm truncate" title={juri.nama}>{juri.nama}</p>
+                </div>
+                <div className="p-3 space-y-2">
+                  {juri.ranking.filter((r) => r.rank <= 3).map((rank) => (
+                    <div key={rank.nominee_id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-slate-100 shadow-sm">
+                      <span className={"text-[10px] px-2 py-1 rounded font-bold border flex-shrink-0 " + (MEDAL_BADGE[rank.rank] || "bg-slate-100 text-slate-500 border-slate-200")}>
+                        {MEDAL_LABEL[rank.rank] || rank.rank + "TH"}
+                      </span>
+                      <div className="w-7 h-7 rounded-full overflow-hidden bg-slate-200 flex-shrink-0 border border-slate-100">
+                        <img
+                          src={rank.foto || (rank.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${rank.nip}.jpg` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rank.nama)}&background=16324a&color=fff`)}
+                          alt={rank.nama}
+                          onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(rank.nama)}&background=16324a&color=fff`; }}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-navy-600">{rank.total_skor.toFixed(2)}</span>
-                      </div>
+                      <p className="font-medium text-sm text-slate-800 truncate flex-1" title={rank.nama}>{rank.nama}</p>
+                      <span className="text-xs font-bold text-navy-600 flex-shrink-0">{rank.total_skor.toFixed(2)}</span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
