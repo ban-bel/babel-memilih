@@ -601,6 +601,11 @@ function DashboardKakanContent({ adminProfile }) {
                     <Star className="h-5 w-5 text-emerald-600" />
                     <span className="font-semibold text-navy-900">{selectedKategori.nama_kategori}</span>
                   </>
+                ) : mode === MODE_PENILAIAN.MODE_2 ? (
+                  <>
+                    <TrendingUp className="h-5 w-5 text-indigo-600" />
+                    <span className="font-semibold text-navy-900">Analisis Keputusan &amp; Rekapitulasi</span>
+                  </>
                 ) : (
                   <>
                     <TrendingUp className="h-5 w-5 text-navy-700" />
