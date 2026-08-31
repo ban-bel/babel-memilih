@@ -29,6 +29,7 @@ import Podium from '../../components/common/Podium';
 import Modal from '../../components/common/Modal';
 import MatrixJuriJuara from './components/MatrixJuriJuara';
 import MultiMethodAnalysis from './components/MultiMethodAnalysis';
+import SkorDistribusiMode2A from './components/SkorDistribusiMode2A';
 
 /** Mapping mode ke fungsi fetch. */
 const FETCH_REKAP = {
@@ -643,6 +644,10 @@ function DashboardKakanContent({ adminProfile }) {
               />
             )}
 
+            {/* Distribusi Skor (Mode 2A Only) */}
+            {!loadingRekap && mode === MODE_PENILAIAN.MODE_2A && rekapTopN.length > 0 && (
+              <SkorDistribusiMode2A nominees={rekapTopN} />
+            )}
             {/* Multi-Method Analysis & Matrix (Mode 2 Only) */}
             {!loadingRekap && mode === MODE_PENILAIAN.MODE_2 && rekapTopN.length > 0 && detailJuri.length > 0 && (
               <>
