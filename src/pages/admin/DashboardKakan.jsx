@@ -638,8 +638,6 @@ function DashboardKakanContent({ adminProfile }) {
               />
             )}
 
-            {mode !== MODE_PENILAIAN.MODE_2 && (
-            
             {/* Multi-Method Analysis & Matrix (Mode 2 Only) */}
             {!loadingRekap && mode === MODE_PENILAIAN.MODE_2 && rekapTopN.length > 0 && detailJuri.length > 0 && (
               <>
@@ -657,7 +655,7 @@ function DashboardKakanContent({ adminProfile }) {
             )}
 
             {mode !== MODE_PENILAIAN.MODE_2 && (
-<table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm">
               <tbody className="divide-y divide-slate-100">
                 {loadingRekap ? (
                   <tr>
