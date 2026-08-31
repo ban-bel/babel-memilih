@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { TrendingUp, Medal, ChevronDown, ChevronUp, BarChart2, Scissors, Activity } from "lucide-react";
+import { TrendingUp, Medal, ChevronDown, ChevronUp, BarChart2, Scissors, Activity, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const TABS = [
   { id: "absolut", label: "Nilai Absolut", desc: "Rata-rata mentah",         icon: "B", color: "emerald" },
@@ -210,15 +211,103 @@ export default function MultiMethodAnalysis({ detailJuri, nominees }) {
     );
   };
 
+
+  const handleExportExcel = () => {
+    const juriNames = [...new Set(detailJuri.map(d => d.juri_nama || d.juri?.nama || ('Juri ' + d.juri_id)))].sort();
+    const wb = XLSX.utils.book_new();
+
+    // 1. Absolut
+    const absolutData = absolut.map((item, index) => {
+      const row = {
+        'Peringkat': index + 1,
+        'Nama Kandidat': item.nama_nominee || item.nama,
+        'Unit Kerja': item.unit_kerja,
+        'Rata-Rata Skor': Number(item.score.toFixed(3)),
+        'Total Juri': item.details.count
+      };
+      juriNames.forEach(jName => {
+        const s = item.details.scores.find(x => x.juri_nama === jName);
+        row[jName] = s ? Number(s.score.toFixed(2)) : '-';
+      });
+      return row;
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(absolutData), "Nilai Absolut");
+
+    // 2. Borda Count
+    const bordaData = borda.map((item, index) => {
+      const row = {
+        'Peringkat': index + 1,
+        'Nama Kandidat': item.nama_nominee || item.nama,
+        'Unit Kerja': item.unit_kerja,
+        'Total Poin': item.score,
+        'Emas (1ST)': item.gold,
+        'Perak (2ND)': item.silver,
+        'Perunggu (3RD)': item.bronze
+      };
+      juriNames.forEach(jName => {
+        const d = item.details.find(x => x.juri_nama === jName);
+        row[jName] = d ? `Rank ${d.rank} (+${d.pts} Pts)` : '-';
+      });
+      return row;
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bordaData), "Borda Count");
+
+    // 3. Trimmed Mean
+    const trimmedData = trimmed.map((item, index) => {
+      const row = {
+        'Peringkat': index + 1,
+        'Nama Kandidat': item.nama_nominee || item.nama,
+        'Unit Kerja': item.unit_kerja,
+        'Skor Trimmed Mean': Number(item.score.toFixed(3))
+      };
+      juriNames.forEach(jName => {
+        const used = item.details.used.find(x => x.juri_nama === jName);
+        const dropped = item.details.dropped.find(x => x.juri_nama === jName);
+        if (used) row[jName] = Number(used.score.toFixed(2));
+        else if (dropped) row[jName] = `${Number(dropped.score.toFixed(2))} (Dipangkas: ${dropped.reason})`;
+        else row[jName] = '-';
+      });
+      return row;
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trimmedData), "Trimmed Mean");
+
+    // 4. Z-Score
+    const zscoreData = zscore.map((item, index) => {
+      const row = {
+        'Peringkat': index + 1,
+        'Nama Kandidat': item.nama_nominee || item.nama,
+        'Unit Kerja': item.unit_kerja,
+        'T-Score (Konversi)': Number(item.score.toFixed(3))
+      };
+      juriNames.forEach(jName => {
+        const d = item.details.find(x => x.juri_nama === jName);
+        row[jName] = d ? `Z: ${d.z.toFixed(3)} (Raw: ${d.raw.toFixed(1)})` : '-';
+      });
+      return row;
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(zscoreData), "Z-Score");
+
+    XLSX.writeFile(wb, "Analisis_Multi_Metode_Juri.xlsx");
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 print:hidden">
       {/* Header */}
-      <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center gap-3">
-        <div className="p-2 bg-indigo-50 rounded-xl"><TrendingUp className="w-5 h-5 text-indigo-600" /></div>
-        <div>
-          <h3 className="text-base font-bold text-navy-900">Analisis Multi-Metode</h3>
-          <p className="text-xs text-slate-500">Bandingkan ranking kandidat menggunakan 4 metode statistik. Klik baris untuk detail per juri.</p>
+      <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-50 rounded-xl"><TrendingUp className="w-5 h-5 text-indigo-600" /></div>
+          <div>
+            <h3 className="text-base font-bold text-navy-900">Analisis Multi-Metode</h3>
+            <p className="text-xs text-slate-500">Bandingkan ranking kandidat menggunakan 4 metode statistik. Klik baris untuk detail per juri.</p>
+          </div>
         </div>
+        <button 
+          onClick={handleExportExcel}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export Excel
+        </button>
       </div>
 
       {/* Tabs */}
