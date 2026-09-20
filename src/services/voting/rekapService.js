@@ -273,14 +273,81 @@ export async function fetchRekapMode1C(periodeId) {
 }
 
 // =============================================================================
-// 9. PEMENANG PER KATEGORI (MODE_1B HYBRID)
+// 10. REKAP MODE PIONIR
 // =============================================================================
 
 /**
- * Ambil pemenang per kategori untuk periode (MODE_1B Hybrid).
+ * Ambil rekapitulasi Mode PIONIR dari view_tabulasi_mode_pionir.
  *
  * @async
- * @function fetchPemenangPerKategori
+ * @function fetchRekapModePionir
  * @param {number} periodeId - ID periode
- * @returns {Promise<Object[]>} Array { kategori_id, nama_kategori, nominee_id, nama_nominee, suara_total, is_auto_locked }
+ * @returns {Promise<Object[]>} Array rekap per kandidat
  */
+export async function fetchRekapModePionir(periodeId) {
+  const { data, error } = await supabase
+    .from('view_tabulasi_mode_pionir')
+    .select(`
+      nominee_id,
+      nama_nominee,
+      nip,
+      nip_baru,
+      jabatan,
+      unit_kerja,
+      foto_url,
+      nilai_ckp,
+      jumlah_pengusul,
+      suara_fase1,
+      suara_fase2,
+      total_suara_kandidat,
+      total_seluruh_suara,
+      rata_skor_kuesioner,
+      kata_pengusul,
+      poin_suara,
+      poin_ckp,
+      poin_kuesioner,
+      skor_akhir,
+      peringkat
+    `)
+    .eq('periode_id', periodeId)
+    .order('peringkat', { ascending: true });
+
+  if (error) {
+    throw new Error(`Gagal memuat rekap Mode PIONIR: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+/**
+ * Ambil rincian penilaian dari pengusul untuk Mode PIONIR.
+ *
+ * @async
+ * @function fetchDetailPengusulPionir
+ * @param {number} periodeId - ID periode
+ * @returns {Promise<Object[]>}
+ */
+export async function fetchDetailPengusulPionir(periodeId) {
+  const { data, error } = await supabase
+    .from('penilaian_pionir_pengusul')
+    .select(`
+      id,
+      pengusul_id,
+      pengusul:pegawai!penilaian_pionir_pengusul_pengusul_id_fkey(nama, nip),
+      kandidat_id,
+      kandidat:pegawai!penilaian_pionir_pengusul_kandidat_id_fkey(nama, nip),
+      pertanyaan_id,
+      pertanyaan:pertanyaan!penilaian_pionir_pengusul_pertanyaan_id_fkey(teks_pertanyaan, bobot),
+      skor,
+      kata_kunci,
+      created_at
+    `)
+    .eq('periode_id', periodeId);
+
+  if (error) {
+    console.warn(`Gagal memuat detail pengusul: ${error.message}`);
+    return [];
+  }
+
+  return data ?? [];
+}

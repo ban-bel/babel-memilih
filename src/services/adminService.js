@@ -401,6 +401,7 @@ export async function fetchPeriodeList(wilayahId = null) {
       wilayah_id,
       tgl_mulai,
       tgl_selesai,
+      tgl_selesai_fase1,
       is_nominee_can_vote,
       is_allow_abstain,
       is_video_profil,
@@ -482,6 +483,7 @@ export async function buatPeriodePenilaian(periode) {
       is_portofolio_inovasi_dinilai: periode.is_portofolio_inovasi_dinilai ?? false,
       is_portofolio_penghargaan: periode.is_portofolio_penghargaan ?? false,
       is_portofolio_penghargaan_dinilai: periode.is_portofolio_penghargaan_dinilai ?? false,
+      tgl_selesai_fase1: formatTimestamp(periode.tgl_selesai_fase1),
     })
     .select('id')
     .single();
@@ -538,11 +540,30 @@ export async function updateStatusPeriode(periodeId, statusBaru) {
  */
 export async function updatePeriodePenilaian(periodeId, payload) {
   const updatedPayload = { ...payload };
+
   if (updatedPayload.tgl_mulai) {
-    updatedPayload.tgl_mulai = new Date(updatedPayload.tgl_mulai).toISOString();
+    const d = new Date(updatedPayload.tgl_mulai);
+    if (!isNaN(d.getTime())) {
+      updatedPayload.tgl_mulai = d.toISOString();
+    }
   }
+
   if (updatedPayload.tgl_selesai) {
-    updatedPayload.tgl_selesai = new Date(updatedPayload.tgl_selesai).toISOString();
+    const d = new Date(updatedPayload.tgl_selesai);
+    if (!isNaN(d.getTime())) {
+      updatedPayload.tgl_selesai = d.toISOString();
+    }
+  }
+
+  if (updatedPayload.tgl_selesai_fase1 && String(updatedPayload.tgl_selesai_fase1).trim()) {
+    const d = new Date(updatedPayload.tgl_selesai_fase1);
+    updatedPayload.tgl_selesai_fase1 = !isNaN(d.getTime()) ? d.toISOString() : null;
+  } else if ('tgl_selesai_fase1' in updatedPayload) {
+    updatedPayload.tgl_selesai_fase1 = null;
+  }
+
+  if ('petunjuk_penilaian' in updatedPayload && !updatedPayload.petunjuk_penilaian) {
+    updatedPayload.petunjuk_penilaian = null;
   }
 
   const { error } = await supabase
@@ -790,6 +811,125 @@ export async function tugaskanJuriMode2(periodeId, daftarJuri) {
 
   const { error } = await supabase.from('juri_periode').insert(payload);
   if (error) throw new Error(`Gagal menunjuk juri: ${error.message}`);
+}
+
+// =============================================================================
+// MANAJEMEN PENGUSUL & INSTRUMEN (MODE PIONIR)
+// =============================================================================
+
+/**
+ * Tunjuk pengusul untuk periode Mode PIONIR.
+ *
+ * @async
+ * @function simpanPengusulPionir
+ * @param {number} periodeId - ID periode
+ * @param {Array<number|Object>} daftarPengusul - Array ID pegawai pengusul atau object { id }
+ * @returns {Promise<void>}
+ */
+export async function simpanPengusulPionir(periodeId, daftarPengusul) {
+  if (!daftarPengusul || daftarPengusul.length === 0) return;
+
+  const pegawaiIds = daftarPengusul.map((p) =>
+    Number(typeof p === 'object' ? (p.pegawai_id || p.id) : p)
+  ).filter(Boolean);
+
+  // 1. Coba lewat RPC security definer terlebih dahulu (bypass RLS)
+  const { error: rpcError } = await supabase.rpc('simpan_pengusul_pionir', {
+    p_periode_id: Number(periodeId),
+    p_pegawai_ids: pegawaiIds,
+  });
+
+  if (!rpcError) return;
+
+  // 2. Fallback jika RPC belum dieksekusi di database
+  const payload = pegawaiIds.map((id) => ({
+    periode_id: Number(periodeId),
+    pegawai_id: id,
+  }));
+
+  const { error } = await supabase.from('pengusul_periode').insert(payload);
+  if (error) throw new Error(`Gagal menunjuk pengusul: ${error.message}`);
+}
+
+/**
+ * Ambil daftar pengusul yang ditunjuk pada periode Mode PIONIR.
+ *
+ * @async
+ * @function fetchPengusulPeriode
+ * @param {number} periodeId - ID periode
+ * @returns {Promise<Object[]>}
+ */
+export async function fetchPengusulPeriode(periodeId) {
+  const { data, error } = await supabase
+    .from('pengusul_periode')
+    .select(`
+      id,
+      periode_id,
+      pegawai_id,
+      token_akses,
+      is_digunakan,
+      submitted_at,
+      pegawai:pegawai(id, nama, nip, nip_baru, jabatan, foto_url, wilayah_id)
+    `)
+    .eq('periode_id', periodeId);
+
+  if (error) {
+    console.warn(`Gagal mengambil pengusul: ${error.message}`);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Hapus pengusul dari periode Mode PIONIR.
+ *
+ * @async
+ * @function hapusPengusulPionir
+ * @param {number} pengusulRowId - ID baris tabel pengusul_periode
+ * @param {number} [periodeId] - ID periode penilaian (opsional, untuk menghapus penilaian jika ada)
+ * @param {number} [pegawaiId] - ID pegawai pengusul (opsional, untuk menghapus penilaian jika ada)
+ * @returns {Promise<void>}
+ */
+export async function hapusPengusulPionir(pengusulRowId, periodeId, pegawaiId) {
+  if (periodeId && pegawaiId) {
+    await supabase
+      .from('penilaian_pionir_pengusul')
+      .delete()
+      .eq('periode_id', periodeId)
+      .eq('pengusul_id', pegawaiId);
+  }
+
+  const { error } = await supabase
+    .from('pengusul_periode')
+    .delete()
+    .eq('id', pengusulRowId);
+
+  if (error) throw new Error(`Gagal menghapus pengusul: ${error.message}`);
+}
+
+/**
+ * Simpan daftar pertanyaan/kriteria kuesioner untuk Mode PIONIR.
+ *
+ * @async
+ * @function simpanPertanyaanPionir
+ * @param {number} periodeId - ID periode
+ * @param {Object[]} daftarPertanyaan - Array pertanyaan berbobot
+ * @returns {Promise<void>}
+ */
+export async function simpanPertanyaanPionir(periodeId, daftarPertanyaan) {
+  if (!daftarPertanyaan || daftarPertanyaan.length === 0) return;
+
+  const payload = daftarPertanyaan.map((p, idx) => ({
+    periode_id: periodeId,
+    urutan: idx + 1,
+    teks_pertanyaan: p.teks_pertanyaan,
+    skor_min: p.skor_min ?? 1,
+    skor_max: p.skor_max ?? 100,
+    bobot: p.bobot !== undefined ? p.bobot : 0.20,
+  }));
+
+  const { error } = await supabase.from('pertanyaan').insert(payload);
+  if (error) throw new Error(`Gagal menyimpan pertanyaan Pionir: ${error.message}`);
 }
 
 // =============================================================================

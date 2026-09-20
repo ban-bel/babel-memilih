@@ -11,10 +11,12 @@ import {
   simpanVotingKategori,
   simpanKriteriaMode2A,
   tugaskanJuriMode2,
+  simpanPengusulPionir,
+  simpanPertanyaanPionir,
   generateTokenPenilaianMultiUnit,
   simpanUnitKerjaPeriode,
 } from '../../services/adminService';
-import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../utils/constants';
+import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL, DEFAULT_PIONIR_PERTANYAAN } from '../../utils/constants';
 
 import AdminLoginGate from './components/AdminLoginGate';
 import AdminLayout from './components/AdminLayout';
@@ -23,6 +25,7 @@ import FormKategoriBuilder, { buatBarisKategori } from './components/FormKategor
 import FormKriteriaBuilder, { buatBarisKriteria } from './components/FormKriteriaBuilder';
 import FormPenunjukanJuri from './components/FormPenunjukanJuri';
 import FormVotingKategoriBuilder, { buatBarisKategoriVoting } from './components/FormVotingKategoriBuilder';
+import FormPengusulPicker from './components/FormPengusulPicker';
 
 const STEP_ICONS = [FileText, ListChecks, Award];
 
@@ -59,6 +62,8 @@ function nilaiAwalForm() {
     votingKategori: [buatBarisKategoriVoting()],
     is_voting_selesai: false,
     juri: [],
+    pengusul: [],
+    tgl_selesai_fase1: '',
     is_video_profil: false,
     is_video_profil_dinilai: false,
     is_nominee_can_vote: true,
@@ -100,7 +105,15 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
   }, [isKabKotaAdmin, adminProfile]);
 
   function ubah(field, nilai) {
-    setForm((prev) => ({ ...prev, [field]: nilai }));
+    setForm((prev) => {
+      const baru = { ...prev, [field]: nilai };
+      if (field === 'mode_penilaian' && nilai === MODE_PENILAIAN.MODE_PIONIR) {
+        if (!baru.pertanyaan || baru.pertanyaan.length <= 1) {
+          baru.pertanyaan = DEFAULT_PIONIR_PERTANYAAN.map((p) => ({ ...p }));
+        }
+      }
+      return baru;
+    });
   }
 
   const totalBobotKategori = form.kategori.reduce((s, k) => s + (Number(k.bobot_persen) || 0), 0);
@@ -121,7 +134,14 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
         ? !form.isVotingKategoriEnabled || (form.votingKategori.length > 0 && form.votingKategori.every((k) => k.nama_kategori.trim()))
         : form.mode_penilaian === MODE_PENILAIAN.MODE_2A
           ? form.kriteria.length > 0 && form.kriteria.every((k) => k.nama_kriteria.trim())
-          : true; // Mode 2: Toggles are always valid. Pertanyaan might be empty, that's fine.
+          : form.mode_penilaian === MODE_PENILAIAN.MODE_PIONIR
+            ? form.pengusul.length > 0 &&
+              form.tgl_selesai_fase1 &&
+              form.tgl_selesai_fase1 > form.tgl_mulai &&
+              form.tgl_selesai_fase1 < form.tgl_selesai &&
+              form.pertanyaan.length > 0 &&
+              form.pertanyaan.every((p) => p.teks_pertanyaan.trim())
+            : true; // Mode 2: Toggles are always valid. Pertanyaan might be empty, that's fine.
 
   const langkah3Valid =
     form.mode_penilaian === MODE_PENILAIAN.MODE_2
@@ -148,6 +168,9 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
         await simpanVotingKategori(periodeId, form.votingKategori);
       } else if (form.mode_penilaian === MODE_PENILAIAN.MODE_2A) {
         await simpanKriteriaMode2A(periodeId, form.kriteria);
+      } else if (form.mode_penilaian === MODE_PENILAIAN.MODE_PIONIR) {
+        await simpanPertanyaanPionir(periodeId, form.pertanyaan);
+        await simpanPengusulPionir(periodeId, form.pengusul);
       } else if (form.mode_penilaian === MODE_PENILAIAN.MODE_2) {
         await simpanPertanyaanMode1A(periodeId, form.pertanyaan);
         await simpanKategoriMode2(periodeId, form.kategori);
@@ -601,6 +624,65 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                   )}
                 </div>
               )}
+
+              {form.mode_penilaian === MODE_PENILAIAN.MODE_PIONIR && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="rounded-xl bg-gradient-to-r from-navy-50 to-blue-50 border border-navy-200/80 p-4 text-xs text-navy-800 space-y-1">
+                    <p className="font-bold text-sm text-navy-900 flex items-center gap-1.5">
+                      🌟 Mode PIONIR (Pemilihan Insan Teladan)
+                    </p>
+                    <p>
+                      Terdiri dari <strong>Fase 1 (Masa Pengusulan)</strong> di mana Pengusul menunjuk 1 calon & mengisi kuesioner, lalu dilanjutkan <strong>Fase 2 (Voting Umum LUBER)</strong> oleh seluruh pegawai biasa.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-navy-200 bg-white p-4 space-y-2">
+                    <label className="block text-sm font-semibold text-slate-800">
+                      Batas Waktu Pengusulan (Akhir Fase 1) <span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-xs text-slate-500">
+                      Setelah waktu ini, pengusulan ditutup dan voting umum untuk seluruh pegawai (Fase 2) otomatis dibuka. Harus berada di antara Tanggal Mulai dan Tanggal Selesai Periode.
+                    </p>
+                    <input
+                      type="datetime-local"
+                      value={form.tgl_selesai_fase1}
+                      min={form.tgl_mulai || undefined}
+                      max={form.tgl_selesai || undefined}
+                      onChange={(e) => ubah('tgl_selesai_fase1', e.target.value)}
+                      className="input w-full sm:w-1/2 text-sm"
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-navy-200 bg-white p-4">
+                    <FormPengusulPicker
+                      wilayahIds={form.wilayah_ids}
+                      daftar={form.pengusul}
+                      onChange={(d) => ubah('pengusul', d)}
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-navy-200 bg-white p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-sm">Instrumen Kuesioner Pengusul</h4>
+                        <p className="text-xs text-slate-500">5 pilar BerAKHLAK & Inovasi (bobot kriteria) + 1 pertanyaan kata kunci deskripsi.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => ubah('pertanyaan', DEFAULT_PIONIR_PERTANYAAN.map(p => ({ ...p })))}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-navy-700 bg-navy-50 hover:bg-navy-100 rounded-lg border border-navy-200 transition-colors"
+                      >
+                        Kembalikan ke Standar PIONIR
+                      </button>
+                    </div>
+
+                    <FormPertanyaanBuilder
+                      daftar={form.pertanyaan}
+                      onChange={(d) => ubah('pertanyaan', d)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -670,6 +752,22 @@ export function BuatPeriodeWizard({ adminProfile, onSuccess }) {
                     <span className="text-slate-500">Kriteria</span>
                     <span className="font-semibold text-slate-800">{form.kriteria.length}</span>
                   </div>
+                )}
+                {form.mode_penilaian === MODE_PENILAIAN.MODE_PIONIR && (
+                  <>
+                    <div className="flex justify-between py-2 border-b border-slate-200">
+                      <span className="text-slate-500">Batas Pengusulan (Fase 1)</span>
+                      <span className="font-semibold text-slate-800">{form.tgl_selesai_fase1 || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-slate-200">
+                      <span className="text-slate-500">Pengusul Ditunjuk</span>
+                      <span className="font-semibold text-slate-800">{form.pengusul.length} orang</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-slate-500">Kuesioner BerAKHLAK</span>
+                      <span className="font-semibold text-slate-800">{form.pertanyaan.length} butir</span>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

@@ -1,20 +1,54 @@
 import { supabase } from '../../config/supabaseClient';
 import { pastikanTokenValid, UUID_REGEX } from './shared';
+import { fetchAksesPionir } from './pionirService';
+import { MODE_PENILAIAN } from '../../utils/constants';
 
 export async function fetchTokenPenilai(token) {
   pastikanTokenValid(token);
 
-  const { data, error } = await supabase.rpc('get_akses_penilai_by_token', { p_token: token });
+  let { data, error } = await supabase.rpc('get_akses_penilai_by_token', { p_token: token });
 
   if (error || !data) {
+    // Cek apakah token ini milik Pengusul pada Mode PIONIR
+    try {
+      const pionirData = await fetchAksesPionir(token);
+      if (pionirData && pionirData.is_valid) {
+        return {
+          id: pionirData.profil.id,
+          token_akses: token,
+          is_digunakan: pionirData.is_digunakan,
+          periode: pionirData.periode,
+          penilai: pionirData.profil,
+          peranPionir: pionirData.peran,
+          fasePionir: pionirData.fase,
+          isKandidatPionir: Boolean(pionirData.is_kandidat),
+        };
+      }
+    } catch (e) {
+      // Bukan token pionir juga
+    }
     throw new Error('Token tidak ditemukan atau tidak valid.');
+  }
+
+  // Jika ini periode MODE_PIONIR (Pemilih Umum atau Kandidat)
+  if (data?.periode?.mode_penilaian === MODE_PENILAIAN.MODE_PIONIR) {
+    try {
+      const pionirData = await fetchAksesPionir(token);
+      if (pionirData && pionirData.is_valid) {
+        data.peranPionir = pionirData.peran;
+        data.fasePionir = pionirData.fase;
+        data.isKandidatPionir = Boolean(pionirData.is_kandidat);
+      }
+    } catch (e) {
+      console.warn('Gagal memuat status detail pionir:', e);
+    }
   }
 
   // SUPPLEMENTARY FETCH FOR MISSING COLUMNS
   if (data?.periode?.id) {
     const { data: periodeInfo } = await supabase
       .from('periode_penilaian')
-      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan')
+      .select('is_video_profil, is_tabel_kehadiran, is_portofolio_pengembangan, is_portofolio_inovasi, is_portofolio_penghargaan, tgl_selesai_fase1')
       .eq('id', data.periode.id)
       .single();
       

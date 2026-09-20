@@ -1,13 +1,14 @@
 import { useParams, Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle, Info } from 'lucide-react';
 
 import { fetchTokenPenilai } from '../../services/voting/authService';
 import { fetchDaftarNominee, fetchPertanyaanMode1A } from '../../services/voting/nomineeService';
 import { submitPenilaianMode1A, submitQuickVoteMode1B, submitAllVotesMode1C, fetchVotesByVoterToken, fetchKriteriaMode2A, fetchPenilaianMode2A, submitPenilaianMode2A } from '../../services/voting/penilaianService';
 import { fetchAllJawabanNominee } from '../../services/voting/jawabanService';
 import { fetchVotingKategori } from '../../services/voting/kategoriService';
+import { submitUsulanPionir, submitVotePionir, fetchPertanyaanPionir, fetchKandidatPionir } from '../../services/voting/pionirService';
 import { getStatusAksesToken, PESAN_STATUS_AKSES } from '../../utils/statusValidator';
 import { STATUS_AKSES_TOKEN, MODE_PENILAIAN, getDailyAvatarUrl } from '../../utils/constants';
 
@@ -18,6 +19,8 @@ import FormMode1A from './components/FormMode1A';
 import GridMode1B from './components/GridMode1B';
 import FormMode1C from './components/FormMode1C';
 import FormMode2A from './components/FormMode2A';
+import FormPionirPengusul from './components/FormPionirPengusul';
+import GridPionirVote from './components/GridPionirVote';
 import SuccessScreen from '../../components/common/SuccessScreen';
 import Modal from '../../components/common/Modal';
 
@@ -101,6 +104,20 @@ export default function PenilaiPage() {
     enabled: aktif && modeSaatIni === MODE_PENILAIAN.MODE_2A && Boolean(token),
   });
 
+  // MODE_PIONIR: Fetch pertanyaan kuesioner pengusul (Fase 1)
+  const { data: pertanyaanPionir = [], isLoading: loadingPertanyaanPionir } = useQuery({
+    queryKey: ['pertanyaan-pionir', akses?.periode?.id],
+    queryFn: () => fetchPertanyaanPionir(akses.periode.id),
+    enabled: aktif && modeSaatIni === MODE_PENILAIAN.MODE_PIONIR && akses?.peranPionir === 'PENGUSUL' && Boolean(akses?.periode?.id),
+  });
+
+  // MODE_PIONIR: Fetch kandidat resmi (Fase 2)
+  const { data: kandidatPionir = [], isLoading: loadingKandidatPionir } = useQuery({
+    queryKey: ['kandidat-pionir', akses?.periode?.id],
+    queryFn: () => fetchKandidatPionir(akses.periode.id),
+    enabled: aktif && modeSaatIni === MODE_PENILAIAN.MODE_PIONIR && Boolean(akses?.periode?.id),
+  });
+
   // Tentukan MODE_1B variant: flat atau per kategori
   const isMode1BFlat = modeSaatIni === MODE_PENILAIAN.MODE_1B && votingKategori.length === 0;
   const isMode1BKategori = modeSaatIni === MODE_PENILAIAN.MODE_1B && votingKategori.length > 0;
@@ -137,6 +154,25 @@ export default function PenilaiPage() {
 
   const mutasiMode2A = useMutation({
     mutationFn: (payload) => submitPenilaianMode2A(token, akses.penilai.id, payload),
+    onSuccess: () => {
+      setSudahKirim(true);
+      queryClient.invalidateQueries({ queryKey: ['akses-penilai', token] });
+    },
+    onError: (err) => setErrorSubmit(err.message),
+  });
+
+  const mutasiUsulanPionir = useMutation({
+    mutationFn: ({ kandidatId, daftarSkor, kataKunci }) =>
+      submitUsulanPionir(token, kandidatId, daftarSkor, kataKunci),
+    onSuccess: () => {
+      setSudahKirim(true);
+      queryClient.invalidateQueries({ queryKey: ['akses-penilai', token] });
+    },
+    onError: (err) => setErrorSubmit(err.message),
+  });
+
+  const mutasiVotePionir = useMutation({
+    mutationFn: (kandidatId) => submitVotePionir(token, kandidatId),
     onSuccess: () => {
       setSudahKirim(true);
       queryClient.invalidateQueries({ queryKey: ['akses-penilai', token] });
@@ -186,10 +222,14 @@ export default function PenilaiPage() {
         namaPeriode={akses.periode.nama_periode}
       />
 
-      <main className="mx-auto mt-6 w-full max-w-2xl space-y-4 px-4">
+      <main className="mx-auto mt-6 w-full max-w-2xl space-y-5 px-4">
         {akses.periode.petunjuk_penilaian && (
-          <div className="rounded-xl border border-navy-200/50 bg-navy-50/50 p-4 text-sm text-navy-800">
-            {akses.periode.petunjuk_penilaian}
+          <div className="rounded-2xl border border-navy-200/70 bg-navy-50/60 p-4 text-xs sm:text-sm text-navy-900 flex items-start gap-3 shadow-2xs">
+            <Info className="h-4 w-4 shrink-0 text-navy-600 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-bold text-navy-950 text-xs uppercase tracking-wider">Petunjuk Penilaian</p>
+              <p className="text-slate-700 leading-relaxed">{akses.periode.petunjuk_penilaian}</p>
+            </div>
           </div>
         )}
 
@@ -254,6 +294,82 @@ export default function PenilaiPage() {
               isSubmitting={mutasiMode1C.isPending}
               errorMessage={mutasiMode1C.error?.message}
             />
+          )
+        ) : modeSaatIni === MODE_PENILAIAN.MODE_PIONIR ? (
+          akses?.peranPionir === 'PENGUSUL' ? (
+            akses?.fasePionir === 1 ? (
+              loadingPertanyaanPionir ? (
+                <LoadingScreen label="Memuat kuesioner pengusul..." />
+              ) : (
+                <FormPionirPengusul
+                  token={token}
+                  akses={akses}
+                  pertanyaan={pertanyaanPionir}
+                  onSubmit={(payload) => {
+                    setErrorSubmit(null);
+                    mutasiUsulanPionir.mutate(payload);
+                  }}
+                  isSubmitting={mutasiUsulanPionir.isPending}
+                  errorMessage={errorSubmit}
+                />
+              )
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center space-y-3">
+                <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto">
+                  <Info className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-lg text-amber-900">Masa Pengusulan Telah Selesai</h3>
+                <p className="text-sm text-amber-800 max-w-md mx-auto">
+                  Batas waktu pengusulan kandidat Pionir (Fase 1) telah berakhir. Saat ini pemilihan telah beralih ke tahap voting umum oleh seluruh pegawai.
+                </p>
+              </div>
+            )
+          ) : akses?.peranPionir === 'KANDIDAT' ? (
+            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-8 text-center space-y-3 shadow-sm">
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8" />
+              </div>
+              <h3 className="font-bold text-xl text-emerald-950">Selamat! Anda Terpilih sebagai Calon Pionir</h3>
+              <p className="text-sm text-emerald-800 max-w-lg mx-auto leading-relaxed">
+                Anda telah dicalonkan oleh Tim Pengusul sebagai salah satu Insan Teladan (Pionir) BPS. Demi menjunjung objektivitas dan netralitas kompetisi, seluruh kandidat tidak memiliki hak suara dalam pemilihan ini.
+              </p>
+              <p className="text-xs text-emerald-700 font-medium">
+                Terima kasih atas dedikasi dan keteladanan yang telah Anda berikan!
+              </p>
+            </div>
+          ) : akses?.fasePionir === 1 ? (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-8 text-center space-y-4 shadow-sm">
+              <div className="w-14 h-14 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto">
+                <Info className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="font-bold text-xl text-navy-900">Tahap Pengusulan Sedang Berlangsung</h3>
+                <p className="text-sm text-slate-700 max-w-lg mx-auto leading-relaxed mt-1">
+                  Saat ini Tim Pengusul yang ditunjuk sedang melakukan penominasian calon Pionir. Tahap Voting Terbuka (Fase 2) untuk seluruh pegawai akan dibuka pada:
+                </p>
+              </div>
+              <div className="inline-block rounded-xl bg-white border border-blue-200 px-5 py-2.5 font-bold text-navy-900 text-base shadow-2xs">
+                {akses.periode.tgl_selesai_fase1 ? new Date(akses.periode.tgl_selesai_fase1).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }) : 'Segera'}
+              </div>
+              <p className="text-xs text-slate-500">
+                Silakan simpan tautan unik ini dan kunjungi kembali saat voting umum telah dibuka.
+              </p>
+            </div>
+          ) : (
+            loadingKandidatPionir ? (
+              <LoadingScreen label="Memuat bursa kandidat pionir..." />
+            ) : (
+              <GridPionirVote
+                periode={akses.periode}
+                kandidatList={kandidatPionir}
+                onSubmit={(kandidatId) => {
+                  setErrorSubmit(null);
+                  mutasiVotePionir.mutate(kandidatId);
+                }}
+                isSubmitting={mutasiVotePionir.isPending}
+                errorMessage={errorSubmit}
+              />
+            )
           )
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">

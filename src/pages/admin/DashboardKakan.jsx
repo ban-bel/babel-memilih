@@ -13,10 +13,21 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import { Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, Crown, Info } from 'lucide-react';
+import { 
+  Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, 
+  Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, 
+  Crown, Info, Edit3, FileSpreadsheet, Sparkles 
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
 
+import { supabase } from '../../config/supabaseClient';
 import { fetchPeriodeList, fetchWilayahList, fetchDaftarJuriLengkap } from '../../services/adminService';
-import { fetchRekapMode1A, fetchRekapMode1B, fetchRekapMode1C, fetchRekapMode2, fetchRekapMode2A, fetchCatatanKualitatifJuri, fetchDetailPenilaianJuri, fetchKelengkapanPenilai } from '../../services/voting/rekapService';
+import { 
+  fetchRekapMode1A, fetchRekapMode1B, fetchRekapMode1C, fetchRekapMode2, 
+  fetchRekapMode2A, fetchCatatanKualitatifJuri, fetchDetailPenilaianJuri, 
+  fetchKelengkapanPenilai, fetchRekapModePionir, fetchDetailPengusulPionir 
+} from '../../services/voting/rekapService';
+import { updateCkpKandidatPionir } from '../../services/voting/pionirService';
 import { fetchVotingKategori, fetchPemenangPerKategori, setPemenangPerKategori, autoLockPemenangPerKategori, resetPemenangPerKategori } from '../../services/voting/kategoriService';
 import { fetchKeputusanKakan, kuncikanPemenang } from '../../services/voting/kakanService';
 import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../utils/constants';
@@ -37,6 +48,7 @@ const FETCH_REKAP = {
   [MODE_PENILAIAN.MODE_1B]: fetchRekapMode1B, // Will be overridden if hybrid has categories
   [MODE_PENILAIAN.MODE_2A]: fetchRekapMode2A,
   [MODE_PENILAIAN.MODE_2]: fetchRekapMode2,
+  [MODE_PENILAIAN.MODE_PIONIR]: fetchRekapModePionir,
 };
 
 /**
@@ -51,6 +63,9 @@ function skorTampil(mode, r, isHybrid = false) {
   }
   if (mode === MODE_PENILAIAN.MODE_2A) {
     return `${Number(r.rata_rata_skor ?? 0).toFixed(1)} poin`;
+  }
+  if (mode === MODE_PENILAIAN.MODE_PIONIR) {
+    return `${Number(r.skor_akhir ?? 0).toFixed(2)} pts`;
   }
   return Number(r.skor_akhir_juri ?? 0).toFixed(2);
 }
@@ -297,6 +312,107 @@ function DashboardKakanContent({ adminProfile }) {
     peringkat: r.peringkat_keseluruhan ?? r.peringkat ?? idx + 1,
     skor_akhir_juri: mode === MODE_PENILAIAN.MODE_2 ? r.skor_akhir_juri : null,
   }));
+
+  // State & Mutasi Edit Nilai CKP (Mode PIONIR)
+  const [editingCkp, setEditingCkp] = useState(null);
+  const [inputCkpVal, setInputCkpVal] = useState('');
+
+  const mutasiCkp = useMutation({
+    mutationFn: ({ nomineeId, nilai }) =>
+      updateCkpKandidatPionir(Number(periodeId), nomineeId, nilai),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rekap-kakan'] });
+      toast.success('Nilai CKP kandidat berhasil disimpan!');
+      setEditingCkp(null);
+    },
+    onError: (err) => toast.error(`Gagal menyimpan CKP: ${err.message}`),
+  });
+
+  // Export Multi-Sheet Excel (.xlsx) untuk Mode PIONIR
+  async function handleExportPionirExcel() {
+    if (!rekapData.length) return;
+    try {
+      toast.loading('Menyiapkan workbook Excel PIONIR...', { id: 'export-pionir' });
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Rekap Hasil PIONIR
+      const sheet1Data = rekapData.map((r, idx) => ({
+        Peringkat: r.peringkat ?? idx + 1,
+        'Nama Pegawai': r.nama_nominee || r.nama || '-',
+        NIP: r.nip_baru || r.nip || '-',
+        'Unit Kerja': r.unit_kerja || '-',
+        'Suara Pengusul (F1)': r.suara_fase1 ?? r.jumlah_pengusul ?? 0,
+        'Suara Pemilih Umum (F2)': r.suara_fase2 ?? 0,
+        'Total Suara': r.total_suara_kandidat ?? 0,
+        'Poin Suara (40%)': Number(r.poin_suara ?? 0).toFixed(2),
+        'Nilai CKP (0-100)': Number(r.nilai_ckp ?? 0).toFixed(2),
+        'Poin CKP (40%)': Number(r.poin_ckp ?? 0).toFixed(2),
+        'Rata-rata Kuesioner (1-100)': Number(r.rata_skor_kuesioner ?? 0).toFixed(2),
+        'Poin Kuesioner (20%)': Number(r.poin_kuesioner ?? 0).toFixed(2),
+        'Total Skor Akhir (100 pts)': Number(r.skor_akhir ?? 0).toFixed(2),
+        'Kata Kunci Pengusul': r.kata_pengusul || '-',
+      }));
+      const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Hasil PIONIR');
+
+      // Sheet 2: Raw Penilaian Pengusul
+      const detailPengusul = await fetchDetailPengusulPionir(Number(periodeId));
+      const sheet2Data = (detailPengusul || []).map((d, i) => ({
+        No: i + 1,
+        'Nama Pengusul': d.pengusul?.nama || '-',
+        'NIP Pengusul': d.pengusul?.nip || '-',
+        'Kandidat Diusulkan': d.kandidat?.nama || '-',
+        'NIP Kandidat': d.kandidat?.nip || '-',
+        'Kriteria Pertanyaan': d.pertanyaan?.teks_pertanyaan || '-',
+        Bobot: d.pertanyaan?.bobot ? `${Math.round(d.pertanyaan.bobot * 100)}%` : '20%',
+        'Skor Kuesioner': d.skor,
+        '1 Kata Deskripsi': d.kata_kunci || '-',
+        'Waktu Pengusulan': d.created_at ? new Date(d.created_at).toLocaleString('id-ID') : '-',
+      }));
+      const ws2 = XLSX.utils.json_to_sheet(sheet2Data.length > 0 ? sheet2Data : [{ Status: 'Belum ada usulan masuk' }]);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Raw Penilaian Pengusul');
+
+      // Sheet 3: Raw Suara LUBER
+      const { data: rawSuara } = await supabase
+        .from('suara_pionir')
+        .select(`
+          id,
+          voter_hash,
+          kandidat:pegawai!suara_pionir_kandidat_id_fkey(nama, nip),
+          created_at
+        `)
+        .eq('periode_id', Number(periodeId));
+
+      const sheet3Data = (rawSuara || []).map((s, i) => ({
+        No: i + 1,
+        'ID Voter Anonim (Audit Trail)': s.voter_hash ? `Voter-${s.voter_hash.substring(0, 8)}...` : `Voter-${i + 1}`,
+        'Kandidat Pilihan': s.kandidat?.nama || '-',
+        'NIP Kandidat': s.kandidat?.nip || '-',
+        'Waktu Voting': s.created_at ? new Date(s.created_at).toLocaleString('id-ID') : '-',
+      }));
+      const ws3 = XLSX.utils.json_to_sheet(sheet3Data.length > 0 ? sheet3Data : [{ Status: 'Belum ada suara pemilih masuk' }]);
+      XLSX.utils.book_append_sheet(wb, ws3, 'Raw Suara LUBER');
+
+      // Sheet 4: Data CKP Admin
+      const sheet4Data = rekapData.map((r, i) => ({
+        No: i + 1,
+        'Nama Kandidat': r.nama_nominee || r.nama || '-',
+        NIP: r.nip_baru || r.nip || '-',
+        'Unit Kerja': r.unit_kerja || '-',
+        'Nilai CKP': Number(r.nilai_ckp ?? 0),
+        'Kontribusi Skor Akhir (40%)': Number(r.poin_ckp ?? 0).toFixed(2),
+      }));
+      const ws4 = XLSX.utils.json_to_sheet(sheet4Data);
+      XLSX.utils.book_append_sheet(wb, ws4, 'Data CKP Admin');
+
+      const namaFile = `Rekap_PIONIR_${periode?.nama_periode?.replace(/ /g, '_') || 'Periode'}.xlsx`;
+      XLSX.writeFile(wb, namaFile);
+      toast.success('File Excel PIONIR berhasil diunduh!', { id: 'export-pionir' });
+    } catch (err) {
+      console.error(err);
+      toast.error(`Gagal export Excel: ${err.message}`, { id: 'export-pionir' });
+    }
+  }
 
   // Export CSV
   function handleExport() {
@@ -623,6 +739,16 @@ function DashboardKakanContent({ adminProfile }) {
                   <Download className="h-3.5 w-3.5" />
                   Cetak PDF
                 </button>
+                {mode === MODE_PENILAIAN.MODE_PIONIR && (
+                  <button
+                    onClick={handleExportPionirExcel}
+                    disabled={!rekapTopN.length}
+                    className="btn-secondary text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-300 font-semibold"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Export Excel (Multi-Sheet)
+                  </button>
+                )}
                 <button
                   onClick={handleExport}
                   disabled={!rekapTopN.length}
@@ -664,7 +790,180 @@ function DashboardKakanContent({ adminProfile }) {
               </>
             )}
 
-            {mode !== MODE_PENILAIAN.MODE_2 && (
+            {mode === MODE_PENILAIAN.MODE_PIONIR ? (
+              <div className="overflow-x-auto">
+                <div className="bg-gradient-to-r from-navy-50 via-blue-50/60 to-indigo-50/40 border-b border-navy-100 p-4 text-xs text-navy-800 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>
+                      <strong>Formula Mode PIONIR (100 pts):</strong> Suara (40%) + CKP (40%) + Kuesioner Pengusul (20%)
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-navy-600 font-medium">
+                    *Admin/Kakan dapat mengisi atau mengubah nilai CKP kapan saja melalui ikon pensil.
+                  </span>
+                </div>
+
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="px-5 py-3.5 font-bold">Peringkat</th>
+                      <th className="px-5 py-3.5 font-bold">Kandidat Pionir &amp; Kata Deskripsi</th>
+                      <th className="px-4 py-3.5 font-bold text-center">Suara (40%)</th>
+                      <th className="px-4 py-3.5 font-bold text-center">CKP Admin (40%)</th>
+                      <th className="px-4 py-3.5 font-bold text-center">Kuesioner (20%)</th>
+                      <th className="px-5 py-3.5 font-bold text-right">Skor Akhir</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loadingRekap ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                          Memuat data tabulasi PIONIR...
+                        </td>
+                      </tr>
+                    ) : rekapTopN.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                          Belum ada usulan kandidat pada periode ini.
+                        </td>
+                      </tr>
+                    ) : (
+                      rekapTopN.map((r) => {
+                        const peringkat = r.peringkat ?? 1;
+                        const isTopN = peringkat <= topN;
+                        const namaNominee = r.nama_nominee || r.nama || '-';
+                        const kataArr = (r.kata_pengusul || '')
+                          .split(',')
+                          .map((w) => w.trim())
+                          .filter(Boolean);
+
+                        let bgClass = '';
+                        let iconNode = null;
+                        if (peringkat === 1) {
+                          bgClass = 'bg-gold-50/40';
+                          iconNode = <Medal className="h-5 w-5 text-gold-500" />;
+                        } else if (peringkat === 2) {
+                          bgClass = 'bg-slate-100/60';
+                          iconNode = <Medal className="h-5 w-5 text-slate-400" />;
+                        } else if (peringkat === 3) {
+                          bgClass = 'bg-amber-50/40';
+                          iconNode = <Medal className="h-5 w-5 text-amber-700" />;
+                        } else if (isTopN) {
+                          bgClass = 'bg-emerald-50/20';
+                        }
+
+                        const fotoSrc =
+                          r.foto_url ||
+                          (r.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${r.nip}.jpg` : null) ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(namaNominee)}&background=16324a&color=fff&size=64`;
+
+                        return (
+                          <tr key={r.nominee_id || r.id} className={`${bgClass} hover:bg-slate-50/80 transition-colors`}>
+                            <td className="px-5 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1.5 text-base font-bold ${isTopN ? 'text-navy-900' : 'text-slate-600'}`}>
+                                {iconNode && <span className="scale-110">{iconNode}</span>}
+                                #{peringkat}
+                              </span>
+                            </td>
+
+                            <td className="px-5 py-4">
+                              <div className="flex items-start gap-3.5">
+                                <img
+                                  src={fotoSrc}
+                                  alt={namaNominee}
+                                  className="h-12 w-12 rounded-xl border border-slate-200 object-cover shadow-2xs shrink-0"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(namaNominee)}&background=16324a&color=fff&size=64`;
+                                  }}
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-slate-900">{namaNominee}</p>
+                                  <p className="text-xs text-slate-500">{r.nip_baru || r.nip || '-'} • {r.unit_kerja}</p>
+                                  {kataArr.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                      {kataArr.map((k, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-block rounded-md bg-navy-50 px-2 py-0.5 text-[10px] font-semibold text-navy-800 border border-navy-200/60"
+                                        >
+                                          "{k}"
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-4 text-center whitespace-nowrap">
+                              <div className="inline-flex flex-col items-center">
+                                <span className="text-sm font-extrabold text-navy-900">
+                                  {Number(r.poin_suara ?? 0).toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">pts</span>
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                  {r.total_suara_kandidat ?? 0} suara
+                                </span>
+                                <span className="text-[9px] text-slate-400">
+                                  (F1: {r.suara_fase1 ?? r.jumlah_pengusul ?? 0} | F2: {r.suara_fase2 ?? 0})
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-4 text-center whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1.5">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm font-extrabold text-navy-900">
+                                    {Number(r.poin_ckp ?? 0).toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">pts</span>
+                                  </span>
+                                  <span className="text-[11px] text-slate-500 font-medium">
+                                    CKP: {Number(r.nilai_ckp ?? 0).toFixed(1)}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCkp(r);
+                                    setInputCkpVal(r.nilai_ckp ?? 0);
+                                  }}
+                                  title="Edit Nilai CKP"
+                                  className="p-1 rounded-lg text-slate-400 hover:text-navy-700 hover:bg-navy-50 transition-colors"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-4 text-center whitespace-nowrap">
+                              <div className="inline-flex flex-col items-center">
+                                <span className="text-sm font-extrabold text-navy-900">
+                                  {Number(r.poin_kuesioner ?? 0).toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">pts</span>
+                                </span>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                  Skor: {Number(r.rata_skor_kuesioner ?? 0).toFixed(1)}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="px-5 py-4 text-right whitespace-nowrap">
+                              <div className="inline-flex flex-col items-end">
+                                <span className="text-lg font-black text-navy-900">
+                                  {Number(r.skor_akhir ?? 0).toFixed(2)}
+                                </span>
+                                <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                                  dari 100 pts
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : mode !== MODE_PENILAIAN.MODE_2 && (
             <table className="w-full text-left text-sm">
               <tbody className="divide-y divide-slate-100">
                 {loadingRekap ? (
@@ -769,8 +1068,6 @@ function DashboardKakanContent({ adminProfile }) {
               </tbody>
             </table>
             )}
-
-            )}
           </div>
 
           {/* Rincian Detail Juri & Catatan (Mode 2) */}
@@ -794,6 +1091,76 @@ function DashboardKakanContent({ adminProfile }) {
             disabled={statusKelengkapan ? !statusKelengkapan.isComplete : false}
             disabledMessage={`Voting belum mencapai batas minimum 50%+1. (${statusKelengkapan?.submitted}/${statusKelengkapan?.total} selesai, butuh min ${statusKelengkapan?.minRequired})`}
           />
+
+          {/* Modal Edit Nilai CKP (Mode PIONIR) */}
+          <Modal
+            isOpen={Boolean(editingCkp)}
+            onClose={() => setEditingCkp(null)}
+            title="Input / Perbarui Nilai CKP"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-navy-50 border border-navy-200">
+                <img
+                  src={
+                    editingCkp?.foto_url ||
+                    (editingCkp?.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${editingCkp.nip}.jpg` : null) ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(editingCkp?.nama_nominee || 'P')}&background=16324a&color=fff`
+                  }
+                  alt={editingCkp?.nama_nominee}
+                  className="h-12 w-12 rounded-full border border-slate-200 object-cover"
+                />
+                <div>
+                  <h4 className="font-bold text-navy-900 text-sm">{editingCkp?.nama_nominee}</h4>
+                  <p className="text-xs text-slate-500">{editingCkp?.nip_baru || editingCkp?.nip || '-'} • {editingCkp?.unit_kerja}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-semibold text-slate-800">
+                  Nilai Capaian Kinerja Pegawai (CKP) <span className="text-xs text-slate-400 font-normal">(Skala 0 - 100)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={inputCkpVal}
+                  onChange={(e) => setInputCkpVal(e.target.value)}
+                  className="input w-full text-base font-bold"
+                  placeholder="Contoh: 88.5"
+                />
+                <p className="text-xs text-slate-500">
+                  Kontribusi terhadap skor akhir (bobot 40%):{' '}
+                  <strong className="text-navy-900">
+                    {(Number(inputCkpVal || 0) * 0.40).toFixed(2)} pts
+                  </strong>
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCkp(null)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={mutasiCkp.isPending}
+                  onClick={() => {
+                    mutasiCkp.mutate({
+                      nomineeId: editingCkp.nominee_id,
+                      nilai: Number(inputCkpVal),
+                    });
+                  }}
+                  className="px-5 py-2 text-sm font-semibold text-white bg-navy-700 hover:bg-navy-800 rounded-xl shadow-sm inline-flex items-center gap-2"
+                >
+                  {mutasiCkp.isPending ? 'Menyimpan...' : 'Simpan Nilai CKP'}
+                </button>
+              </div>
+            </div>
+          </Modal>
         </>
       )}
       </div>

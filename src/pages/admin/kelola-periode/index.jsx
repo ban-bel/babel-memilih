@@ -18,6 +18,7 @@ import { KelolaNomineeContent } from '../KelolaNominee';
 import { PartisipanPeriodeContent } from '../PartisipanPeriode';
 import KelolaJuriContent from './components/KelolaJuriContent';
 import KelolaKategoriContent from './components/KelolaKategoriContent';
+import KelolaPengusulContent from './components/KelolaPengusulContent';
 
 function InfoDasarPeriode({ periode }) {
   if (!periode) return null;
@@ -62,14 +63,36 @@ function InfoDasarPeriode({ periode }) {
         </div>
         
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50 transition-all hover:bg-white hover:shadow-sm">
-            <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Hak Pilih Nominee</p>
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase ${
-              periode.is_nominee_can_vote !== false ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
-            }`}>
-              {periode.is_nominee_can_vote !== false ? 'DIBERIKAN HAK VOTING' : 'TIDAK BERHAK VOTING'}
-            </span>
-          </div>
+          {periode.mode_penilaian === 'MODE_PIONIR' ? (
+            <div className="bg-amber-50/60 p-5 rounded-2xl border border-amber-200/50 transition-all hover:bg-white hover:shadow-sm">
+              <p className="text-xs font-bold text-amber-700 mb-2 uppercase tracking-widest">Batas Waktu Fase 1 (Masa Pengusulan)</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-bold text-navy-900">
+                  {periode.tgl_selesai_fase1 ? (
+                    new Date(periode.tgl_selesai_fase1).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+                  ) : (
+                    <span className="text-slate-400 italic">Belum diatur</span>
+                  )}
+                </p>
+                {periode.tgl_selesai_fase1 && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    new Date() <= new Date(periode.tgl_selesai_fase1) ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {new Date() <= new Date(periode.tgl_selesai_fase1) ? 'Pengusulan Berjalan' : 'Pengusulan Selesai'}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50 transition-all hover:bg-white hover:shadow-sm">
+              <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Hak Pilih Nominee</p>
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase ${
+                periode.is_nominee_can_vote !== false ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-rose-100 text-rose-700 border border-rose-200'
+              }`}>
+                {periode.is_nominee_can_vote !== false ? 'DIBERIKAN HAK VOTING' : 'TIDAK BERHAK VOTING'}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-200/50">
@@ -106,6 +129,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
     nama_periode: '',
     tgl_mulai: '',
     tgl_selesai: '',
+    tgl_selesai_fase1: '',
     petunjuk_penilaian: '',
     status: 'DRAFT',
     is_nominee_can_vote: true,
@@ -176,6 +200,7 @@ function ManajemenPeriodeContent({ adminProfile }) {
       nama_periode: p.nama_periode || '',
       tgl_mulai: toLocalDatetimeString(p.tgl_mulai),
       tgl_selesai: toLocalDatetimeString(p.tgl_selesai),
+      tgl_selesai_fase1: toLocalDatetimeString(p.tgl_selesai_fase1),
       petunjuk_penilaian: p.petunjuk_penilaian || '',
       status: p.status || 'DRAFT',
       is_nominee_can_vote: p.is_nominee_can_vote ?? true,
@@ -489,8 +514,17 @@ function ManajemenPeriodeContent({ adminProfile }) {
                       onClick={() => setActiveTab('nominee')}
                       className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'nominee' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
                     >
-                      <Users className="h-4.5 w-4.5" /> Kelola Nominee
+                      <Users className="h-4.5 w-4.5" /> {activePeriode.mode_penilaian === 'MODE_PIONIR' ? 'Bursa Kandidat' : 'Kelola Nominee'}
                     </button>
+                    {/* Tab Khusus Mode PIONIR */}
+                    {activePeriode.mode_penilaian === 'MODE_PIONIR' && (
+                      <button
+                        onClick={() => setActiveTab('pengusul')}
+                        className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap ${activeTab === 'pengusul' ? 'bg-white text-navy-800 shadow-sm ring-1 ring-slate-900/5' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                      >
+                        <UserCheck className="h-4.5 w-4.5" /> Tim Pengusul
+                      </button>
+                    )}
                     {/* Tab Khusus Mode 2 */}
                     {activePeriode.mode_penilaian === 'MODE_2' && (
                       <>
@@ -522,7 +556,21 @@ function ManajemenPeriodeContent({ adminProfile }) {
               {/* Tab Content */}
               <div className="mt-4">
                 {activeTab === 'info' && <InfoDasarPeriode periode={activePeriode} />}
-                {activeTab === 'nominee' && <KelolaNomineeContent adminProfile={adminProfile} periodeId={activePeriode.id} />}
+                {activeTab === 'nominee' && (
+                  <KelolaNomineeContent 
+                    adminProfile={adminProfile} 
+                    periodeId={activePeriode.id} 
+                    onNavigatePengusul={() => setActiveTab('pengusul')}
+                  />
+                )}
+                {activeTab === 'pengusul' && activePeriode.mode_penilaian === 'MODE_PIONIR' && (
+                  <KelolaPengusulContent 
+                    adminProfile={adminProfile} 
+                    periodeId={activePeriode.id} 
+                    periode={activePeriode} 
+                    onNavigateNominee={() => setActiveTab('nominee')}
+                  />
+                )}
                 {activeTab === 'kategori' && activePeriode.mode_penilaian === 'MODE_2' && <KelolaKategoriContent periodeId={activePeriode.id} periode={activePeriode} />}
                 {activeTab === 'juri' && activePeriode.mode_penilaian === 'MODE_2' && <KelolaJuriContent periodeId={activePeriode.id} />}
                 {activeTab === 'partisipan' && <PartisipanPeriodeContent adminProfile={adminProfile} periode={activePeriode} />}
@@ -587,6 +635,26 @@ function ManajemenPeriodeContent({ adminProfile }) {
               <option value="DIARSIPKAN">DIARSIPKAN</option>
             </select>
           </div>
+
+          {/* Opsi Khusus Mode PIONIR */}
+          {activePeriode?.mode_penilaian === 'MODE_PIONIR' && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-2 mb-4">
+              <div>
+                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">
+                  Batas Waktu Pengusulan (Fase 1)
+                </label>
+                <p className="text-xs text-amber-700 mb-2">
+                  Setelah batas waktu ini terlampaui, hak akses pengusul otomatis ditutup dan voting terbuka (Fase 2) dapat dimulai oleh seluruh pegawai.
+                </p>
+                <input
+                  type="datetime-local"
+                  value={editForm.tgl_selesai_fase1 || ''}
+                  onChange={(e) => setEditForm({ ...editForm, tgl_selesai_fase1: e.target.value })}
+                  className="input bg-white border-amber-300"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Opsi Khusus Quick Vote (MODE_1B) */}
           {activePeriode?.mode_penilaian === 'MODE_1B' && (

@@ -28,6 +28,7 @@ export const MODE_PENILAIAN = Object.freeze({
   MODE_1B: 'MODE_1B',
   MODE_2A: 'MODE_2A',
   MODE_2: 'MODE_2',
+  MODE_PIONIR: 'MODE_PIONIR',
 });
 
 /**
@@ -113,7 +114,59 @@ export const MODE_PENILAIAN_LABEL = Object.freeze({
   [MODE_PENILAIAN.MODE_1B]: 'Quick Vote',
   [MODE_PENILAIAN.MODE_2A]: 'Seleksi & Scoring',
   [MODE_PENILAIAN.MODE_2]: 'Panel Dewan Juri',
+  [MODE_PENILAIAN.MODE_PIONIR]: 'Mode PIONIR',
 });
+
+/**
+ * Daftar pertanyaan default baku untuk Mode PIONIR.
+ * Mencakup 5 kriteria BerAKHLAK & Inovasi (total bobot 1.0) + 1 pertanyaan kata kunci.
+ *
+ * @readonly
+ * @type {Array<{urutan: number, teks_pertanyaan: string, bobot: number, skor_min?: number, skor_max?: number, is_kata_kunci?: boolean}>}
+ */
+export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
+  {
+    urutan: 1,
+    teks_pertanyaan: 'Pegawai tersebut kolaboratif dan berorientasi pelayanan',
+    bobot: 0.20,
+    skor_min: 1,
+    skor_max: 100,
+  },
+  {
+    urutan: 2,
+    teks_pertanyaan: 'Pegawai tersebut selalu tuntas dan bahkan melebihi ekspektasi, kompeten dan berinovasi',
+    bobot: 0.25,
+    skor_min: 1,
+    skor_max: 100,
+  },
+  {
+    urutan: 3,
+    teks_pertanyaan: 'Pegawai tersebut dapat diteladani dalam melaksanakan tanggung jawab dan tugasnya dan harmonis',
+    bobot: 0.15,
+    skor_min: 1,
+    skor_max: 100,
+  },
+  {
+    urutan: 4,
+    teks_pertanyaan: 'Amanah, Integritas dan Akuntabel dalam pelaksanaan tugasnya',
+    bobot: 0.20,
+    skor_min: 1,
+    skor_max: 100,
+  },
+  {
+    urutan: 5,
+    teks_pertanyaan: 'Melakukan inovasi yang bermanfaat',
+    bobot: 0.20,
+    skor_min: 1,
+    skor_max: 100,
+  },
+  {
+    urutan: 6,
+    teks_pertanyaan: 'Berikan 1 kata untuk calon pionir',
+    bobot: 0,
+    is_kata_kunci: true,
+  },
+]);
 
 /**
  * Nama bucket Supabase Storage untuk menyimpan dokumen bukti inovasi.

@@ -30,28 +30,26 @@ out/
 
 # ============================================
 # Database Migrations & Backups
-# Sensitive - jangan commit!
 # ============================================
-*.sql
 *.dump
 *.backup
 *.bak
 *.csv
+*.tsv
 *.xlsx
 *.xls
 supabase/.temp/
 supabase/db_backup/
-supabase/migrations/*
 supabase/backups/
+*backup*.sql
+*dump*.sql
 
-# ============================================
-# Whitelist - Schema utama (OK untuk commit)
-# ============================================
-!supabase/00_deploy_master.sql
-!supabase/schema_struktur_semua_tabel.sql
-!supabase/migrations/003_create_template_pesan_wa.sql
-!supabase/migrations/006_fix_log_notifikasi_wa_rls.sql
-!supabase/migrations/009_fix_log_notifikasi_wa_rls_anon.sql
+# Abaikan file SQL umum di root / luar, tapi lacak schema & migrasi di supabase/
+*.sql
+!supabase/*.sql
+!supabase/**/*.sql
+supabase/*backup*.sql
+supabase/*dump*.sql
 
 # ============================================
 # WhatsApp Bot (Baileys) - LOCAL ONLY
@@ -122,9 +120,12 @@ temp/
 .netlify/
 
 # ============================================
-# Claude Code
+# AI Assistants & Local Tools
 # ============================================
 .claude/
+.gemini/
+.antigravity/
+.cursor/
 
 # ============================================
 # Misc
