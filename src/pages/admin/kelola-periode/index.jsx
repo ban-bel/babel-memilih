@@ -306,79 +306,89 @@ function ManajemenPeriodeContent({ adminProfile }) {
                 periodeList.map(p => {
                   const isActive = activePeriodeId === p.id;
                   return (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setActivePeriodeId(p.id);
-                        setActiveTab('info');
-                      }}
-                      className={`group flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl border border-transparent transition-all duration-300 cursor-pointer relative overflow-hidden ${
-                        isActive
-                          ? 'bg-white shadow-md border-navy-200'
-                          : 'hover:bg-white/50 hover:shadow-sm'
-                      }`}
-                    >
-                      {isActive && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-navy-400 to-navy-600 rounded-r-md"></div>
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        {/* Nama Periode */}
-                        <div className="flex items-center gap-2 mb-1.5">
-                           <span className={`font-bold text-sm truncate ${isActive ? 'text-navy-900' : 'text-slate-700'}`}>{p.nama_periode}</span>
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setActivePeriodeId(p.id);
+                          setActiveTab('info');
+                        }}
+                        className={`group shrink-0 flex flex-col w-full text-left p-4 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                          isActive
+                            ? 'bg-white shadow-md border-navy-200'
+                            : 'bg-slate-50/50 border-slate-200 hover:bg-white hover:border-navy-300 hover:shadow-sm'
+                        }`}
+                      >
+                        {isActive && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-navy-400 to-navy-600"></div>
+                        )}
+                        
+                        <div className="w-full min-w-0 pr-20">
+                          {/* Nama Periode */}
+                          <div className={`font-bold text-sm mb-2.5 line-clamp-2 leading-snug ${isActive ? 'text-navy-900' : 'text-slate-700 group-hover:text-navy-800'}`}>
+                            {p.nama_periode}
+                          </div>
+                          
+                          <div className="flex flex-col gap-2">
+                            {/* Metadata Row */}
+                            <div className="flex items-center gap-2">
+                              <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase ${
+                                isActive ? 'bg-navy-50 text-navy-700 border border-navy-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}>
+                                {p.status}
+                              </span>
+                              <span className={`text-[10px] truncate ${isActive ? 'text-navy-600/80 font-medium' : 'text-slate-500'}`}>
+                                {MODE_PENILAIAN_LABEL[p.mode_penilaian]}
+                              </span>
+                            </div>
+  
+                            {/* Date */}
+                            <div className={`text-[10px] flex items-center gap-1.5 ${isActive ? 'text-navy-500' : 'text-slate-400'}`}>
+                              <Calendar className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">
+                                {new Date(p.tgl_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - {new Date(p.tgl_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {/* Status Badge */}
-                          <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase ${
-                            isActive ? 'bg-navy-50 text-navy-700 border border-navy-100' : 'bg-slate-100/50 text-slate-500 border border-slate-200/50'
-                          }`}>
-                            {p.status}
-                          </span>
-                          {/* Mode Penilaian */}
-                          <span className={`text-[10px] hidden sm:block truncate ${isActive ? 'text-navy-600/70 font-medium' : 'text-slate-400'}`}>
-                            &bull; {MODE_PENILAIAN_LABEL[p.mode_penilaian]}
-                          </span>
+  
+                        {/* Action buttons */}
+                        <div className={`absolute top-3.5 right-3 flex items-center gap-1.5 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPeriodeToReset(p);
+                              setShowResetModal(true);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
+                            title="Reset Data Periode"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              bukaModalEdit(p);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-navy-50 text-navy-600 hover:bg-navy-600 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-navy-600 hover:border-navy-300'}`}
+                            title="Edit Periode"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(p);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300'}`}
+                            title="Hapus Periode"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Action buttons */}
-                      <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPeriodeToReset(p);
-                            setShowResetModal(true);
-                          }}
-                          className={`p-2 rounded-xl transition-all ${isActive ? 'bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
-                          title="Reset Data Periode"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            bukaModalEdit(p);
-                          }}
-                          className={`p-2 rounded-xl transition-all ${isActive ? 'bg-navy-50 text-navy-600 hover:bg-navy-600 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-navy-600 hover:border-navy-300'}`}
-                          title="Edit Periode"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(p);
-                          }}
-                          className={`p-2 rounded-xl transition-all ${isActive ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300'}`}
-                          title="Hapus Periode"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
                   );
                 })
               )}
@@ -394,73 +404,78 @@ function ManajemenPeriodeContent({ adminProfile }) {
                 periodeList.slice(0, 3).map(p => {
                   const isActive = activePeriodeId === p.id;
                   return (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setActivePeriodeId(p.id);
-                        setActiveTab('info');
-                      }}
-                      className={`group flex items-center gap-3 w-full text-left px-4 py-3 border-b border-slate-50 last:border-0 transition-all duration-300 cursor-pointer relative overflow-hidden ${
-                        isActive
-                          ? 'bg-navy-50/50'
-                          : 'bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      {isActive && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-navy-600 rounded-r-md"></div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        {/* Nama Periode */}
-                        <div className="flex items-center gap-2 mb-1">
-                           <span className={`font-semibold text-sm truncate ${isActive ? 'text-navy-900' : 'text-slate-700'}`}>{p.nama_periode}</span>
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setActivePeriodeId(p.id);
+                          setActiveTab('info');
+                        }}
+                        className={`group shrink-0 flex flex-col w-full text-left p-4 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                          isActive
+                            ? 'bg-white shadow-md border-navy-200'
+                            : 'bg-slate-50/50 border-slate-200 hover:bg-white hover:border-navy-300 hover:shadow-sm'
+                        }`}
+                      >
+                        {isActive && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-navy-400 to-navy-600"></div>
+                        )}
+                        
+                        <div className="w-full min-w-0 pr-20">
+                          {/* Nama Periode */}
+                          <div className={`font-bold text-sm mb-2.5 line-clamp-2 leading-snug ${isActive ? 'text-navy-900' : 'text-slate-700 group-hover:text-navy-800'}`}>
+                            {p.nama_periode}
+                          </div>
+                          
+                          <div className="flex flex-col gap-2">
+                            {/* Metadata Row */}
+                            <div className="flex items-center gap-2">
+                              <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase ${
+                                isActive ? 'bg-navy-50 text-navy-700 border border-navy-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}>
+                                {p.status}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {/* Status Badge */}
-                          <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase ${
-                            isActive ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-500'
-                          }`}>
-                            {p.status}
-                          </span>
+  
+                        {/* Action buttons (Always visible on mobile) */}
+                        <div className="absolute top-3.5 right-3 flex items-center gap-1.5 opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPeriodeToReset(p);
+                              setShowResetModal(true);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
+                            title="Reset Data Periode"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              bukaModalEdit(p);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-navy-50 text-navy-600 hover:bg-navy-600 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-navy-600 hover:border-navy-300'}`}
+                            title="Edit Periode"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(p);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300'}`}
+                            title="Hapus Periode"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-                      {/* Action buttons */}
-                      <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPeriodeToReset(p);
-                            setShowResetModal(true);
-                          }}
-                          className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-white shadow-sm text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300'}`}
-                          title="Reset"
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            bukaModalEdit(p);
-                          }}
-                          className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-white shadow-sm text-navy-600 hover:bg-navy-600 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-navy-600 hover:border-navy-300'}`}
-                          title="Edit"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(p);
-                          }}
-                          className={`p-1.5 rounded-lg transition-all ${isActive ? 'bg-white shadow-sm text-red-500 hover:bg-red-500 hover:text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300'}`}
-                          title="Hapus"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
                   );
                 })
               )}
