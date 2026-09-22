@@ -111,9 +111,12 @@ export default function HeaderProfilAkses({ profil, modePenilaian, namaPeriode }
 
               {/* Nama Periode */}
               {namaPeriode && (
-                <p className="mt-2 text-xs font-medium text-white/70">
-                  {namaPeriode}
-                </p>
+                <div className="mt-3 inline-block">
+                  <p className="text-[10px] uppercase tracking-wider text-white/60 font-semibold mb-0.5">Sesi Penilaian Aktif</p>
+                  <p className="text-sm font-bold text-white bg-black/20 px-3 py-1.5 rounded-lg border border-white/10 shadow-inner">
+                    {namaPeriode}
+                  </p>
+                </div>
               )}
             </div>
           </div>
