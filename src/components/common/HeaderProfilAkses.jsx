@@ -19,6 +19,7 @@
 import { Building2, IdCard, ShieldCheck } from 'lucide-react';
 
 import { MODE_PENILAIAN_LABEL } from '../../utils/constants';
+import { getFotoUrl, getFotoErrorHandler } from '../../utils/votingUtils';
 import WarningBox from './WarningBox';
 
 /**
@@ -73,16 +74,10 @@ export default function HeaderProfilAkses({ profil, modePenilaian, namaPeriode }
             {/* Avatar dengan Shield Badge */}
             <div className="relative">
               <img
-                src={
-                  profil?.foto_url ||
-                  (nipAvatar ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${nipAvatar}.jpg` : null)
-                }
+                src={getFotoUrl(profil?.foto_url, nipAvatar, profil?.nama)}
                 alt={`Foto ${profil?.nama ?? 'pegawai'}`}
                 className="h-20 w-20 shrink-0 rounded-full border-4 border-gold-300 object-cover shadow-lg"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profil?.nama || 'Pegawai')}&background=16324a&color=fff&size=128`;
-                }}
+                onError={getFotoErrorHandler(profil?.nama)}
               />
               {/* Shield Badge */}
               <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gold-500 text-white shadow-lg">
@@ -103,7 +98,7 @@ export default function HeaderProfilAkses({ profil, modePenilaian, namaPeriode }
               </div>
 
               {/* Detail: NIP & Unit Kerja */}
-              <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/80">
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-white/80">
                 <div className="flex items-center gap-1.5">
                   <IdCard className="h-3.5 w-3.5" aria-hidden="true" />
                   <span className="font-mono text-xs">{nipDisplay}</span>
@@ -112,7 +107,7 @@ export default function HeaderProfilAkses({ profil, modePenilaian, namaPeriode }
                   <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span className="truncate text-xs">{profil?.unit_kerja ?? '-'}</span>
                 </div>
-              </dl>
+              </div>
 
               {/* Nama Periode */}
               {namaPeriode && (

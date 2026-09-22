@@ -21,6 +21,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { fetchTokenNominee } from '../../services/voting/authService';
@@ -160,6 +161,18 @@ export default function NomineePage() {
     onError: (err) => setErrorAkhir(err.message),
   });
 
+  /**
+   * Wrapper for inline onSimpan async callbacks.
+   * Prevents silent error swallowing — shows a toast if something fails.
+   */
+  async function safeSubmit(fn) {
+    try {
+      await fn();
+    } catch (err) {
+      toast.error(err?.message || 'Gagal menyimpan. Coba lagi.');
+    }
+  }
+
   const isKirimDisabledMode1A = mutasiSelesai.isPending || (akses?.periode?.is_video_profil && !videoProfilLink);
   
   // Di Mode 2, jika admin sudah menset form link (pertanyaan > 0), upload file fisik opsional/dihilangkan wajibnya.
@@ -222,10 +235,10 @@ export default function NomineePage() {
                   {akses.periode.is_video_profil && (
                     <FormVideoProfilNominee
                       linkTersimpan={videoProfilLink}
-                      onSimpan={async (link) => {
+                      onSimpan={(link) => safeSubmit(async () => {
                         await submitVideoProfilNominee(token, link);
                         await muatUlangVideoLink();
-                      }}
+                      })}
                     />
                   )}
 
@@ -235,10 +248,10 @@ export default function NomineePage() {
                       key={p.id}
                       pertanyaan={p}
                       jawabanTersimpan={jawabanByPertanyaanId[p.id]}
-                      onSimpan={async (teks) => {
+                      onSimpan={(teks) => safeSubmit(async () => {
                         await submitJawabanNominee(token, p.id, teks);
                         await muatUlangJawaban();
-                      }}
+                      })}
                     />
                   ))}
                   
@@ -246,10 +259,10 @@ export default function NomineePage() {
                     <FormPortofolioNominee
                       type="portofolio_pengembangan"
                       dataTersimpan={portofolio?.portofolio_pengembangan}
-                      onSimpan={async (data) => {
+                      onSimpan={(data) => safeSubmit(async () => {
                         await submitPortofolioNominee(token, 'portofolio_pengembangan', data);
                         await muatUlangPortofolio();
-                      }}
+                      })}
                     />
                   )}
 
@@ -257,10 +270,10 @@ export default function NomineePage() {
                     <FormPortofolioNominee
                       type="portofolio_inovasi"
                       dataTersimpan={portofolio?.portofolio_inovasi}
-                      onSimpan={async (data) => {
+                      onSimpan={(data) => safeSubmit(async () => {
                         await submitPortofolioNominee(token, 'portofolio_inovasi', data);
                         await muatUlangPortofolio();
-                      }}
+                      })}
                     />
                   )}
 
@@ -268,12 +281,13 @@ export default function NomineePage() {
                     <FormPortofolioNominee
                       type="portofolio_penghargaan"
                       dataTersimpan={portofolio?.portofolio_penghargaan}
-                      onSimpan={async (data) => {
+                      onSimpan={(data) => safeSubmit(async () => {
                         await submitPortofolioNominee(token, 'portofolio_penghargaan', data);
                         await muatUlangPortofolio();
-                      }}
+                      })}
                     />
                   )}
+
                 </div>
 
                 {/* Tombol Selesai */}
@@ -307,10 +321,10 @@ export default function NomineePage() {
                   <div className="mb-4">
                     <FormVideoProfilNominee
                       linkTersimpan={videoProfilLink}
-                      onSimpan={async (link) => {
+                      onSimpan={(link) => safeSubmit(async () => {
                         await submitVideoProfilNominee(token, link);
                         await muatUlangVideoLink();
-                      }}
+                      })}
                     />
                   </div>
                 )}

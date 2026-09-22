@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   UserCheck, 
@@ -30,8 +30,15 @@ export default function FormPionirPengusul({
 }) {
   const [kandidat, setKandidat] = useState(null);
   const [kataCari, setKataCari] = useState('');
+  const [debouncedKataCari, setDebouncedKataCari] = useState('');
   const [kataKunci, setKataKunci] = useState('');
   const [tampilModal, setTampilModal] = useState(false);
+
+  // Debounce kataCari 300ms — prevents API call on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedKataCari(kataCari), 300);
+    return () => clearTimeout(timer);
+  }, [kataCari]);
 
   // Pisahkan pertanyaan kuesioner (skor 1-100) dan pertanyaan kata deskripsi (jika ada di master)
   const pertanyaanSkor = useMemo(() => {
@@ -49,10 +56,11 @@ export default function FormPionirPengusul({
 
   // Query daftar rekan kerja yang boleh diusulkan
   const { data: daftarPegawai = [], isLoading: loadingPegawai } = useQuery({
-    queryKey: ['pegawai-eligible-pionir', akses?.periode?.id, akses?.penilai?.id, kataCari],
-    queryFn: () => fetchPegawaiEligiblePionir(akses.periode.id, akses.penilai.id, kataCari),
+    queryKey: ['pegawai-eligible-pionir', akses?.periode?.id, akses?.penilai?.id, debouncedKataCari],
+    queryFn: () => fetchPegawaiEligiblePionir(akses.periode.id, akses.penilai.id, debouncedKataCari),
     enabled: Boolean(akses?.periode?.id),
   });
+
 
   function handleSliderChange(pertanyaanId, nilai) {
     setSkorState((prev) => ({
@@ -126,8 +134,8 @@ export default function FormPionirPengusul({
       </div>
 
       {errorMessage && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
           <span>{errorMessage}</span>
         </div>
       )}

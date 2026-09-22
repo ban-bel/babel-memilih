@@ -1,21 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Send, Loader2, ChevronDown, Star, AlertTriangle, CheckCircle2, Save } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import PortofolioViewer from '../../../components/common/PortofolioViewer';
-
-function kunciSkor(nomineeId, pertanyaanId) {
-  return `${nomineeId}:${pertanyaanId}`;
-}
-
-function getEmbedUrl(url) {
-  if (!url) return '';
-  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-  if (videoIdMatch && videoIdMatch[1]) {
-    return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
-  }
-  return url;
-}
+import { kunciSkor, getEmbedUrl, getFotoUrl, getFotoErrorHandler } from '../../../utils/votingUtils';
 
 /**
  * Form Mode 1A — Voting Evaluatif Pegawai. Satu kartu per nominee, berisi
@@ -31,18 +18,16 @@ function getEmbedUrl(url) {
  * @param {string|null} [errorMessage] - Error message from submit
  */
 export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubmit, isSubmitting, errorMessage }) {
-  const loadDraft = () => {
+  const [draft] = useState(() => {
     if (!token) return null;
     try {
       const saved = localStorage.getItem(`draft_mode1a_${token}`);
       if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn("Failed to read draft", e);
+    } catch {
+      // Silently ignore malformed draft data
     }
     return null;
-  };
-
-  const draft = useMemo(loadDraft, [token]);
+  });
 
   const nilaiAwal = useMemo(() => {
     if (draft && draft.skor) {
@@ -228,13 +213,10 @@ export default function FormMode1A({ token, nominee, pertanyaan, jawaban, onSubm
               >
                 <div className="relative">
                   <img
-                    src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
+                    src={getFotoUrl(n.foto_url, n.nip, n.nama)}
                     alt={n.nama}
                     className="h-14 w-14 rounded-full border-2 border-slate-200 object-cover shadow-md transition-transform duration-200 hover:scale-105"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama)}&background=16324a&color=fff&size=128`;
-                    }}
+                    onError={getFotoErrorHandler(n.nama)}
                   />
                   {sudahTerisi && (
                     <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">

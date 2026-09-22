@@ -153,18 +153,20 @@ export default function VerifikasiPenilai() {
               <form onSubmit={handleVerifikasi} className="space-y-5">
                 {/* NIP Input */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
+                  <label htmlFor="input-nip" className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
                     <Fingerprint className="w-4 h-4" />
                     5 Digit Terakhir NIP Lama Anda
                   </label>
                   <div className="relative">
                     <input
+                      id="input-nip"
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={nip5digit}
                       onChange={handleNipChange}
                       placeholder="Contoh: 12345"
+                      aria-label="5 digit terakhir NIP Lama"
                       className="w-full px-4 py-3 sm:px-5 sm:py-4 text-center text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-navy-900
                                bg-white/50 border-2 border-slate-200 rounded-2xl
                                focus:outline-none focus:border-navy-500 focus:bg-white focus:shadow-glow
@@ -173,6 +175,7 @@ export default function VerifikasiPenilai() {
                       maxLength={5}
                       disabled={isLoading}
                     />
+
                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
                       <span className={`text-xs font-bold px-2 py-1 rounded-md ${nip5digit.length === 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                         {nip5digit.length}/5
@@ -183,18 +186,20 @@ export default function VerifikasiPenilai() {
 
                 {/* HP Input */}
                 <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
+                  <label htmlFor="input-hp" className="flex items-center gap-2 text-sm font-semibold text-navy-800 mb-2 transition-colors group-focus-within:text-navy-600">
                     <Smartphone className="w-4 h-4" />
                     5 Digit Terakhir No. HP
                   </label>
                   <div className="relative">
                     <input
+                      id="input-hp"
                       type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={hp5digit}
                       onChange={handleHpChange}
                       placeholder="Contoh: 81234"
+                      aria-label="5 digit terakhir Nomor HP"
                       className="w-full px-4 py-3 sm:px-5 sm:py-4 text-center text-2xl sm:text-3xl font-mono tracking-[0.2em] sm:tracking-[0.3em] text-navy-900
                                bg-white/50 border-2 border-slate-200 rounded-2xl
                                focus:outline-none focus:border-navy-500 focus:bg-white focus:shadow-glow
@@ -210,6 +215,7 @@ export default function VerifikasiPenilai() {
                     </div>
                   </div>
                 </div>
+
 
                 {/* Submit Button */}
                 <div className="pt-2">
@@ -347,6 +353,15 @@ export default function VerifikasiPenilai() {
                             }
                           `}
                           onClick={() => !sudahDigunakan && handleMasukPeriode(periode.token, periode.peran)}
+                          tabIndex={sudahDigunakan ? -1 : 0}
+                          role={sudahDigunakan ? undefined : 'button'}
+                          aria-label={sudahDigunakan ? undefined : `Masuk ke periode ${periode.nama_periode}`}
+                          onKeyDown={(e) => {
+                            if (!sudahDigunakan && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              handleMasukPeriode(periode.token, periode.peran);
+                            }
+                          }}
                         >
                           {/* Status Label (If Done) */}
                           {sudahDigunakan && (

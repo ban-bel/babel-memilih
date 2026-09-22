@@ -1,24 +1,11 @@
 import ReactMarkdown from 'react-markdown';
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Send, Loader2, ChevronDown, FileText, Download, Star, Gavel, MessageSquare, Save, CloudDownload, Check, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { Send, Loader2, ChevronDown, FileText, Gavel, MessageSquare, Save, CloudDownload, Check, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import Modal from '../../../components/common/Modal';
 import { toast } from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import PortofolioViewer from '../../../components/common/PortofolioViewer';
-import { getSignedUrlBuktiPDF } from '../../../services/voting/uploadService';
-
-function kunciSkor(nomineeId, kategoriId) {
-  return `${nomineeId}:${kategoriId}`;
-}
-
-function getEmbedUrl(url) {
-  if (!url) return '';
-  const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-  if (videoIdMatch && videoIdMatch[1]) {
-    return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
-  }
-  return url;
-}
+import { kunciSkor, getEmbedUrl, getFotoUrl, getFotoErrorHandler } from '../../../utils/votingUtils';
 
 function getPreviewUrl(url) {
   if (!url) return '';
@@ -48,20 +35,16 @@ function getPreviewUrl(url) {
 export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaban, onSubmit, isSubmitting }) {
   const isFirstRender = useRef(true);
 
-  const [downloadingUrl, setDownloadingUrl] = useState(null);
-  
-  const loadDraft = () => {
+  const [draft] = useState(() => {
     if (!token) return null;
     try {
       const saved = localStorage.getItem(`draft_mode2_${token}`);
       if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn("Failed to read draft", e);
+    } catch {
+      // Silently ignore malformed draft data
     }
     return null;
-  };
-
-  const draft = useMemo(loadDraft, [token]);
+  });
 
   const nilaiAwal = useMemo(() => {
     if (draft && draft.skor) {
@@ -181,14 +164,6 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
 
   const progressPercent = targetDinilai === 0 ? 100 : (sudahDinilai / targetDinilai) * 100;
 
-
-  function handleBukaNominee(id) {
-    const buka = nomineeTerbuka === id ? null : id;
-    setNomineeTerbuka(buka);
-    if (buka) {
-      setTersentuh((prev) => new Set(prev).add(buka));
-    }
-  }
 
   function ubahSkor(nomineeId, kategoriId, nilai) {
     setSkor((prev) => ({ ...prev, [kunciSkor(nomineeId, kategoriId)]: Number(nilai) }));
@@ -316,13 +291,10 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
                     sudahTerisi ? 'border-emerald-400' : 'border-slate-100 group-hover:border-navy-200'
                   }`}></div>
                   <img
-                    src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
+                    src={getFotoUrl(n.foto_url, n.nip, n.nama)}
                     alt={n.nama}
                     className="w-14 h-14 rounded-full object-cover p-0.5 bg-white"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=64`;
-                    }}
+                    onError={getFotoErrorHandler(n.nama)}
                   />
                   {sudahTerisi && (
                     <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 text-white rounded-full p-1 shadow-sm border-2 border-white transform transition-transform group-hover:scale-110">
@@ -365,13 +337,10 @@ export default function FormMode2({ token, nominee, kategori, pertanyaan, jawaba
             openedNominee ? (
               <div className="flex items-center gap-3 -my-1">
                 <img
-                  src={openedNominee.foto_url || (openedNominee.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${openedNominee.nip}.jpg` : null)}
+                  src={getFotoUrl(openedNominee.foto_url, openedNominee.nip, openedNominee.nama)}
                   alt={openedNominee.nama}
                   className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(openedNominee.nama || 'N')}&background=16324a&color=fff&size=64`;
-                  }}
+                  onError={getFotoErrorHandler(openedNominee.nama)}
                 />
                 <div className="flex flex-col">
                   <span className="text-base sm:text-lg font-black text-navy-900 leading-none">{openedNominee.nama}</span>

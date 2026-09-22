@@ -12,7 +12,7 @@ import ResetToken from './pages/admin/ResetToken';
 import KelolaTemplateWA from './pages/admin/KelolaTemplateWA';
 import PerkenalanNomorWA from './pages/admin/PerkenalanNomorWA';
 import KotakKeluar from './pages/admin/KotakKeluar';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 
 function PlaceholderPage({ judul, keterangan }) {
   return (
@@ -28,10 +28,41 @@ function PlaceholderPage({ judul, keterangan }) {
   );
 }
 
-import { ArrowRight, Fingerprint, Database, Award } from 'lucide-react';
+import { ArrowRight, Fingerprint, Database, Award, MessageCircle, X, Send, Loader2 } from 'lucide-react';
 import { getDailyAvatarUrl } from './utils/constants';
+import { kirimPesanLocalBot } from './services/wabotLokalService';
+import { useState } from 'react';
 
 function PortalLandingPage() {
+  const [showWaTest, setShowWaTest] = useState(false);
+  const [waNomor, setWaNomor] = useState('');
+  const [waPesan, setWaPesan] = useState('');
+  const [isSendingWa, setIsSendingWa] = useState(false);
+
+  const handleKirimWA = async (e) => {
+    e.preventDefault();
+    if (!waNomor || !waPesan) {
+      toast.error('Nomor dan pesan harus diisi!');
+      return;
+    }
+    
+    setIsSendingWa(true);
+    try {
+      const res = await kirimPesanLocalBot(waNomor, waPesan);
+      if (res.status) {
+        toast.success(res.message || 'Pesan WA berhasil dikirim!');
+        setWaNomor('');
+        setWaPesan('');
+        setShowWaTest(false);
+      } else {
+        toast.error(res.reason || 'Gagal mengirim pesan WA.');
+      }
+    } catch (err) {
+      toast.error('Terjadi kesalahan koneksi.');
+    } finally {
+      setIsSendingWa(false);
+    }
+  };
   const girlAvatarSrc = getDailyAvatarUrl('girl');
   const boyAvatarSrc = getDailyAvatarUrl('boy');
 
@@ -132,12 +163,82 @@ function PortalLandingPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center animate-fade-in">
+        <div className="mt-8 flex flex-col items-center gap-4 animate-fade-in">
+          <button 
+            onClick={() => setShowWaTest(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-slate-200 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-colors text-sm font-medium shadow-sm"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Uji Coba API WhatsApp
+          </button>
           <p className="text-sm font-medium text-slate-400">
             © {new Date().getFullYear()} BPS Provinsi Kepulauan Bangka Belitung
           </p>
         </div>
       </div>
+
+      {/* Modal Uji Coba WA */}
+      {showWaTest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <MessageCircle className="w-5 h-5" />
+                <h3 className="font-bold">Uji Coba Kirim WA</h3>
+              </div>
+              <button 
+                onClick={() => setShowWaTest(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleKirimWA} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">Nomor Tujuan (Awali 08/62)</label>
+                <input 
+                  type="text" 
+                  value={waNomor}
+                  onChange={(e) => setWaNomor(e.target.value)}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">Pesan</label>
+                <textarea 
+                  value={waPesan}
+                  onChange={(e) => setWaPesan(e.target.value)}
+                  placeholder="Ketik pesan uji coba Anda di sini..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                  required
+                />
+              </div>
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={isSendingWa}
+                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSendingWa ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Kirim Pesan
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

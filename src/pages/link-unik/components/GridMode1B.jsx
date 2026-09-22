@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import ProfilNomineeModal from '../../../components/common/ProfilNomineeModal';
 import Modal from '../../../components/common/Modal';
+import { ABSTAIN_ICON_URL, KENALAN_BTN_LABEL } from '../../../utils/votingConstants';
+import { getFotoUrl, getFotoErrorHandler } from '../../../utils/votingUtils';
 
 /**
  * Form Mode 1B — Quick Vote / Pegawai Terfavorit. Grid kartu foto nominee,
@@ -105,13 +107,10 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
                   isHovered ? 'bg-gradient-to-br from-gold-300/50 to-gold-400/50 blur-md opacity-30 scale-105' : ''
                 }`} />
                 <img
-                  src={n.foto_url || (n.nip ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${n.nip}.jpg` : null)}
+                  src={getFotoUrl(n.foto_url, n.nip, n.nama)}
                   alt={n.nama}
                   className="relative h-28 w-28 sm:h-36 sm:w-36 md:h-40 md:w-40 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.nama || 'N')}&background=16324a&color=fff&size=128`;
-                  }}
+                  onError={getFotoErrorHandler(n.nama)}
                 />
                 {terpilih && (
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
@@ -132,22 +131,33 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
 
               {/* Lihat Profil Button (Only if has data) */}
               {(n.dokumen_link || (periode?.is_tabel_kehadiran && hasTabel(n.tabel_kehadiran))) && (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation();
                     setProfilNominee(n);
                     setReadProfiles(prev => new Set(prev).add(n.id));
                   }}
-                  className={`relative z-10 mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 border-none ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setProfilNominee(n);
+                      setReadProfiles(prev => new Set(prev).add(n.id));
+                    }
+                  }}
+                  aria-label={`Lihat profil ${n.nama}`}
+                  className={`relative z-10 mt-3 w-full py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer select-none ${
                     terpilih 
                       ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
                       : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
                   }`}
                 >
-                  👀 Kenalan Dulu Yuk
-                </button>
+                  {KENALAN_BTN_LABEL}
+                </div>
               )}
+
 
               {/* Hover Effect Overlay */}
               <div className={`absolute inset-0 rounded-2xl transition-all duration-300 pointer-events-none ${
@@ -179,8 +189,8 @@ export default function GridMode1B({ nominee, periode, onSubmit, isSubmitting })
             )}
             <div className={`relative mx-auto mb-4 w-fit transition-all duration-300 ${pilihan === 'abstain' ? 'scale-110' : 'group-hover:scale-105'}`}>
               <img
-                src="https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/ikon-pegawai/tidak-memilih-rev.png"
-                alt="Abstain"
+                src={ABSTAIN_ICON_URL}
+                alt="Abstain — tidak memilih siapapun"
                 className="relative h-28 w-28 sm:h-36 sm:w-36 rounded-full border-4 border-white object-cover shadow-lg transition-all duration-300 bg-white grayscale opacity-[.92]"
               />
             </div>

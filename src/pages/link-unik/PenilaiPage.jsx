@@ -1,7 +1,7 @@
 import { useParams, Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Send, CheckCircle, Info } from 'lucide-react';
+import { CheckCircle, Info } from 'lucide-react';
 
 import { fetchTokenPenilai } from '../../services/voting/authService';
 import { fetchDaftarNominee, fetchPertanyaanMode1A } from '../../services/voting/nomineeService';
@@ -22,7 +22,8 @@ import FormMode2A from './components/FormMode2A';
 import FormPionirPengusul from './components/FormPionirPengusul';
 import GridPionirVote from './components/GridPionirVote';
 import SuccessScreen from '../../components/common/SuccessScreen';
-import Modal from '../../components/common/Modal';
+import WelcomeModal from '../../components/common/WelcomeModal';
+
 
 export default function PenilaiPage() {
   const { token } = useParams();
@@ -31,11 +32,6 @@ export default function PenilaiPage() {
   const [tampilModalWelcome, setTampilModalWelcome] = useState(true);
   const girlAvatarSrc = getDailyAvatarUrl('girl');
   const boyAvatarSrc = getDailyAvatarUrl('boy');
-
-  // Redirect ke halaman verifikasi jika tidak ada token
-  if (!token) {
-    return <Navigate to="/penilai" replace />;
-  }
 
   const {
     data: akses,
@@ -180,8 +176,12 @@ export default function PenilaiPage() {
     onError: (err) => setErrorSubmit(err.message),
   });
 
-  if (!token || (loadingToken && token)) {
-    return token ? <LoadingScreen label="Memuat..." /> : <StatusScreen status={STATUS_AKSES_TOKEN.TOKEN_TIDAK_VALID} />;
+  if (!token) {
+    return <Navigate to="/penilai" replace />;
+  }
+
+  if (loadingToken) {
+    return <LoadingScreen label="Memuat..." />;
   }
 
   if (sudahKirim) {
@@ -378,30 +378,14 @@ export default function PenilaiPage() {
         )}
       </main>
       
-      <Modal 
-        isOpen={tampilModalWelcome} 
+      <WelcomeModal
+        isOpen={tampilModalWelcome}
         onClose={() => setTampilModalWelcome(false)}
-        title="Konfirmasi Penilaian"
-      >
-        <div className="space-y-6 text-center">
-          <div className="mx-auto w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
-          </div>
-          <div>
-            <h4 className="text-xl font-bold text-navy-900">Selamat Datang, {akses.penilai.nama}!</h4>
-            <p className="mt-2 text-slate-600">
-              Pada pemilihan <span className="font-semibold text-navy-800">{akses.periode.nama_periode}</span>
-            </p>
-          </div>
-          <button
-            onClick={() => setTampilModalWelcome(false)}
-            className="w-full py-3 px-4 bg-navy-600 hover:bg-navy-700 text-white rounded-xl font-medium transition-colors"
-          >
-            Mulai Menilai
-          </button>
-        </div>
-      </Modal>
+        nama={akses.penilai.nama}
+        namaPeriode={akses.periode.nama_periode}
+      />
       </div>
     </div>
   );
 }
+

@@ -11,6 +11,7 @@ import {
   Users 
 } from 'lucide-react';
 import Modal from '../../../components/common/Modal';
+import { KENALAN_BTN_LABEL } from '../../../utils/votingConstants';
 
 /**
  * GridPionirVote — Tampilan Voting Cepat Mode PIONIR (Fase 2: Voting Umum Terbuka LUBER).
@@ -116,8 +117,8 @@ export default function GridPionirVote({
       </div>
 
       {errorMessage && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -269,7 +270,7 @@ export default function GridPionirVote({
                         : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:-translate-y-0.5'
                     }`}
                   >
-                    👀 Kenalan Dulu Yuk
+                    {KENALAN_BTN_LABEL}
                   </button>
                 </div>
               </div>
