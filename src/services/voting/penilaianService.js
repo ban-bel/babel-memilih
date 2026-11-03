@@ -1,5 +1,6 @@
 import { supabase } from '../../config/supabaseClient';
 import { fetchTokenPenilai } from './authService';
+import { pastikanTokenValid } from './shared';
 
 export async function fetchKriteriaMode2A(periodeId) {
   const { data, error } = await supabase

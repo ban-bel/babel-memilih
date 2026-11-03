@@ -59,25 +59,6 @@ const BATCH_PAUSE_CHANCE = 0.70; // 70% chance untuk pause antar batch
 // Weekend batch pause lebih lama
 const WEEKEND_BATCH_PAUSE_MULTIPLIER = 1.5;
 
-/**
- * ============================================
- * VARIABEL STATE - untuk tracking pattern
- * ============================================
- */
-
-// Track waktu kirim terakhir untuk natural interval
-let lastSendTime = null;
-let messageCount = 0;
-let sessionStartTime = null;
-
-/**
- * Reset state untuk sesi baru
- */
-function resetHumanPatternState() {
-  lastSendTime = Date.now();
-  messageCount = 0;
-  sessionStartTime = Date.now();
-}
 
 /**
  * Get random batch size - manusia kadang kirim 1-2, kadang 3-5

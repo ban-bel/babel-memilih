@@ -303,6 +303,8 @@ export async function fetchRekapModePionir(periodeId) {
       total_seluruh_suara,
       rata_skor_kuesioner,
       kata_pengusul,
+      deskripsi_inovasi,
+      inovasi_pengusul_raw,
       poin_suara,
       poin_ckp,
       poin_kuesioner,
@@ -340,6 +342,7 @@ export async function fetchDetailPengusulPionir(periodeId) {
       pertanyaan:pertanyaan!penilaian_pionir_pengusul_pertanyaan_id_fkey(teks_pertanyaan, bobot),
       skor,
       kata_kunci,
+      deskripsi_inovasi,
       created_at
     `)
     .eq('periode_id', periodeId);

@@ -101,7 +101,11 @@ export default function FormKunciPemenang({ opsiNominee, keputusanSaatIni, onKun
                   <option key={r.nominee_id} value={r.nominee_id}>
                     {idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}#
                     {r.peringkat} — {r.nama_nominee}
-                    {r.skor_akhir_juri != null ? ` (${Number(r.skor_akhir_juri).toFixed(2)})` : ''}
+                    {r.skor_akhir_juri != null
+                      ? ` (${Number(r.skor_akhir_juri).toFixed(2)})`
+                      : r.skor_akhir != null
+                        ? ` (${Number(r.skor_akhir).toFixed(2)} pts)`
+                        : ''}
                   </option>
                 ))}
               </select>

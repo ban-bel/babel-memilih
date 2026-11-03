@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Sparkles,
   Award,
+  Lightbulb,
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -87,6 +88,7 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
           kandidatNama: item.kandidat?.nama,
           kandidatNip: item.kandidat?.nip,
           kataKunci: item.kata_kunci,
+          deskripsiInovasi: item.deskripsi_inovasi || '',
           submittedAt: item.created_at,
         });
       }
@@ -421,15 +423,28 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
 
                     {/* Informasi Calon yang Diusulkan jika sudah submit */}
                     {isSudah && usulan && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200">
-                          <Award className="h-3.5 w-3.5 text-emerald-600" />
-                          Mencalonkan: <strong>{usulan.kandidatNama}</strong>
-                        </span>
-                        {usulan.kataKunci && (
-                          <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200 italic">
-                            &ldquo;{usulan.kataKunci}&rdquo;
+                      <div className="mt-2 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200">
+                            <Award className="h-3.5 w-3.5 text-emerald-600" />
+                            Mencalonkan: <strong>{usulan.kandidatNama}</strong>
                           </span>
+                          {usulan.kataKunci && (
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200 italic">
+                              &ldquo;{usulan.kataKunci}&rdquo;
+                            </span>
+                          )}
+                        </div>
+                        {usulan.deskripsiInovasi && (
+                          <div className="rounded-xl bg-white/90 border border-amber-200/80 p-2.5 text-xs text-slate-700 max-w-2xl">
+                            <span className="font-semibold text-amber-800 flex items-center gap-1 mb-0.5">
+                              <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                              Inovasi yang Diusulkan:
+                            </span>
+                            <p className="whitespace-pre-line leading-relaxed text-slate-600">
+                              {usulan.deskripsiInovasi}
+                            </p>
+                          </div>
                         )}
                       </div>
                     )}

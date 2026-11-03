@@ -1,4 +1,29 @@
 import nodemailer from 'nodemailer';
+import { verifikasiAdmin, escapeHtml, EMAIL_REGEX, stripNewlines } from './_auth.js';
+
+/**
+ * Link penilaian hanya boleh mengarah ke host aplikasi ini sendiri
+ * (atau host tambahan di env APP_ALLOWED_HOSTS, dipisah koma),
+ * agar endpoint tidak bisa dipakai menyebar link phishing.
+ */
+function linkDiizinkan(link, req) {
+  let parsed;
+  try {
+    parsed = new URL(link);
+  } catch {
+    return false;
+  }
+  if (!['https:', 'http:'].includes(parsed.protocol)) return false;
+
+  const host = parsed.host.toLowerCase();
+  const requestHost = String(req.headers?.host || '').toLowerCase();
+  const extraHosts = String(process.env.APP_ALLOWED_HOSTS || '')
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+
+  return host === requestHost || extraHosts.includes(host);
+}
 
 export default async function handler(req, res) {
   // Hanya melayani method POST
@@ -6,21 +31,44 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const { email, nama_penerima, link_penilaian, sapaan, nama_periode } = req.body;
-
-  const finalSapaan = sapaan || 'Bapak/Ibu';
-  const finalPeriode = nama_periode || 'Babel Memilih';
-
-  if (!email || !link_penilaian) {
-    return res.status(400).json({ message: 'Email tujuan dan link penilaian wajib diisi.' });
+  // Hanya admin yang login yang boleh mengirim email
+  const auth = await verifikasiAdmin(req);
+  if (!auth.ok) {
+    return res.status(auth.status).json({ success: false, message: auth.message });
   }
 
+  const { email, nama_penerima: rawNama, link_penilaian: rawLink, sapaan, nama_periode } = req.body || {};
+
+  if (!email || !rawLink) {
+    return res.status(400).json({ message: 'Email tujuan dan link penilaian wajib diisi.' });
+  }
+  if (typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
+    return res.status(400).json({ message: 'Alamat email tidak valid.' });
+  }
+  if (typeof rawLink !== 'string' || !linkDiizinkan(rawLink, req)) {
+    return res.status(400).json({ message: 'Link penilaian tidak diizinkan.' });
+  }
+  if (!process.env.SMTP_USER) {
+    console.error('Missing Environment Variable: SMTP_USER');
+    return res.status(500).json({ success: false, message: 'Konfigurasi SMTP server tidak lengkap.' });
+  }
+
+  // Versi plain (tanpa newline) untuk subject & text body
+  const plainSapaan = stripNewlines(sapaan) || 'Bapak/Ibu';
+  const plainPeriode = stripNewlines(nama_periode) || 'Babel Memilih';
+  const plainNama = stripNewlines(rawNama);
+
+  // Versi ter-escape untuk HTML body
+  const finalSapaan = escapeHtml(plainSapaan);
+  const finalPeriode = escapeHtml(plainPeriode);
+  const nama_penerima = escapeHtml(plainNama);
+  const link_penilaian = escapeHtml(rawLink);
+
   try {
-    // Inisialisasi Transporter Nodemailer dengan SMTP BPS
-    // Prioritaskan dari Environment Variables, dengan fallback ke default
+    // Inisialisasi Transporter Nodemailer dengan SMTP BPS dari Environment Variables
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
+      port: parseInt(process.env.SMTP_PORT || '465', 10),
       secure: true, // Gunakan TLS/SSL
       auth: {
         user: process.env.SMTP_USER,
@@ -29,20 +77,23 @@ export default async function handler(req, res) {
     });
 
     // Variasi sapaan awal untuk menghindari deteksi spam (Energetic & Witty)
-    const pembukaList = [
-      `Semoga hari ${finalSapaan} lagi on fire banget nih! 🔥`,
-      `Gimana kabarnya ${finalSapaan}? Semoga selalu dilancarkan segalanya ya. 🚀`,
-      `Halo halo! Semoga ${finalSapaan} lagi santai sejenak dari rutinitas. ☕`,
-      `Panggilan cepat buat ${finalSapaan} yang super sibuk! ⚡`
+    const pembukaVariasi = [
+      (s) => `Semoga hari ${s} lagi on fire banget nih! 🔥`,
+      (s) => `Gimana kabarnya ${s}? Semoga selalu dilancarkan segalanya ya. 🚀`,
+      (s) => `Halo halo! Semoga ${s} lagi santai sejenak dari rutinitas. ☕`,
+      (s) => `Panggilan cepat buat ${s} yang super sibuk! ⚡`
     ];
-    const pembuka = pembukaList[Math.floor(Math.random() * pembukaList.length)];
+    const pembukaFn = pembukaVariasi[Math.floor(Math.random() * pembukaVariasi.length)];
 
-    const penutupList = [
-      `Makasih banyak udah nyempetin waktu di sela-sela kesibukannya ya ${finalSapaan}! 🙏`,
-      `Insight dari ${finalSapaan} bener-bener berharga buat kita. Thanks a lot! 🌟`,
-      `We owe you one! Makasih atas bantuannya ${finalSapaan}. 🎉`
+    const penutupVariasi = [
+      (s) => `Makasih banyak udah nyempetin waktu di sela-sela kesibukannya ya ${s}! 🙏`,
+      (s) => `Insight dari ${s} bener-bener berharga buat kita. Thanks a lot! 🌟`,
+      (s) => `We owe you one! Makasih atas bantuannya ${s}. 🎉`
     ];
-    const penutup = penutupList[Math.floor(Math.random() * penutupList.length)];
+    const penutupFn = penutupVariasi[Math.floor(Math.random() * penutupVariasi.length)];
+
+    const pembuka = pembukaFn(finalSapaan);
+    const penutup = penutupFn(finalSapaan);
 
     // Template HTML Email (Energetic, Witty & To The Point)
     const htmlBody = `
@@ -77,18 +128,18 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    // Plain text fallback
-    const textBody = `Yth. ${finalSapaan} ${nama_penerima || 'Partisipan'}, 👋
+    // Plain text fallback (tidak perlu escape HTML)
+    const textBody = `Yth. ${plainSapaan} ${plainNama || 'Partisipan'}, 👋
 
-${pembuka}
+${pembukaFn(plainSapaan)}
 
-Not to rush you or anything, tapi ${finalPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.
+Not to rush you or anything, tapi ${plainPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${plainSapaan} biar hasilnya makin valid dan mantap.
 
 Less typing, more action. Langsung aja akses tautan berikut untuk masuk ke sistem:
-${link_penilaian}
+${rawLink}
 
-Reminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${finalSapaan}. Jangan di-share ya! 🤫
-${penutup}
+Reminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${plainSapaan}. Jangan di-share ya! 🤫
+${penutupFn(plainSapaan)}
 
 Yours in Friendship and Chaos,
 Tim Diseminasi Statistik
@@ -97,9 +148,9 @@ BPS Provinsi Kepulauan Bangka Belitung`;
 
     // Eksekusi pengiriman
     const info = await transporter.sendMail({
-      from: `"${finalPeriode} (Diseminasi Statistik)" <${process.env.SMTP_USER || 'kasiedls1900@bps.go.id'}>`,
+      from: `"${plainPeriode.replace(/"/g, '')} (Diseminasi Statistik)" <${process.env.SMTP_USER}>`,
       to: email,
-      subject: `Panggilan Kepada ${finalSapaan} ${nama_penerima}: ${finalPeriode} Menunggu! 🎯`,
+      subject: `Panggilan Kepada ${plainSapaan} ${plainNama}: ${plainPeriode} Menunggu! 🎯`,
       text: textBody,
       html: htmlBody,
     });
@@ -111,11 +162,11 @@ BPS Provinsi Kepulauan Bangka Belitung`;
     });
 
   } catch (error) {
+    // Detail error hanya di log server, tidak dikirim ke client
     console.error('Error pengiriman email (SMTP):', error);
     return res.status(500).json({ 
       success: false, 
       message: 'Gagal mengirim email.',
-      error: error.message 
     });
   }
 }

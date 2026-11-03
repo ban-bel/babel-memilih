@@ -6,7 +6,40 @@
  * @module services/wabotLokalService
  */
 
-// Gunakan environment variable jika ada, default ke localhost:3000
+import { supabase } from '../config/supabaseClient';
+
+/**
+ * Header untuk memanggil API serverless. Menyertakan access token sesi admin
+ * karena /api/universal-bot hanya melayani admin yang sudah login.
+ * @returns {Promise<Record<string, string>>}
+ */
+async function buatHeaderApi() {
+  const headers = { 'Content-Type': 'application/json' };
+  const { data: { session } = {} } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return headers;
+}
+
+/** Escape karakter HTML agar nilai dinamis aman disisipkan ke template email. */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Ambil body JSON dengan aman (server bisa saja mengembalikan non-JSON saat error). */
+async function bacaJsonAman(response) {
+  try {
+    return await response.json();
+  } catch {
+    return { success: false, message: `HTTP ${response.status}` };
+  }
+}
 
 /**
  * Kirim pesan tunggal via Wabot Lokal.
@@ -20,9 +53,7 @@ export async function kirimPesanLocalBot(nomorHP, pesan) {
   try {
     const response = await fetch('/api/universal-bot', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: await buatHeaderApi(),
       body: JSON.stringify({
         endpoint: '/send',
         payload: {
@@ -32,9 +63,9 @@ export async function kirimPesanLocalBot(nomorHP, pesan) {
       }),
     });
 
-            const data = await response.json();
+            const data = await bacaJsonAman(response);
 
-    if (data.success || response.ok) {
+    if (data.success === true) {
       return {
         status: true,
         message: 'Pesan berhasil dikirim via bot lokal',
@@ -73,10 +104,18 @@ export function formatHP(noHP) {
 /**
  * Kirim Email via Wabot Lokal / Universal API
  */
-export async function kirimEmailLocalBot({ email, nama_penerima, sapaan, link_penilaian, nama_periode }) {
+export async function kirimEmailLocalBot({ email, nama_penerima: rawNama, sapaan, link_penilaian: rawLink, nama_periode }) {
   try {
-    const finalSapaan = sapaan || 'Bapak/Ibu';
-    const finalPeriode = nama_periode || 'Babel Memilih';
+    // Buang newline (cegah header injection di subject) lalu escape untuk HTML
+    const bersih = (v) => String(v ?? '').replace(/[\r\n]+/g, ' ').trim();
+    const finalSapaan = escapeHtml(bersih(sapaan) || 'Bapak/Ibu');
+    const finalPeriode = escapeHtml(bersih(nama_periode) || 'Babel Memilih');
+    const nama_penerima = escapeHtml(bersih(rawNama));
+    const link_penilaian = escapeHtml(rawLink);
+    // Versi plain (tanpa escape HTML) untuk subject & text body, agar nama seperti "Ma'ruf" tidak tampil sebagai entity
+    const plainSapaan = bersih(sapaan) || 'Bapak/Ibu';
+    const plainPeriode = bersih(nama_periode) || 'Babel Memilih';
+    const plainNama = bersih(rawNama);
 
     const pembukaList = [
       `Semoga hari ${finalSapaan} lagi on fire banget nih! 🔥`,
@@ -93,7 +132,7 @@ export async function kirimEmailLocalBot({ email, nama_penerima, sapaan, link_pe
     ];
     const penutup = penutupList[Math.floor(Math.random() * penutupList.length)];
 
-    const subject = `Panggilan Kepada ${finalSapaan} ${nama_penerima}: ${finalPeriode} Menunggu! 🚀`;
+    const subject = `Panggilan Kepada ${plainSapaan} ${plainNama}: ${plainPeriode} Menunggu! 🚀`;
 
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
@@ -127,13 +166,11 @@ export async function kirimEmailLocalBot({ email, nama_penerima, sapaan, link_pe
       </div>
     `;
 
-    const textBody = `Yth. ${finalSapaan} ${nama_penerima || 'Partisipan'}, 👋\n\n${pembuka}\n\nNot to rush you or anything, tapi ${finalPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${finalSapaan} biar hasilnya makin valid dan mantap.\n\nLess typing, more action. Langsung aja akses tautan berikut untuk masuk ke sistem:\n${link_penilaian}\n\nReminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${finalSapaan}. Jangan di-share ya! 🤫\n\n${penutup}\n\nYours in Friendship and Chaos,\nTim Diseminasi Statistik\nBPS Provinsi Kepulauan Bangka Belitung`;
+    const textBody = `Yth. ${plainSapaan} ${plainNama || 'Partisipan'}, 👋\n\n${pembuka}\n\nNot to rush you or anything, tapi ${plainPeriode} udah mulai nih! Kita butuh banget insight dan penilaian dari ${plainSapaan} biar hasilnya makin valid dan mantap.\n\nLess typing, more action. Langsung aja akses tautan berikut untuk masuk ke sistem:\n${rawLink}\n\nReminder kecil: Tautan di atas bersifat strictly confidential khusus untuk ${plainSapaan}. Jangan di-share ya! 🤫\n\n${penutup}\n\nYours in Friendship and Chaos,\nTim Diseminasi Statistik\nBPS Provinsi Kepulauan Bangka Belitung`;
 
     const response = await fetch('/api/universal-bot', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: await buatHeaderApi(),
       body: JSON.stringify({
         endpoint: '/email',
         payload: {
@@ -145,9 +182,9 @@ export async function kirimEmailLocalBot({ email, nama_penerima, sapaan, link_pe
       }),
     });
 
-    const data = await response.json();
+    const data = await bacaJsonAman(response);
 
-    if (data.success || response.ok) {
+    if (data.success === true) {
       return { status: true, message: 'Email berhasil dikirim via bot lokal' };
     } else {
       return { status: false, reason: data.error || data.message || 'Gagal mengirim email via API' };

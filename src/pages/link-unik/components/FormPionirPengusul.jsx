@@ -10,7 +10,8 @@ import {
   Info, 
   ChevronRight,
   HelpCircle,
-  Award
+  Award,
+  Lightbulb
 } from 'lucide-react';
 import { fetchPegawaiEligiblePionir } from '../../../services/voting/pionirService';
 import Modal from '../../../components/common/Modal';
@@ -32,6 +33,7 @@ export default function FormPionirPengusul({
   const [kataCari, setKataCari] = useState('');
   const [debouncedKataCari, setDebouncedKataCari] = useState('');
   const [kataKunci, setKataKunci] = useState('');
+  const [deskripsiInovasi, setDeskripsiInovasi] = useState('');
   const [tampilModal, setTampilModal] = useState(false);
 
   // Debounce kataCari 300ms — prevents API call on every keystroke
@@ -83,13 +85,16 @@ export default function FormPionirPengusul({
     return totalBobot > 0 ? (totalPoin / totalBobot) : 0;
   }, [pertanyaanSkor, skorState]);
 
+  const panjangInovasi = deskripsiInovasi.trim().length;
+
   // Validasi form
   const isFormValid = useMemo(() => {
     if (!kandidat) return false;
     if (!kataKunci.trim()) return false;
+    if (panjangInovasi < 20) return false;
     if (pertanyaanSkor.some((p) => !skorState[p.id])) return false;
     return true;
-  }, [kandidat, kataKunci, pertanyaanSkor, skorState]);
+  }, [kandidat, kataKunci, panjangInovasi, pertanyaanSkor, skorState]);
 
   function handleKonfirmasiSubmit() {
     if (!isFormValid) return;
@@ -102,6 +107,7 @@ export default function FormPionirPengusul({
       kandidatId: kandidat.id,
       daftarSkor,
       kataKunci: kataKunci.trim(),
+      deskripsiInovasi: deskripsiInovasi.trim(),
     });
   }
 
@@ -356,6 +362,43 @@ export default function FormPionirPengusul({
         </div>
       </div>
 
+      {/* STEP 4: Deskripsi Inovasi / Terobosan Kandidat */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy-100 text-navy-800 text-sm font-bold">
+            4
+          </span>
+          <div>
+            <h3 className="font-bold text-slate-900 text-base">Deskripsi Inovasi / Terobosan Kandidat</h3>
+            <p className="text-xs text-slate-500">
+              Ceritakan dalam bentuk paragraf mengenai inovasi, perbaikan proses kerja, atau terobosan nyata yang dibuat oleh kandidat ini.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-1">
+          <div className="relative">
+            <textarea
+              rows={4}
+              maxLength={1500}
+              placeholder="Contoh: Menginisiasi otomasi pengolahan laporan bulanan menggunakan dashboard terpadu sehingga memangkas waktu rekapitulasi tim dari 3 hari menjadi kurang dari 2 jam serta meminimalkan human error..."
+              value={deskripsiInovasi}
+              onChange={(e) => setDeskripsiInovasi(e.target.value)}
+              className="input w-full text-sm border-slate-300 focus:border-navy-600 leading-relaxed resize-y py-3"
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="text-slate-400 flex items-center gap-1.5">
+              <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              Narasi ini akan menjadi bahan pertimbangan Kepala Kantor dalam penetapan Pionir terpilih.
+            </span>
+            <span className={panjangInovasi >= 20 ? 'font-semibold text-emerald-600' : 'text-amber-600 font-medium'}>
+              {panjangInovasi} / 1500 karakter {panjangInovasi < 20 ? '(min. 20 karakter)' : '✓'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Tombol Submit */}
       <div className="flex justify-end pt-2">
         <button
@@ -409,6 +452,16 @@ export default function FormPionirPengusul({
                 <span className="text-slate-500 block">Kata Deskripsi</span>
                 <span className="font-bold text-emerald-700 text-sm">"{kataKunci.trim()}"</span>
               </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs space-y-1">
+              <span className="text-slate-500 font-semibold flex items-center gap-1">
+                <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                Deskripsi Inovasi / Terobosan
+              </span>
+              <p className="text-slate-700 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto">
+                {deskripsiInovasi.trim()}
+              </p>
             </div>
           </div>
 

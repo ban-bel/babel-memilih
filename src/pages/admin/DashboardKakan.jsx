@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast';
 import { 
   Medal, MessageSquare, Download, Trophy, TrendingUp, ChevronDown, LayoutGrid, 
   Star, Lock, Unlock, RefreshCw, ChevronDown as ChevronDownIcon, ChevronUp, 
-  Crown, Info, Edit3, FileSpreadsheet, Sparkles 
+  Crown, Info, Edit3, FileSpreadsheet, Sparkles, Lightbulb 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -27,7 +27,7 @@ import {
   fetchRekapMode2A, fetchCatatanKualitatifJuri, fetchDetailPenilaianJuri, 
   fetchKelengkapanPenilai, fetchRekapModePionir, fetchDetailPengusulPionir 
 } from '../../services/voting/rekapService';
-import { updateCkpKandidatPionir } from '../../services/voting/pionirService';
+import { updateCkpKandidatPionir, updateInovasiKandidatPionir } from '../../services/voting/pionirService';
 import { fetchVotingKategori, fetchPemenangPerKategori, setPemenangPerKategori, autoLockPemenangPerKategori, resetPemenangPerKategori } from '../../services/voting/kategoriService';
 import { fetchKeputusanKakan, kuncikanPemenang } from '../../services/voting/kakanService';
 import { MODE_PENILAIAN, MODE_PENILAIAN_LABEL } from '../../utils/constants';
@@ -310,12 +310,15 @@ function DashboardKakanContent({ adminProfile }) {
     nominee_id: r.nominee_id,
     nama_nominee: r.nama_nominee || r.nama,
     peringkat: r.peringkat_keseluruhan ?? r.peringkat ?? idx + 1,
-    skor_akhir_juri: mode === MODE_PENILAIAN.MODE_2 ? r.skor_akhir_juri : null,
+    skor_akhir_juri: mode === MODE_PENILAIAN.MODE_2 ? r.skor_akhir_juri : null, skor_akhir: mode === MODE_PENILAIAN.MODE_PIONIR ? r.skor_akhir : null,
   }));
 
-  // State & Mutasi Edit Nilai CKP (Mode PIONIR)
+  // State & Mutasi Edit Nilai CKP & Inovasi (Mode PIONIR)
   const [editingCkp, setEditingCkp] = useState(null);
   const [inputCkpVal, setInputCkpVal] = useState('');
+  const [selectedInovasiKandidat, setSelectedInovasiKandidat] = useState(null);
+  const [isEditingInovasi, setIsEditingInovasi] = useState(false);
+  const [inputInovasiVal, setInputInovasiVal] = useState('');
 
   const mutasiCkp = useMutation({
     mutationFn: ({ nomineeId, nilai }) =>
@@ -326,6 +329,21 @@ function DashboardKakanContent({ adminProfile }) {
       setEditingCkp(null);
     },
     onError: (err) => toast.error(`Gagal menyimpan CKP: ${err.message}`),
+  });
+
+  const mutasiInovasi = useMutation({
+    mutationFn: ({ nomineeId, deskripsiInovasi }) =>
+      updateInovasiKandidatPionir(Number(periodeId), nomineeId, deskripsiInovasi),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['rekap-kakan'] });
+      queryClient.invalidateQueries({ queryKey: ['rekap-pionir', Number(periodeId)] });
+      toast.success('Deskripsi inovasi berhasil diperbarui!');
+      setSelectedInovasiKandidat((prev) =>
+        prev ? { ...prev, deskripsi_inovasi: variables.deskripsiInovasi.trim() } : null
+      );
+      setIsEditingInovasi(false);
+    },
+    onError: (err) => toast.error(`Gagal menyimpan inovasi: ${err.message}`),
   });
 
   // Export Multi-Sheet Excel (.xlsx) untuk Mode PIONIR
@@ -351,6 +369,7 @@ function DashboardKakanContent({ adminProfile }) {
         'Poin Kuesioner (20%)': Number(r.poin_kuesioner ?? 0).toFixed(2),
         'Total Skor Akhir (100 pts)': Number(r.skor_akhir ?? 0).toFixed(2),
         'Kata Kunci Pengusul': r.kata_pengusul || '-',
+        'Deskripsi Inovasi': r.deskripsi_inovasi || '-',
       }));
       const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
       XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Hasil PIONIR');
@@ -367,6 +386,7 @@ function DashboardKakanContent({ adminProfile }) {
         Bobot: d.pertanyaan?.bobot ? `${Math.round(d.pertanyaan.bobot * 100)}%` : '20%',
         'Skor Kuesioner': d.skor,
         '1 Kata Deskripsi': d.kata_kunci || '-',
+        'Deskripsi Inovasi (Pengusul)': d.deskripsi_inovasi || '-',
         'Waktu Pengusulan': d.created_at ? new Date(d.created_at).toLocaleString('id-ID') : '-',
       }));
       const ws2 = XLSX.utils.json_to_sheet(sheet2Data.length > 0 ? sheet2Data : [{ Status: 'Belum ada usulan masuk' }]);
@@ -427,6 +447,17 @@ function DashboardKakanContent({ adminProfile }) {
       const peringkat = selectedKategori
         ? (r.peringkat ?? r.peringkat_dalam_kategori ?? 0)
         : (r.peringkat_keseluruhan ?? r.peringkat ?? 0);
+      if (mode === MODE_PENILAIAN.MODE_PIONIR) {
+        return {
+          Peringkat: peringkat,
+          Nama: r.nama_nominee || r.nama || '-',
+          NIP: r.nip_baru || r.nip || '-',
+          Unit_Kerja: r.unit_kerja || '-',
+          Total_Suara: r.total_suara_kandidat ?? 0,
+          Skor_Akhir: Number(r.skor_akhir ?? 0).toFixed(2),
+        };
+      }
+
       const suara = selectedKategori
         ? (r.total_suara ?? 0)
         : (r.total_suara ?? 0);
@@ -808,7 +839,7 @@ function DashboardKakanContent({ adminProfile }) {
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
                     <tr>
                       <th className="px-5 py-3.5 font-bold">Peringkat</th>
-                      <th className="px-5 py-3.5 font-bold">Kandidat Pionir &amp; Kata Deskripsi</th>
+                      <th className="px-5 py-3.5 font-bold">Kandidat Pionir, Kata Kunci &amp; Inovasi</th>
                       <th className="px-4 py-3.5 font-bold text-center">Suara (40%)</th>
                       <th className="px-4 py-3.5 font-bold text-center">CKP Admin (40%)</th>
                       <th className="px-4 py-3.5 font-bold text-center">Kuesioner (20%)</th>
@@ -892,6 +923,38 @@ function DashboardKakanContent({ adminProfile }) {
                                         </span>
                                       ))}
                                     </div>
+                                  )}
+                                  {r.deskripsi_inovasi ? (
+                                    <div className="mt-2 rounded-lg bg-amber-50/70 border border-amber-200/70 p-2.5 max-w-md">
+                                      <p className="text-xs text-slate-700 line-clamp-2 leading-relaxed whitespace-pre-line">
+                                        {r.deskripsi_inovasi}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedInovasiKandidat(r);
+                                          setInputInovasiVal(r.deskripsi_inovasi || '');
+                                          setIsEditingInovasi(false);
+                                        }}
+                                        className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline"
+                                      >
+                                        <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                                        Baca Selengkapnya / Edit
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedInovasiKandidat(r);
+                                        setInputInovasiVal('');
+                                        setIsEditingInovasi(true);
+                                      }}
+                                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-navy-700"
+                                    >
+                                      <Lightbulb className="w-3.5 h-3.5" />
+                                      + Tambah Deskripsi Inovasi
+                                    </button>
                                   )}
                                 </div>
                               </div>
@@ -1161,6 +1224,141 @@ function DashboardKakanContent({ adminProfile }) {
               </div>
             </div>
           </Modal>
+
+          {/* Modal Lihat & Edit Inovasi Kandidat (Mode PIONIR) */}
+          <Modal
+            isOpen={Boolean(selectedInovasiKandidat)}
+            onClose={() => {
+              setSelectedInovasiKandidat(null);
+              setIsEditingInovasi(false);
+            }}
+            title="Inovasi / Terobosan Kandidat Pionir"
+          >
+            {selectedInovasiKandidat && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-navy-50 border border-navy-200">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={
+                        selectedInovasiKandidat.foto_url ||
+                        (selectedInovasiKandidat.nip
+                          ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${selectedInovasiKandidat.nip}.jpg`
+                          : null) ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedInovasiKandidat.nama_nominee || 'P')}&background=16324a&color=fff`
+                      }
+                      alt={selectedInovasiKandidat.nama_nominee}
+                      className="h-12 w-12 rounded-full border border-slate-200 object-cover shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-navy-900 text-sm truncate">
+                        {selectedInovasiKandidat.nama_nominee}
+                      </h4>
+                      <p className="text-xs text-slate-500 truncate">
+                        {selectedInovasiKandidat.nip_baru || selectedInovasiKandidat.nip || '-'} • {selectedInovasiKandidat.unit_kerja}
+                      </p>
+                    </div>
+                  </div>
+                  {!isEditingInovasi && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInputInovasiVal(selectedInovasiKandidat.deskripsi_inovasi || '');
+                        setIsEditingInovasi(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-navy-700 border border-navy-200 hover:bg-navy-100/50 transition shrink-0"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                {selectedInovasiKandidat.kata_pengusul && (
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-slate-500 font-medium">Kata Kunci Pengusul:</span>
+                    {selectedInovasiKandidat.kata_pengusul
+                      .split(',')
+                      .map((w) => w.trim())
+                      .filter(Boolean)
+                      .map((kt, idx) => (
+                        <span
+                          key={idx}
+                          className="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 border border-indigo-100"
+                        >
+                          &ldquo;{kt}&rdquo;
+                        </span>
+                      ))}
+                  </div>
+                )}
+
+                {isEditingInovasi ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Deskripsi Inovasi / Terobosan
+                      </label>
+                      <textarea
+                        rows={6}
+                        maxLength={3000}
+                        value={inputInovasiVal}
+                        onChange={(e) => setInputInovasiVal(e.target.value)}
+                        placeholder="Tuliskan deskripsi inovasi yang dibuat oleh kandidat..."
+                        className="input w-full text-sm leading-relaxed resize-y py-2.5"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!selectedInovasiKandidat.deskripsi_inovasi) {
+                            setSelectedInovasiKandidat(null);
+                          }
+                          setIsEditingInovasi(false);
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        disabled={mutasiInovasi.isPending}
+                        onClick={() => {
+                          mutasiInovasi.mutate({
+                            nomineeId: selectedInovasiKandidat.nominee_id,
+                            deskripsiInovasi: inputInovasiVal,
+                          });
+                        }}
+                        className="px-5 py-2 text-sm font-semibold text-white bg-navy-700 hover:bg-navy-800 rounded-xl shadow-sm inline-flex items-center gap-2"
+                      >
+                        {mutasiInovasi.isPending ? 'Menyimpan...' : 'Simpan Inovasi'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 max-h-80 overflow-y-auto">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-2">
+                        <Lightbulb className="w-4 h-4 text-amber-500" />
+                        <span>Uraian Inovasi / Terobosan</span>
+                      </div>
+                      <p className="text-sm text-slate-800 whitespace-pre-line leading-relaxed">
+                        {selectedInovasiKandidat.deskripsi_inovasi}
+                      </p>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedInovasiKandidat(null)}
+                        className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl"
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Modal>
         </>
       )}
       </div>
@@ -1233,6 +1431,8 @@ function DashboardKakanContent({ adminProfile }) {
                       skorTampilnya = Number(r.skor_akhir_juri ?? 0).toFixed(2);
                     } else if (mode === MODE_PENILAIAN.MODE_2A) {
                       skorTampilnya = `${Number(r.rata_rata_skor ?? 0).toFixed(1)} poin`;
+                    } else if (mode === MODE_PENILAIAN.MODE_PIONIR) {
+                      skorTampilnya = `${Number(r.skor_akhir ?? 0).toFixed(2)} pts`;
                     } else if (mode === MODE_PENILAIAN.MODE_1B) {
                       skorTampilnya = `${r.total_suara ?? 0} suara`;
                     } else if (selectedKategori) {

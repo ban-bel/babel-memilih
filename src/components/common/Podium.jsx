@@ -28,21 +28,24 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
     if (mode === 'MODE_1A') return `${Number(r.skor_akhir_persen ?? 0).toFixed(1)}%`;
     if (mode === 'MODE_2') return Number(r.skor_akhir_juri ?? 0).toFixed(2);
     if (mode === 'MODE_2A') return `${Number(r.rata_rata_skor ?? 0).toFixed(1)} poin`;
+    if (mode === 'MODE_PIONIR' || r.skor_akhir !== undefined) {
+      return `${Number(r.skor_akhir ?? 0).toFixed(2)} pts`;
+    }
 
     // MODE_1B Hybrid: berbeda antara overview dan per kategori
     if (mode === 'MODE_1B') {
       if (isMode1BKategori) {
         if (selectedKategori) {
-          return `${r.total_suara ?? 0} suara`;
+          return `${r.total_suara ?? r.total_suara_kandidat ?? 0} suara`;
         } else {
           return `${r.total_keseluruhan ?? 0} suara`;
         }
       } else {
         // Normal MODE_1B (bukan hybrid)
-        return `${r.total_suara ?? 0} suara`;
+        return `${r.total_suara ?? r.total_suara_kandidat ?? 0} suara`;
       }
     }
-    return `${r.total_suara ?? 0} suara`;
+    return `${r.total_suara ?? r.total_suara_kandidat ?? 0} suara`;
   }
 
   return (
@@ -90,6 +93,11 @@ export default function Podium({ top3, mode, isMode1BKategori, selectedKategori 
               <div className="mt-2 md:mt-3 inline-flex items-center justify-center px-2 py-1 md:px-4 md:py-1.5 rounded-full bg-navy-900 text-white font-bold text-[10px] md:text-lg shadow-md whitespace-nowrap">
                 {getSkorTampil(item)}
               </div>
+              {item.total_suara_kandidat !== undefined && (
+                <span className="mt-1 text-[10px] md:text-xs font-semibold text-slate-500">
+                  {item.total_suara_kandidat ?? 0} suara
+                </span>
+              )}
             </div>
 
             {/* Podium Block */}

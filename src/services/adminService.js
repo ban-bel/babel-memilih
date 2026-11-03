@@ -691,7 +691,8 @@ export async function simpanPertanyaanMode1A(periodeId, daftarPertanyaan) {
  */
 export async function simpanKategoriMode2(periodeId, daftarKategori) {
   // Hapus kategori lama terlebih dahulu
-  await supabase.from('kategori_penilaian').delete().eq('periode_id', periodeId);
+  const { error: deleteError } = await supabase.from('kategori_penilaian').delete().eq('periode_id', periodeId);
+  if (deleteError) throw new Error(`Gagal menghapus kategori lama: ${deleteError.message}`);
 
   if (!daftarKategori || daftarKategori.length === 0) return;
 
@@ -740,7 +741,8 @@ export async function simpanKategoriMode2(periodeId, daftarKategori) {
  */
 export async function simpanKriteriaMode2A(periodeId, daftarKriteria) {
   // Delete existing criteria first
-  await supabase.from('kriteria_mode2a').delete().eq('periode_id', periodeId);
+  const { error: deleteError } = await supabase.from('kriteria_mode2a').delete().eq('periode_id', periodeId);
+  if (deleteError) throw new Error(`Gagal menghapus kriteria lama: ${deleteError.message}`);
 
   if (!daftarKriteria || daftarKriteria.length === 0) {
     return; // No criteria to save

@@ -1,13 +1,5 @@
 import { supabase } from '../../config/supabaseClient';
-
-/**
- * Validasi token UUID.
- */
-function pastikanTokenValid(token) {
-  if (!token || typeof token !== 'string') {
-    throw new Error('Token akses tidak valid atau tidak ditemukan.');
-  }
-}
+import { pastikanTokenValid } from './shared';
 
 /**
  * Mengambil detail akses token Mode PIONIR (Pengusul atau Pemilih Biasa).
@@ -54,15 +46,16 @@ export async function fetchKandidatPionir(periodeId) {
 }
 
 /**
- * Mengirimkan usulan kandidat beserta nilai kuesioner dan kata kunci oleh Pengusul (Fase 1).
+ * Mengirimkan usulan kandidat beserta nilai kuesioner, kata kunci, dan deskripsi inovasi oleh Pengusul (Fase 1).
  *
  * @param {string} token - UUID token pengusul
  * @param {number} kandidatId - ID pegawai yang dicalonkan
  * @param {Array<{pertanyaan_id: number, skor: number}>} daftarSkor - Array skor kuesioner
  * @param {string} kataKunci - 1 kata deskripsi untuk calon pionir
+ * @param {string} deskripsiInovasi - Narasi paragraf inovasi/terobosan yang dibuat oleh kandidat
  * @returns {Promise<Object>} Hasil submit
  */
-export async function submitUsulanPionir(token, kandidatId, daftarSkor, kataKunci) {
+export async function submitUsulanPionir(token, kandidatId, daftarSkor, kataKunci, deskripsiInovasi) {
   pastikanTokenValid(token);
 
   if (!kandidatId) {
@@ -77,11 +70,16 @@ export async function submitUsulanPionir(token, kandidatId, daftarSkor, kataKunc
     throw new Error('Mohon berikan 1 kata deskripsi untuk calon pionir.');
   }
 
+  if (!deskripsiInovasi || deskripsiInovasi.trim().length < 20) {
+    throw new Error('Mohon tuliskan deskripsi inovasi/terobosan kandidat minimal 20 karakter.');
+  }
+
   const { data, error } = await supabase.rpc('submit_usulan_pionir', {
     p_token: token,
     p_kandidat_id: kandidatId,
     p_scores_json: daftarSkor,
     p_kata_kunci: kataKunci.trim(),
+    p_deskripsi_inovasi: deskripsiInovasi.trim(),
   });
 
   if (error) {
@@ -143,6 +141,30 @@ export async function updateCkpKandidatPionir(periodeId, nomineeId, nilaiCkp) {
 
   if (error) {
     throw new Error(`Gagal menyimpan nilai CKP: ${error.message}`);
+  }
+}
+
+/**
+ * Update narasi deskripsi inovasi kandidat oleh Admin / Kepala Kantor.
+ *
+ * @param {number} periodeId - ID periode
+ * @param {number} nomineeId - ID pegawai kandidat
+ * @param {string} deskripsiInovasi - Teks paragraf deskripsi inovasi
+ * @returns {Promise<void>}
+ */
+export async function updateInovasiKandidatPionir(periodeId, nomineeId, deskripsiInovasi) {
+  if (!periodeId || !nomineeId) {
+    throw new Error('Periode ID dan Nominee ID wajib disediakan.');
+  }
+
+  const { error } = await supabase.rpc('update_inovasi_kandidat_pionir', {
+    p_periode_id: Number(periodeId),
+    p_nominee_id: Number(nomineeId),
+    p_deskripsi_inovasi: (deskripsiInovasi ?? '').trim(),
+  });
+
+  if (error) {
+    throw new Error(`Gagal menyimpan deskripsi inovasi: ${error.message}`);
   }
 }
 

@@ -118,6 +118,8 @@ export async function fetchNomineeByPeriode(periodeId) {
         portofolio_pengembangan,
         portofolio_inovasi,
         portofolio_penghargaan,
+        nilai_ckp,
+        deskripsi_inovasi,
         pegawai:pegawai_id (
           id,
           nama,

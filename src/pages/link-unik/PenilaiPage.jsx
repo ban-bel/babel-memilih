@@ -158,8 +158,8 @@ export default function PenilaiPage() {
   });
 
   const mutasiUsulanPionir = useMutation({
-    mutationFn: ({ kandidatId, daftarSkor, kataKunci }) =>
-      submitUsulanPionir(token, kandidatId, daftarSkor, kataKunci),
+    mutationFn: ({ kandidatId, daftarSkor, kataKunci, deskripsiInovasi }) =>
+      submitUsulanPionir(token, kandidatId, daftarSkor, kataKunci, deskripsiInovasi),
     onSuccess: () => {
       setSudahKirim(true);
       queryClient.invalidateQueries({ queryKey: ['akses-penilai', token] });
