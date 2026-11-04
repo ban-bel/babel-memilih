@@ -44,7 +44,7 @@ export default function FormPionirPengusul({
 
   // Pisahkan pertanyaan kuesioner (skor 1-100) dan pertanyaan kata deskripsi (jika ada di master)
   const pertanyaanSkor = useMemo(() => {
-    return pertanyaan.filter((p) => (p.skor_max ?? 100) > 1);
+    return pertanyaan.filter((p) => !p.is_kata_kunci && Number(p.bobot ?? 0.2) > 0 && (p.skor_max ?? 100) > 1);
   }, [pertanyaan]);
 
   // State nilai skor kuesioner per pertanyaan ID (default 85)

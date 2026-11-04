@@ -25,10 +25,10 @@ export default function FormPertanyaanBuilder({
     onChange([...daftar, buatBaris()]);
   }
   function hapus(key) {
-    onChange(daftar.filter((p) => p.key !== key));
+    onChange(daftar.filter((p, i) => (p.key ?? i) !== key));
   }
   function ubah(key, field, nilai) {
-    onChange(daftar.map((p) => (p.key === key ? { ...p, [field]: nilai } : p)));
+    onChange(daftar.map((p, i) => ((p.key ?? i) === key ? { ...p, [field]: nilai } : p)));
   }
 
   return (
@@ -40,7 +40,7 @@ export default function FormPertanyaanBuilder({
 
       <div className="space-y-3">
         {daftar.map((p, idx) => (
-          <div key={p.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-soft">
+          <div key={p.key ?? idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-soft">
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy-100 text-xs font-bold text-navy-800">
                 {idx + 1}
@@ -49,7 +49,7 @@ export default function FormPertanyaanBuilder({
                 <textarea
                   rows={2}
                   value={p.teks_pertanyaan}
-                  onChange={(e) => ubah(p.key, 'teks_pertanyaan', e.target.value)}
+                  onChange={(e) => ubah(p.key ?? idx, 'teks_pertanyaan', e.target.value)}
                   placeholder={labels.placeholder}
                   className="input resize-none text-sm"
                 />
@@ -57,11 +57,11 @@ export default function FormPertanyaanBuilder({
                   <div className="flex items-center gap-4 text-sm">
                     <label className="flex items-center gap-2 text-slate-600">
                       <span>Min:</span>
-                      <input type="number" value={p.skor_min} onChange={(e) => ubah(p.key, 'skor_min', Number(e.target.value))} className="input w-20 text-center" />
+                      <input type="number" value={p.skor_min} onChange={(e) => ubah(p.key ?? idx, 'skor_min', Number(e.target.value))} className="input w-20 text-center" />
                     </label>
                     <label className="flex items-center gap-2 text-slate-600">
                       <span>Max:</span>
-                      <input type="number" value={p.skor_max} onChange={(e) => ubah(p.key, 'skor_max', Number(e.target.value))} className="input w-20 text-center" />
+                      <input type="number" value={p.skor_max} onChange={(e) => ubah(p.key ?? idx, 'skor_max', Number(e.target.value))} className="input w-20 text-center" />
                     </label>
                   </div>
                 )}
@@ -71,7 +71,7 @@ export default function FormPertanyaanBuilder({
                   <select 
                     className="input input-sm w-44 text-xs bg-white cursor-pointer"
                     value={p.is_dinilai ? 'score' : 'info'}
-                    onChange={(e) => ubah(p.key, 'is_dinilai', e.target.value === 'score')}
+                    onChange={(e) => ubah(p.key ?? idx, 'is_dinilai', e.target.value === 'score')}
                   >
                     <option value="info">Hanya Kelengkapan</option>
                     <option value="score">Masuk Penilaian</option>
@@ -79,7 +79,7 @@ export default function FormPertanyaanBuilder({
                 )}
                 <button
                   type="button"
-                  onClick={() => hapus(p.key)}
+                  onClick={() => hapus(p.key ?? idx)}
                   className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
                   aria-label="Hapus"
                 >

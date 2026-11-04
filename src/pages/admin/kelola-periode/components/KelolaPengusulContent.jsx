@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   UserCheck, 
@@ -7,6 +7,8 @@ import {
   Copy, 
   Check, 
   Share2, 
+  Send,
+  StopCircle,
   Trash2, 
   Plus, 
   Clock, 
@@ -31,6 +33,7 @@ import {
   fetchDaftarPegawaiAktifMultiUnit 
 } from '../../../../services/adminService';
 import { fetchDetailPengusulPionir } from '../../../../services/voting/rekapService';
+import { kirimPesanLocalBot, formatHP } from '../../../../services/wabotLokalService';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Modal from '../../../../components/common/Modal';
 
@@ -44,6 +47,11 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sendingBotId, setSendingBotId] = useState(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [isBulkSending, setIsBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ sent: 0, failed: 0, total: 0, statusText: '', logs: [] });
+  const cancelBulkRef = useRef(false);
 
   // State Modal Tambah
   const [modalSearch, setModalSearch] = useState('');
@@ -176,7 +184,7 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
   };
 
   // Handler Kirim Pesan WhatsApp
-  const handleKirimWA = (p) => {
+  const buatPesanWA = (p) => {
     const namaPegawai = p.pegawai?.nama || 'Bapak/Ibu';
     const linkAkses = `${window.location.origin}/penilai/${p.token_akses}`;
     const batasWaktu = periode?.tgl_selesai_fase1 
@@ -191,8 +199,84 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
 
     const pesan = `Halo Bapak/Ibu *${namaPegawai}*,\n\nAnda ditunjuk sebagai *Tim Pengusul* pada kegiatan *${periode?.nama_periode || 'Pemilihan Insan Teladan (PIONIR)'}* di BPS.\n\nSebagai pengusul, Anda memiliki hak untuk mengusulkan 1 orang rekan kerja teladan beserta pengisian kuesioner BerAKHLAK.\n\nSilakan klik tautan rahasia berikut untuk memberikan usulan Anda:\n🔗 ${linkAkses}\n\n⏳ *Batas Waktu Pengusulan (Fase 1):* ${batasWaktu}\n\nTerima kasih atas partisipasi dan objektivitas Bapak/Ibu.`;
 
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(pesan)}`;
+    return pesan;
+  };
+
+  const handleKirimWA = (p) => {
+    const hp = formatHP(p.pegawai?.no_hp);
+    const pesan = encodeURIComponent(buatPesanWA(p));
+    const waUrl = hp ? `https://wa.me/${hp}?text=${pesan}` : `https://api.whatsapp.com/send?text=${pesan}`;
     window.open(waUrl, '_blank');
+  };
+
+  // Handler Kirim WA via Bot API (Satuan)
+  const handleKirimWABot = async (p) => {
+    const hp = formatHP(p.pegawai?.no_hp);
+    const nama = p.pegawai?.nama || 'Pengusul';
+    if (!hp) return toast.error(`Nomor HP untuk ${nama} belum terdaftar.`);
+
+    setSendingBotId(p.id);
+    const toastId = toast.loading(`Mengirim WA via Bot ke ${nama}...`);
+    try {
+      const res = await kirimPesanLocalBot(hp, buatPesanWA(p));
+      if (!res.status) throw new Error(res.reason || 'Gagal mengirim WA via Bot');
+      toast.success(`WA berhasil dikirim ke ${nama}!`, { id: toastId });
+    } catch (err) {
+      toast.error(err.message, { id: toastId });
+    } finally {
+      setSendingBotId(null);
+    }
+  };
+
+  // Handler Broadcast Bot WA Massal (Belum Mengusulkan, jeda aman 11-18 detik)
+  const targetBroadcast = useMemo(
+    () => pengusulList.filter((p) => !p.is_digunakan && Boolean(formatHP(p.pegawai?.no_hp))),
+    [pengusulList]
+  );
+
+  const handleMulaiBroadcastBot = async () => {
+    if (targetBroadcast.length === 0) return toast.error('Tidak ada pengusul belum submit dengan nomor HP valid.');
+    cancelBulkRef.current = false;
+    setIsBulkSending(true);
+    setBulkProgress({ sent: 0, failed: 0, total: targetBroadcast.length, statusText: 'Memulai pengiriman...', logs: [] });
+
+    let sent = 0, failed = 0;
+    for (let i = 0; i < targetBroadcast.length; i++) {
+      if (cancelBulkRef.current) break;
+      const item = targetBroadcast[i];
+      const nama = item.pegawai?.nama || 'Pengusul';
+      const hp = formatHP(item.pegawai?.no_hp);
+
+      setBulkProgress((prev) => ({ ...prev, statusText: `Mengirim (${i + 1}/${targetBroadcast.length}): ${nama}...` }));
+      const res = await kirimPesanLocalBot(hp, buatPesanWA(item));
+
+      if (res.status) {
+        sent += 1;
+        setBulkProgress((prev) => ({ ...prev, sent, logs: [{ ok: true, nama }, ...prev.logs.slice(0, 49)] }));
+      } else {
+        failed += 1;
+        setBulkProgress((prev) => ({ ...prev, failed, logs: [{ ok: false, nama, error: res.reason }, ...prev.logs.slice(0, 49)] }));
+        if (res.isRateLimit) {
+          toast.error('Dihentikan sementara: Rate limit WA Bot tercapai.');
+          break;
+        }
+      }
+
+      if (i < targetBroadcast.length - 1 && !cancelBulkRef.current) {
+        const jeda = Math.floor(Math.random() * 8) + 11;
+        for (let s = jeda; s > 0 && !cancelBulkRef.current; s--) {
+          setBulkProgress((prev) => ({ ...prev, statusText: `Jeda aman ${s} detik sebelum penerima berikutnya...` }));
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+    }
+
+    setIsBulkSending(false);
+    setBulkProgress((prev) => ({
+      ...prev,
+      statusText: `${cancelBulkRef.current ? 'Dihentikan' : 'Selesai'}! Berhasil: ${sent}, Gagal: ${failed}`,
+    }));
+    toast.success(`Broadcast selesai (Berhasil: ${sent}, Gagal: ${failed})`);
   };
 
   // Hitung statistik
@@ -211,14 +295,14 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
       <div className="rounded-3xl border border-navy-100 bg-gradient-to-br from-navy-900 via-navy-800 to-indigo-950 p-6 sm:p-7 text-white shadow-soft-lg relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-72 h-72 bg-gradient-to-br from-amber-400/15 to-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300 border border-amber-400/30">
-                <Sparkles className="h-3.5 w-3.5" />
+        <div className="relative z-10 flex flex-col gap-5">
+          <div className="space-y-2 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300 border border-amber-400/30">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 Fase 1: Penjaringan & Usulan
               </span>
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+              <span className={`inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold ${
                 isFase1Aktif ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-500/20 text-slate-300 border border-slate-500/30'
               }`}>
                 {isFase1Aktif ? 'Masa Pengusulan Aktif' : 'Masa Pengusulan Berakhir'}
@@ -233,7 +317,20 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {totalBelum > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBulkProgress({ sent: 0, failed: 0, total: 0, statusText: '', logs: [] });
+                  setShowBulkModal(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-teal-400 hover:to-emerald-500 active:scale-95"
+              >
+                <Send className="h-4 w-4" />
+                Kirim Bot WA Massal ({totalBelum})
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
@@ -376,145 +473,247 @@ export default function KelolaPengusulContent({ adminProfile, periodeId, periode
             return (
               <div
                 key={p.id}
-                className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 sm:p-5 transition-all ${
+                className={`rounded-2xl border p-4 sm:p-5 transition-all ${
                   isSudah 
                     ? 'border-emerald-200/80 bg-emerald-50/20 hover:bg-emerald-50/40' 
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-soft'
                 }`}
               >
-                {/* Profil Pengusul */}
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <img
-                    src={
-                      p.pegawai?.foto_url ||
-                      (p.pegawai?.nip
-                        ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${p.pegawai.nip}.jpg`
-                        : null)
-                    }
-                    alt={p.pegawai?.nama || 'Pengusul'}
-                    className="h-12 w-12 rounded-full object-cover border border-slate-200 shrink-0 shadow-sm"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        p.pegawai?.nama || 'P'
-                      )}&background=16324a&color=fff&size=80`;
-                    }}
-                  />
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+                  {/* Profil Pengusul */}
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <img
+                      src={
+                        p.pegawai?.foto_url ||
+                        (p.pegawai?.nip
+                          ? `https://raw.githubusercontent.com/ban-bel/avatar-bps/refs/heads/main/Hasil_Compress/${p.pegawai.nip}.jpg`
+                          : null)
+                      }
+                      alt={p.pegawai?.nama || 'Pengusul'}
+                      className="h-12 w-12 rounded-full object-cover border border-slate-200 shrink-0 shadow-sm"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          p.pegawai?.nama || 'P'
+                        )}&background=16324a&color=fff&size=80`;
+                      }}
+                    />
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-slate-900 text-sm sm:text-base truncate">
-                        {p.pegawai?.nama}
-                      </p>
-                      <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-navy-50 text-navy-700 border border-navy-100 uppercase">
-                        Pengusul
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-0.5">
-                      <span>NIP: {p.pegawai?.nip || p.pegawai?.nip_baru || '-'}</span>
-                      {p.pegawai?.jabatan && (
-                        <>
-                          <span>&bull;</span>
-                          <span className="truncate max-w-xs">{p.pegawai?.jabatan}</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Informasi Calon yang Diusulkan jika sudah submit */}
-                    {isSudah && usulan && (
-                      <div className="mt-2 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200">
-                            <Award className="h-3.5 w-3.5 text-emerald-600" />
-                            Mencalonkan: <strong>{usulan.kandidatNama}</strong>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                          {p.pegawai?.nama}
+                        </p>
+                        <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-navy-50 text-navy-700 border border-navy-100 uppercase">
+                          Pengusul
+                        </span>
+                        {isSudah ? (
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                            Sudah Mengusulkan
                           </span>
-                          {usulan.kataKunci && (
-                            <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200 italic">
-                              &ldquo;{usulan.kataKunci}&rdquo;
-                            </span>
-                          )}
-                        </div>
-                        {usulan.deskripsiInovasi && (
-                          <div className="rounded-xl bg-white/90 border border-amber-200/80 p-2.5 text-xs text-slate-700 max-w-2xl">
-                            <span className="font-semibold text-amber-800 flex items-center gap-1 mb-0.5">
-                              <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                              Inovasi yang Diusulkan:
-                            </span>
-                            <p className="whitespace-pre-line leading-relaxed text-slate-600">
-                              {usulan.deskripsiInovasi}
-                            </p>
-                          </div>
+                        ) : (
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                            <Clock className="h-3 w-3 text-amber-600" />
+                            Belum Mengusulkan
+                          </span>
                         )}
                       </div>
-                    )}
+
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 mt-0.5">
+                        <span>NIP: {p.pegawai?.nip || p.pegawai?.nip_baru || '-'}</span>
+                        {p.pegawai?.jabatan && (
+                          <span className="inline-flex items-center gap-2 min-w-0">
+                            <span>&bull;</span>
+                            <span className="truncate">{p.pegawai?.jabatan}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
+                    {/* Tombol Salin Link */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(p.token_akses, p.pegawai?.nama)}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-navy-300 hover:bg-slate-50 hover:text-navy-900 active:scale-95"
+                      title="Salin Tautan Akses Pengusul"
+                    >
+                      {copiedToken === p.token_akses ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          Tersalin
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5 text-slate-500" />
+                          Salin Link
+                        </>
+                      )}
+                    </button>
+
+                    {/* Tombol Bot WA */}
+                    <button
+                      type="button"
+                      disabled={sendingBotId === p.id || isBulkSending || !formatHP(p.pegawai?.no_hp)}
+                      onClick={() => handleKirimWABot(p)}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700 shadow-sm transition hover:bg-teal-100 hover:border-teal-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={formatHP(p.pegawai?.no_hp) ? `Kirim otomatis via Bot WA (${p.pegawai?.no_hp})` : 'Nomor HP belum terdaftar'}
+                    >
+                      {sendingBotId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-600" /> : <Send className="h-3.5 w-3.5 text-teal-600" />}
+                      Bot WA
+                    </button>
+
+                    {/* Tombol WhatsApp */}
+                    <button
+                      type="button"
+                      onClick={() => handleKirimWA(p)}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95"
+                      title="Bagikan Tautan via WhatsApp"
+                    >
+                      <Share2 className="h-3.5 w-3.5 text-emerald-600" />
+                      Kirim WA
+                    </button>
+
+                    {/* Tombol Hapus Pengusul */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteTarget(p);
+                        setShowDeleteModal(true);
+                      }}
+                      className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                      title="Hapus dari Tim Pengusul"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Status & Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end md:self-center">
-                  {/* Status Badge */}
-                  {isSudah ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                      Sudah Mengusulkan
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                      <Clock className="h-3.5 w-3.5 text-amber-600" />
-                      Belum Mengusulkan
-                    </span>
-                  )}
-
-                  {/* Tombol Salin Link */}
-                  <button
-                    type="button"
-                    onClick={() => handleCopyLink(p.token_akses, p.pegawai?.nama)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-navy-300 hover:bg-slate-50 hover:text-navy-900 active:scale-95"
-                    title="Salin Tautan Akses Pengusul"
-                  >
-                    {copiedToken === p.token_akses ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        Tersalin
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5 text-slate-500" />
-                        Salin Link
-                      </>
+                {/* Informasi Calon yang Diusulkan jika sudah submit */}
+                {isSudah && usulan && (
+                  <div className="mt-3.5 pt-3 border-t border-emerald-200/60 sm:pl-[3.875rem] space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200">
+                        <Award className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                        <span>Mencalonkan: <strong>{usulan.kandidatNama}</strong></span>
+                      </span>
+                      {usulan.kataKunci && (
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200 italic">
+                          &ldquo;{usulan.kataKunci}&rdquo;
+                        </span>
+                      )}
+                    </div>
+                    {usulan.deskripsiInovasi && (
+                      <div className="rounded-xl bg-white/90 border border-amber-200/80 p-3 text-xs text-slate-700">
+                        <span className="font-semibold text-amber-800 flex items-center gap-1.5 mb-0.5">
+                          <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                          Inovasi yang Diusulkan:
+                        </span>
+                        <p className="whitespace-pre-line leading-relaxed text-slate-600">
+                          {usulan.deskripsiInovasi}
+                        </p>
+                      </div>
                     )}
-                  </button>
-
-                  {/* Tombol WhatsApp */}
-                  <button
-                    type="button"
-                    onClick={() => handleKirimWA(p)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95"
-                    title="Bagikan Tautan via WhatsApp"
-                  >
-                    <Share2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Kirim WA
-                  </button>
-
-                  {/* Tombol Hapus Pengusul */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteTarget(p);
-                      setShowDeleteModal(true);
-                    }}
-                    className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                    title="Hapus dari Tim Pengusul"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      {/* === MODAL BROADCAST BOT WA MASSAL === */}
+      <Modal
+        isOpen={showBulkModal}
+        onClose={() => !isBulkSending && setShowBulkModal(false)}
+        title="Kirim Undangan Pengusul via Bot WA"
+      >
+        <div className="space-y-4">
+          {!isBulkSending && bulkProgress.total === 0 ? (
+            <>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Kirim tautan rahasia ke seluruh pengusul yang <strong>belum mengusulkan</strong> via Bot WA dengan jeda acak aman <strong>11–18 detik</strong> antar pesan agar terhindar dari blokir WhatsApp.
+              </p>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Belum mengusulkan:</span>
+                  <span className="font-bold text-slate-800">{totalBelum} orang</span>
+                </div>
+                <div className="flex justify-between text-teal-700">
+                  <span>Memiliki Nomor HP valid (Siap dikirim):</span>
+                  <span className="font-bold">{targetBroadcast.length} orang</span>
+                </div>
+                {totalBelum - targetBroadcast.length > 0 && (
+                  <div className="flex justify-between text-rose-600">
+                    <span>Dilewati (Nomor HP kosong):</span>
+                    <span className="font-bold">{totalBelum - targetBroadcast.length} orang</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button type="button" onClick={() => setShowBulkModal(false)} className="btn-ghost text-xs">Batal</button>
+                <button
+                  type="button"
+                  disabled={targetBroadcast.length === 0}
+                  onClick={handleMulaiBroadcastBot}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-teal-700 disabled:opacity-50"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Mulai Kirim ({targetBroadcast.length})
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-slate-700">{bulkProgress.statusText}</span>
+                  <span className="text-navy-800">{bulkProgress.sent + bulkProgress.failed} / {bulkProgress.total}</span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-300"
+                    style={{ width: `${bulkProgress.total ? Math.round(((bulkProgress.sent + bulkProgress.failed) / bulkProgress.total) * 100) : 0}%` }}
+                  />
+                </div>
+                <div className="flex gap-4 text-xs">
+                  <span className="font-semibold text-emerald-700">Berhasil: {bulkProgress.sent}</span>
+                  <span className="font-semibold text-rose-600">Gagal: {bulkProgress.failed}</span>
+                </div>
+              </div>
+              {bulkProgress.logs.length > 0 && (
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2 space-y-1 text-xs">
+                  {bulkProgress.logs.map((log, i) => (
+                    <div key={i} className="flex justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5 border border-slate-100">
+                      <span className="font-medium text-slate-800 truncate">{log.nama}</span>
+                      <span className={`shrink-0 text-[11px] font-semibold ${log.ok ? 'text-emerald-600' : 'text-rose-600 truncate max-w-[160px]'}`}>
+                        {log.ok ? 'Terkirim' : `Gagal: ${log.error}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                {isBulkSending ? (
+                  <button
+                    type="button"
+                    onClick={() => { cancelBulkRef.current = true; }}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-rose-700"
+                  >
+                    <StopCircle className="h-3.5 w-3.5" />
+                    Hentikan
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => setShowBulkModal(false)} className="btn-primary text-xs">Tutup</button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* === MODAL TAMBAH PENGUSUL SUSULAN === */}
       <Modal

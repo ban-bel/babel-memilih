@@ -871,7 +871,7 @@ export async function fetchPengusulPeriode(periodeId) {
       token_akses,
       is_digunakan,
       submitted_at,
-      pegawai:pegawai(id, nama, nip, nip_baru, jabatan, foto_url, wilayah_id)
+      pegawai:pegawai(id, nama, nip, nip_baru, jabatan, foto_url, wilayah_id, no_hp)
     `)
     .eq('periode_id', periodeId);
 

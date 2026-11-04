@@ -126,6 +126,7 @@ export const MODE_PENILAIAN_LABEL = Object.freeze({
  */
 export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
   {
+    key: 'pionir-1',
     urutan: 1,
     teks_pertanyaan: 'Pegawai tersebut kolaboratif dan berorientasi pelayanan',
     bobot: 0.20,
@@ -133,6 +134,7 @@ export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
     skor_max: 100,
   },
   {
+    key: 'pionir-2',
     urutan: 2,
     teks_pertanyaan: 'Pegawai tersebut selalu tuntas dan bahkan melebihi ekspektasi, kompeten dan berinovasi',
     bobot: 0.25,
@@ -140,6 +142,7 @@ export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
     skor_max: 100,
   },
   {
+    key: 'pionir-3',
     urutan: 3,
     teks_pertanyaan: 'Pegawai tersebut dapat diteladani dalam melaksanakan tanggung jawab dan tugasnya dan harmonis',
     bobot: 0.15,
@@ -147,6 +150,7 @@ export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
     skor_max: 100,
   },
   {
+    key: 'pionir-4',
     urutan: 4,
     teks_pertanyaan: 'Amanah, Integritas dan Akuntabel dalam pelaksanaan tugasnya',
     bobot: 0.20,
@@ -154,17 +158,12 @@ export const DEFAULT_PIONIR_PERTANYAAN = Object.freeze([
     skor_max: 100,
   },
   {
+    key: 'pionir-5',
     urutan: 5,
     teks_pertanyaan: 'Melakukan inovasi yang bermanfaat',
     bobot: 0.20,
     skor_min: 1,
     skor_max: 100,
-  },
-  {
-    urutan: 6,
-    teks_pertanyaan: 'Berikan 1 kata untuk calon pionir',
-    bobot: 0,
-    is_kata_kunci: true,
   },
 ]);
 
