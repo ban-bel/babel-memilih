@@ -778,7 +778,9 @@ export function PartisipanPeriodeContent({ adminProfile, periode }) {
             sent: progress.status === 'SUCCESS' ? prev.sent + 1 : prev.sent,
             failed: progress.status === 'FAILED' ? prev.failed + 1 : prev.failed,
             statusText: progress.statusText,
-            logs: [{ status: progress.status, nama: progress.nama, error: progress.error }, ...prev.logs.slice(0, 49)]
+            logs: (progress.status === 'SUCCESS' || progress.status === 'FAILED')
+              ? [{ status: progress.status, nama: progress.nama, error: progress.error }, ...prev.logs.slice(0, 49)]
+              : prev.logs
           }));
         },
         onComplete: (results) => {

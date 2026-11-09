@@ -8,7 +8,8 @@ import {
   Search, 
   AlertCircle, 
   Sparkles, 
-  Users 
+  Users,
+  Lightbulb 
 } from 'lucide-react';
 import Modal from '../../../components/common/Modal';
 import { KENALAN_BTN_LABEL } from '../../../utils/votingConstants';
@@ -52,7 +53,8 @@ export default function GridPionirVote({
       (k.nama && k.nama.toLowerCase().includes(q)) ||
       (k.jabatan && k.jabatan.toLowerCase().includes(q)) ||
       (k.unit_kerja && k.unit_kerja.toLowerCase().includes(q)) ||
-      (k.kata_pengusul && k.kata_pengusul.toLowerCase().includes(q))
+      (k.kata_pengusul && k.kata_pengusul.toLowerCase().includes(q)) ||
+      (k.deskripsi_inovasi && k.deskripsi_inovasi.toLowerCase().includes(q))
     );
   });
 
@@ -254,6 +256,19 @@ export default function GridPionirVote({
                       ))}
                     </div>
                   )}
+
+                  {/* Pratinjau Inovasi yang Diusulkan */}
+                  {k.deskripsi_inovasi && (
+                    <div className="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/60 px-3 py-2 text-left">
+                      <p className="flex items-center gap-1 text-[11px] font-bold text-amber-800">
+                        <Lightbulb className="h-3 w-3 text-amber-500 shrink-0" />
+                        Inovasi
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-600 leading-snug line-clamp-3">
+                        {k.deskripsi_inovasi.split(/\n+---\n+/)[0]}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tombol Kenalan Dulu Yuk */}
@@ -439,6 +454,23 @@ export default function GridPionirVote({
                 )}
               </div>
             </div>
+
+            {/* Inovasi yang Diusulkan */}
+            {profilDetail.deskripsi_inovasi && (
+              <div className="rounded-xl border border-amber-200/80 bg-white p-4 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                  <Lightbulb className="h-4 w-4 text-amber-500" />
+                  <span>Inovasi yang Diusulkan:</span>
+                </div>
+                <div className="space-y-2">
+                  {profilDetail.deskripsi_inovasi.split(/\n+---\n+/).map((teks, i) => (
+                    <p key={i} className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                      {teks}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 justify-end pt-2">
               <button
